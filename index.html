@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f6fa; --card: #fff; --border: #e8eaef;
+    --text: #1a1d2e; --text-2: #6b7280; --text-3: #9ca3af;
+    --accent: #3b5bdb; --accent-hover: #2f4ac0; --accent-soft: #eef2ff;
+    --green: #12b76a; --red: #ef4444;
+    --shadow: 0 1px 3px rgba(0,0,0,.07); --radius: 10px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+  /* TOPBAR */
+  .topbar {
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 58px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; }
+  .logo-text { font-weight: 700; font-size: 15px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .search-wrap { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; width: 220px; }
+  .search-wrap input { border: none; background: transparent; font-family: inherit; font-size: 13px; color: var(--text); outline: none; width: 100%; }
+  .search-wrap input::placeholder { color: var(--text-3); }
+  .notif-btn { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-2); position: relative; }
+  .notif-dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; position: absolute; top: 7px; right: 7px; border: 2px solid #fff; }
+  .user-chip { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 6px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; background: var(--card); }
+  .av-teacher { width: 28px; height: 28px; border-radius: 50%; background: #4f46e5; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fff; }
+  .user-name { font-size: 13px; font-weight: 600; }
+  .user-role { font-size: 11px; color: var(--text-3); }
+
+  /* CONTENT */
+  .content { flex: 1; overflow-y: auto; padding: 28px; }
+  .welcome-title { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+  .welcome-sub { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
+  .top-action { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+
+  /* BTN */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border: none; outline: none; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-2); }
+  .btn-outline:hover { background: var(--bg); }
+
+  /* GRID */
+  .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  /* SECTION CARD */
+  .section-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .section-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+  .section-count { background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+
+  /* EMPTY STATE */
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; gap: 14px; min-height: 180px; }
+  .empty-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; color: var(--accent); }
+  .empty-text { font-size: 13px; color: var(--text-3); text-align: center; }
+
+  /* STUDENT ITEM */
+  .student-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--border); transition: background .12s; }
+  .student-item:last-child { border-bottom: none; }
+  .student-item:hover { background: #f9fafb; }
+  .student-left { display: flex; align-items: center; gap: 10px; }
+  .av { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; flex-shrink: 0; }
+  .student-name { font-size: 14px; font-weight: 500; }
+  .student-meta { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+
+  /* MSG ITEM */
+  .msg-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+  .msg-item:last-child { border-bottom: none; }
+  .msg-item:hover { background: #f9fafb; }
+  .msg-body { flex: 1; min-width: 0; }
+  .msg-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+  .msg-name { font-size: 13px; font-weight: 600; }
+  .msg-time { font-size: 11px; color: var(--text-3); }
+  .msg-preview { font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .unread-badge { min-width: 18px; height: 18px; background: var(--accent); color: #fff; border-radius: 9px; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 5px; flex-shrink: 0; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--card); border-radius: 14px; padding: 28px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,.15); transform: translateY(10px); transition: transform .2s; }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 14px; color: var(--text-2); margin-bottom: 20px; }
+  .field-label { font-size: 12px; font-weight: 500; color: var(--text-2); margin-bottom: 5px; }
+  .field-row { margin-bottom: 14px; }
+  .field-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 13px; color: var(--text); outline: none; transition: border-color .15s; }
+  .field-input:focus { border-color: var(--accent); }
+  .select-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 13px; color: var(--text); outline: none; appearance: none; cursor: pointer; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+
+  /* CHOICE CARDS */
+  .choice-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all .15s; }
+  .choice-card:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .choice-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .choice-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .choice-sub { font-size: 12px; color: var(--text-2); }
+
+  /* NOTIF PANEL */
+  .notif-panel {
+    position: absolute; top: 50px; right: 0;
+    width: 340px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    z-index: 500; overflow: hidden;
+    opacity: 0; pointer-events: none;
+    transform: translateY(6px); transition: all .18s;
+  }
+  .notif-panel.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+  .notif-panel-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .notif-panel-title { font-size: 14px; font-weight: 700; }
+  .notif-read-all { font-size: 12px; color: var(--accent); cursor: pointer; font-weight: 600; border: none; background: none; font-family: inherit; }
+  .notif-read-all:hover { text-decoration: underline; }
+  .notif-list { max-height: 320px; overflow-y: auto; }
+  .notif-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); transition: background .12s; }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-item:hover { background: var(--bg); }
+  .notif-item.unread { background: var(--accent-soft); }
+  .notif-item.unread:hover { background: #e0e9ff; }
+  .notif-icon-wrap { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .notif-content { flex: 1; min-width: 0; }
+  .notif-text { font-size: 13px; color: var(--text); line-height: 1.4; }
+  .notif-text b { font-weight: 600; }
+  .notif-time-label { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+  .notif-unread-dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .notif-empty { padding: 28px 16px; text-align: center; font-size: 13px; color: var(--text-3); }
+
+  /* Messages footer btn */
+  .section-footer { padding: 10px 20px; border-top: 1px solid var(--border); }
+  .btn-read-all { width: 100%; justify-content: center; font-size: 13px; }
+
+  /* LOGIN PAGE */
+  .login-page { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+  .login-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 36px; width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,.1); }
+  .login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+  .login-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
+  .login-error { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--red); margin-bottom: 14px; display: none; }
+
+  /* HISTORY */
+  .history-item { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--border); transition: background .12s; }
+  .history-item:last-child { border-bottom: none; }
+  .history-item:hover { background: #f9fafb; }
+  .history-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0; }
+  .history-info { flex: 1; }
+  .history-name { font-size: 14px; font-weight: 600; }
+  .history-meta { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+  .history-duration { font-size: 12px; font-weight: 600; color: var(--green); background: var(--green-soft); padding: 3px 8px; border-radius: 6px; }
+  --green-soft: #ecfdf3;
+
+  /* PASSWORD TOGGLE */
+  .pass-wrap { position: relative; }
+  .pass-wrap .field-input { padding-right: 40px; }
+  .eye-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 16px; user-select: none; opacity: .5; transition: opacity .15s; }
+  .eye-btn:hover { opacity: 1; }
+
+  /* TOGGLE */
+  .toggle { width: 40px; height: 22px; background: var(--accent); border-radius: 11px; position: relative; cursor: pointer; transition: background .2s; }
+  .toggle::after { content: ''; width: 16px; height: 16px; background: #fff; border-radius: 50%; position: absolute; top: 3px; right: 3px; transition: right .2s; }
+  .toggle.off { background: var(--border); }
+  .toggle.off::after { right: auto; left: 3px; }
+
+  /* ROLE TABS */
+  .role-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .role-tab { flex: 1; padding: 9px; border-radius: 8px; border: 1.5px solid var(--border); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-2); transition: all .15s; text-align: center; }
+  .role-tab.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .auth-switch { text-align: center; font-size: 13px; color: var(--text-2); margin-top: 14px; }
+  .auth-switch span { color: var(--accent); cursor: pointer; font-weight: 600; }
+  .auth-switch span:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN / REGISTER PAGE -->
+<div class="login-page" id="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <span class="logo-text">Teacher Dashboard</span>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="form-login">
+      <div class="login-title">Xush kelibsiz! 👋</div>
+      <div class="login-sub">Hisobingizga kiring</div>
+      <div class="login-error" id="login-error">Login yoki parol noto'g'ri!</div>
+      <div class="field-row">
+        <div class="field-label">Login</div>
+        <input class="field-input" id="login-username" placeholder="loginni kiriting" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Parol</div>
+        <div class="pass-wrap">
+          <input class="field-input" id="login-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+          <span class="eye-btn" onclick="togglePass('login-password',this)">👁</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px;padding:11px" onclick="doLogin()">Kirish</button>
+      <div class="auth-switch">Hisob yo'qmi? <span onclick="showRegister()">Ro'yxatdan o'tish</span></div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="form-register" style="display:none">
+      <div class="login-title">Ro'yxatdan o'tish</div>
+      <div class="login-sub">Rolni tanlang va ma'lumotlarni kiriting</div>
+      <div class="login-error" id="reg-error"></div>
+
+      <!-- ROLE TABS -->
+      <div class="role-tabs">
+        <button class="role-tab active" id="tab-student" onclick="selectRole('student')">
+          🎓 O'quvchi
+        </button>
+        <button class="role-tab" id="tab-teacher" onclick="selectRole('teacher')">
+          👨‍🏫 Ustoz
+        </button>
+      </div>
+
+      <div class="field-row">
+        <div class="field-label">Ism</div>
+        <input class="field-input" id="reg-name" placeholder="Ismni kiriting">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Telefon</div>
+        <input class="field-input" id="reg-phone" placeholder="+998 90 000 00 00">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Login</div>
+        <input class="field-input" id="reg-login" placeholder="login kiriting">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Parol</div>
+        <div class="pass-wrap">
+          <input class="field-input" id="reg-pass" type="password" placeholder="••••••••">
+          <span class="eye-btn" onclick="togglePass('reg-pass',this)">👁</span>
+        </div>
+      </div>
+
+      <!-- SECRET CODE (only for teacher) -->
+      <div id="teacher-code-row" class="field-row" style="display:none">
+        <div class="field-label">Telegram kalit</div>
+        <div class="pass-wrap">
+          <input class="field-input" id="reg-secret" type="password" placeholder="USTOZ-XXXXXX-XXXXX">
+          <span class="eye-btn" onclick="togglePass('reg-secret',this)">👁</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:5px;line-height:1.5">
+          📩 Telegram botga <b>/getkey</b> yozing → bir martalik kalit olasiz
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px;padding:11px" onclick="doRegister()">Ro'yxatdan o'tish</button>
+      <div class="auth-switch">Hisobingiz bormi? <span onclick="showLogin()">Kirish</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;flex-direction:column;height:100vh">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <span class="logo-text">Teacher Dashboard</span>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="color:var(--text-3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="O'quvchilarni qidirish...">
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="showPage('history')" style="font-size:12px;gap:5px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      Darslar tarixi
+    </button>
+    <div class="notif-btn" id="notif-btn" onclick="toggleNotif(event)" style="position:relative">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <div class="notif-dot" id="notif-dot"></div>
+      <!-- NOTIFICATION PANEL -->
+      <div class="notif-panel" id="notif-panel" onclick="event.stopPropagation()">
+        <div class="notif-panel-header">
+          <span class="notif-panel-title">Bildirishnomalar</span>
+          <button class="notif-read-all" onclick="markAllNotifsRead()">Barchasini o'qish</button>
+        </div>
+        <div class="notif-list" id="notif-list">
+          <div class="notif-item unread">
+            <div class="notif-icon-wrap" style="background:#eef2ff">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#3b5bdb" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="notif-content">
+              <div class="notif-text">O'tgan dars bugun soat <b>09:00</b> — SAT Math</div>
+              <div class="notif-time-label">Bugun, 09:00</div>
+            </div>
+            <div class="notif-unread-dot"></div>
+          </div>
+          <div class="notif-item unread">
+            <div class="notif-icon-wrap" style="background:#ecfdf3">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#12b76a" stroke-width="2" width="16" height="16"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </div>
+            <div class="notif-content">
+              <div class="notif-text">Yangi o'quvchi muvaffaqiyatli qo'shildi</div>
+              <div class="notif-time-label">Hozirgina</div>
+            </div>
+            <div class="notif-unread-dot"></div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-icon-wrap" style="background:#fff7ed">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="notif-content">
+              <div class="notif-text">O'quvchidan yangi xabar</div>
+              <div class="notif-time-label">30 daqiqa oldin</div>
+            </div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-icon-wrap" style="background:#eef2ff">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#3b5bdb" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="notif-content">
+              <div class="notif-text">Keyingi dars soat <b>11:00</b> — SAT Reading</div>
+              <div class="notif-time-label">Bugun, 11:00</div>
+            </div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-icon-wrap" style="background:#fef2f2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="notif-content">
+              <div class="notif-text">Kechagi dars soat <b>15:00</b> da tugadi — SAT Writing</div>
+              <div class="notif-time-label">Kecha, 15:00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="user-chip" onclick="openProfile()" style="cursor:pointer">
+      <div class="av-teacher">И</div>
+      <div>
+        <div class="user-name">Islomhon</div>
+        <div class="user-role">O'qituvchi</div>
+      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="color:var(--text-3);margin-left:2px"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: HOME -->
+<div id="page-home" class="content">
+  <div class="welcome-title">Xush kelibsiz, Islomhon! 👋</div>
+  <div class="welcome-sub">Bugun nima bo'layotganini ko'ring.</div>
+
+  <div class="top-action">
+    <button class="btn btn-primary" onclick="openCreateLesson()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Dars yaratish
+    </button>
+  </div>
+
+  <div class="home-grid">
+    <!-- STUDENTS -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <span>O'quvchilar</span>
+        <span class="section-count" id="student-count">0</span>
+      </div>
+      <div id="student-list">
+        <div class="empty-state" id="student-empty">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="empty-text">Hozircha o'quvchi yo'q.<br>Birinchi o'quvchini qo'shing!</div>
+          <button class="btn btn-primary" onclick="openAddStudent()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            O'quvchi qo'shish
+          </button>
+        </div>
+      </div>
+      <div id="student-add-btn-wrap" style="display:none; padding:12px 20px; border-top:1px solid var(--border);">
+        <button class="btn btn-outline" style="width:100%;justify-content:center" onclick="openAddStudent()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          O'quvchi qo'shish
+        </button>
+      </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <span>Xabarlar</span>
+        <span class="section-count" id="msg-count">0 ta yangi</span>
+      </div>
+      <div id="msg-list">
+        <div class="empty-state" id="msg-empty">
+          <div class="empty-icon" style="background:#f0fdf4;color:#12b76a">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="empty-text">Hozircha xabar yo'q.<br>O'quvchi qo'shing, muloqotni boshlang.</div>
+        </div>
+      </div>
+      <div class="section-footer" id="msg-footer" style="display:none">
+        <button class="btn btn-outline btn-read-all" onclick="readAllMessages()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Barcha xabarlar o'qildi
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: PROFILE -->
+<div id="page-profile" class="content" style="display:none">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;cursor:pointer;width:fit-content" onclick="showPage('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color:var(--text-2)"><polyline points="15 18 9 12 15 6"/></svg>
+    <span style="font-size:14px;color:var(--text-2)">Orqaga</span>
+  </div>
+
+  <div style="max-width:520px">
+    <!-- AVATAR -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:20px">
+      <div style="width:72px;height:72px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;flex-shrink:0">И</div>
+      <div>
+        <div style="font-size:20px;font-weight:700">Islomhon</div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:3px">O'qituvchi</div>
+        <div style="font-size:12px;color:var(--green);margin-top:4px;display:flex;align-items:center;gap:4px">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--green)"></div>
+          Faol
+        </div>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--shadow)">
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px">Shaxsiy ma'lumotlar</div>
+      <div class="field-row">
+        <div class="field-label">Ism</div>
+        <input class="field-input" id="profile-name" value="Islomhon">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Email</div>
+        <input class="field-input" id="profile-email" value="islomhon@example.com">
+      </div>
+      <div class="field-row" style="margin-bottom:0">
+        <div class="field-label">Telefon raqami</div>
+        <input class="field-input" id="profile-phone" value="+998 90 123 45 67">
+      </div>
+    </div>
+
+    <!-- SECURITY -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--shadow)">
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px">Xavfsizlik</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openChangePassword()">
+        <div>
+          <div style="font-size:14px;font-weight:500">Parolni o'zgartirish</div>
+          <div style="font-size:12px;color:var(--text-3);margin-top:2px">Oxirgi marta 30 kun oldin o'zgartirildi</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:var(--text-3)"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;cursor:pointer" onclick="openTwoFactor()">
+        <div>
+          <div style="font-size:14px;font-weight:500">Ikki bosqichli autentifikatsiya</div>
+          <div style="font-size:12px;color:var(--text-3);margin-top:2px">Hisobingizni himoya qiling</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:var(--text-3)"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- SAVE & LOGOUT -->
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="alert('Saqlandi!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+        Saqlash
+      </button>
+      <button class="btn btn-outline" style="color:var(--red);border-color:#fecaca" onclick="doLogout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Chiqish
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: HISTORY -->
+<div id="page-history" class="content" style="display:none">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;cursor:pointer;width:fit-content" onclick="showPage('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color:var(--text-2)"><polyline points="15 18 9 12 15 6"/></svg>
+    <span style="font-size:14px;color:var(--text-2)">Orqaga</span>
+  </div>
+  <div style="font-size:22px;font-weight:700;margin-bottom:4px">Darslar tarixi</div>
+  <div style="font-size:13px;color:var(--text-2);margin-bottom:20px">O'tgan barcha video darslar</div>
+  <div class="section-card">
+    <div class="section-card-header">
+      <span>Video darslar</span>
+      <span class="section-count" id="history-count">0 ta dars</span>
+    </div>
+    <div id="history-list">
+      <div class="empty-state" id="history-empty">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        </div>
+        <div class="empty-text">Hozircha o'tgan darslar yo'q.<br>Dars boshlanganidan keyin bu yerda ko'rinadi.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- END DASHBOARD -->
+
+<!-- PROFILE MODAL -->
+<div class="modal-overlay" id="modal-profile">
+  <div class="modal" style="width:440px">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+      <div style="width:64px;height:64px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;flex-shrink:0">И</div>
+      <div>
+        <div style="font-size:18px;font-weight:700">Islomhon</div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:2px">O'qituvchi</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Ism</div>
+      <input class="field-input" value="Islomhon">
+    </div>
+    <div class="field-row">
+      <div class="field-label">Email</div>
+      <input class="field-input" value="islomhon@example.com">
+    </div>
+    <div class="field-row">
+      <div class="field-label">Telefon raqami</div>
+      <input class="field-input" value="+998 90 123 45 67">
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text-2)">Xavfsizlik</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="alert('Parolni o\'zgartirish')">
+        <span style="font-size:14px">Parolni o'zgartirish</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="color:var(--text-3)"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;cursor:pointer" onclick="alert('Tizimdan chiqish')">
+        <span style="font-size:14px;color:var(--red)">Tizimdan chiqish</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="color:var(--red)"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </div>
+    </div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="btn btn-outline" onclick="closeAll()">Yopish</button>
+      <button class="btn btn-primary" onclick="closeAll()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal-overlay" id="modal-password">
+  <div class="modal">
+    <h2>Parolni o'zgartirish</h2>
+    <p>Yangi parolingizni kiriting</p>
+    <div class="field-row">
+      <div class="field-label">Joriy parol</div>
+      <div class="pass-wrap"><input class="field-input" id="pass-current" type="password" placeholder="••••••••"><span class="eye-btn" onclick="togglePass('pass-current',this)">👁</span></div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Yangi parol</div>
+      <div class="pass-wrap"><input class="field-input" id="pass-new" type="password" placeholder="••••••••"><span class="eye-btn" onclick="togglePass('pass-new',this)">👁</span></div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Yangi parolni tasdiqlang</div>
+      <div class="pass-wrap"><input class="field-input" id="pass-confirm" type="password" placeholder="••••••••"><span class="eye-btn" onclick="togglePass('pass-confirm',this)">👁</span></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeAll()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="closeAll()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- TWO FACTOR MODAL -->
+<div class="modal-overlay" id="modal-twofactor">
+  <div class="modal">
+    <h2>Ikki bosqichli autentifikatsiya</h2>
+    <p>Hisobingizni qo'shimcha himoya qiling</p>
+    <div style="background:var(--accent-soft);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="20" height="20" style="flex-shrink:0;margin-top:1px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div style="font-size:13px;color:var(--accent);line-height:1.5">SMS orqali tasdiqlash kodi yuboriladi. Har safar tizimga kirganda telefon raqamingizga kod keladi.</div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Telefon raqami</div>
+      <input class="field-input" value="+998 90 123 45 67">
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--border)">
+      <span style="font-size:14px;font-weight:500">Faollashtirish</span>
+      <div class="toggle" id="twofa-toggle" onclick="this.classList.toggle('off')"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeAll()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="closeAll()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD STUDENT MODAL -->
+<div class="modal-overlay" id="modal-student">
+  <div class="modal">
+    <h2>O'quvchi qo'shish</h2>
+    <p>Yangi o'quvchi ma'lumotlarini kiriting</p>
+    <div class="field-row">
+      <div class="field-label">Ism</div>
+      <input class="field-input" id="input-name" placeholder="Ismni kiriting">
+    </div>
+    <div class="field-row">
+      <div class="field-label">Telefon raqami</div>
+      <input class="field-input" id="input-phone" placeholder="+998 90 000 00 00">
+    </div>
+    <div style="border-top:1px solid var(--border);margin:16px 0 14px;padding-top:14px">
+      <div style="font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:12px">Kirish ma'lumotlari</div>
+      <div class="field-row">
+        <div class="field-label">Login</div>
+        <input class="field-input" id="input-login" placeholder="login kiriting">
+      </div>
+      <div class="field-row" style="margin-bottom:0">
+        <div class="field-label">Parol</div>
+        <div class="pass-wrap">
+          <input class="field-input" id="input-student-pass" type="password" placeholder="••••••••">
+          <span class="eye-btn" onclick="togglePass('input-student-pass',this)">👁</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="btn btn-outline" onclick="closeStudentModal()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="addStudent()">Qo'shish</button>
+    </div>
+  </div>
+</div>
+
+<!-- LESSON CHOICE MODAL -->
+<div class="modal-overlay" id="modal-lesson-choice">
+  <div class="modal">
+    <h2>Dars yaratish</h2>
+    <p>Darsni qanday boshlashni tanlang</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <div class="choice-card" onclick="openLessonForm()">
+        <div class="choice-icon" style="background:#eef2ff;color:#3b5bdb">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div style="flex:1">
+          <div class="choice-title">Dars yaratish сейчас</div>
+          <div class="choice-sub">Aniq sana va vaqtga dars belgilang</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:#9ca3af;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="choice-card" onclick="openStartNow()">
+        <div class="choice-icon" style="background:#ecfdf3;color:#12b76a">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        </div>
+        <div style="flex:1">
+          <div class="choice-title">Darsni boshlash</div>
+          <div class="choice-sub">O'quvchi bilan video darsni hoziroq boshlash</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:#9ca3af;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeAll()">Bekor qilish</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE LESSON FORM MODAL -->
+<div class="modal-overlay" id="modal-lesson">
+  <div class="modal">
+    <h2>Dars yaratish</h2>
+    <p>Yangi dars ma'lumotlarini to'ldiring</p>
+    <div class="form-row">
+      <div class="field-row">
+        <div class="field-label">Sana</div>
+        <input class="field-input" type="date" id="lesson-date">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Vaqt</div>
+        <input class="field-input" type="time" id="lesson-time">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Dars mavzusi</div>
+      <input class="field-input" id="lesson-topic" placeholder="Dars mavzusini kiriting">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeAll()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="closeAll()">Dars yaratish</button>
+    </div>
+  </div>
+</div>
+
+<!-- START NOW MODAL -->
+<div class="modal-overlay" id="modal-start-now">
+  <div class="modal">
+    <h2>Darsni boshlash</h2>
+    <p>Darhol dars boshlash uchun o'quvchini tanlang</p>
+    <div class="field-row">
+      <div class="field-label">Ученик</div>
+      <select class="select-input" id="start-student-select"></select>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Dars mavzusi</div>
+      <input class="field-input" id="start-topic" placeholder="Dars mavzusini kiriting">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeAll()">Bekor qilish</button>
+      <button class="btn btn-primary" style="background:#12b76a" onclick="startLesson()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Hozir boshlash
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const COLORS = ['#4f46e5','#0ea5e9','#f59e0b','#10b981','#8b5cf6','#ec4899','#ef4444','#14b8a6'];
+  let students = [];
+
+  function getColor(i) { return COLORS[i % COLORS.length]; }
+  function getInitial(name) { return name.trim().charAt(0).toUpperCase(); }
+  function getNow() {
+    const d = new Date();
+    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+  }
+
+  function addStudent() {
+    const nameEl  = document.getElementById('input-name');
+    const phoneEl = document.getElementById('input-phone');
+    const loginEl = document.getElementById('input-login');
+    const passEl  = document.getElementById('input-student-pass');
+    const name  = nameEl.value.trim();
+    const phone = phoneEl.value.trim();
+    const login = loginEl.value.trim();
+    const pass  = passEl.value.trim();
+    if (!name)  { nameEl.focus(); return; }
+    if (!login) { loginEl.focus(); return; }
+    if (!pass)  { passEl.focus(); return; }
+
+    const student = { id: Date.now(), name, phone, login, pass, color: getColor(students.length) };
+    students.push(student);
+
+    nameEl.value = ''; phoneEl.value = ''; loginEl.value = ''; passEl.value = '';
+    closeModal('modal-student');
+
+    renderStudents();
+    renderMessages(student);
+    updateSelects();
+  }
+
+  function renderStudents() {
+    const list = document.getElementById('student-list');
+    const addBtn = document.getElementById('student-add-btn-wrap');
+    const count = document.getElementById('student-count');
+
+    count.textContent = students.length;
+
+    // Clear only student rows, keep empty-state in DOM
+    list.querySelectorAll('.student-item').forEach(el => el.remove());
+
+    if (students.length === 0) {
+      document.getElementById('student-empty').style.display = 'flex';
+      addBtn.style.display = 'none';
+      return;
+    }
+
+    document.getElementById('student-empty').style.display = 'none';
+    addBtn.style.display = 'block';
+
+    students.forEach(s => {
+      const item = document.createElement('div');
+      item.className = 'student-item';
+      item.innerHTML = `
+        <div class="student-left">
+          <div class="av" style="background:${s.color}">${getInitial(s.name)}</div>
+          <div>
+            <div class="student-name">${s.name}</div>
+            <div class="student-meta">${s.phone || 'Raqam kiritilmagan'}</div>
+          </div>
+        </div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#d1d5db;flex-shrink:0"></div>
+      `;
+      list.insertBefore(item, document.getElementById('student-empty'));
+    });
+  }
+
+  function renderMessages(student) {
+    const msgList = document.getElementById('msg-list');
+    const msgCount = document.getElementById('msg-count');
+
+    document.getElementById('msg-empty').style.display = 'none';
+    document.getElementById('msg-footer').style.display = 'block';
+
+    const item = document.createElement('div');
+    item.className = 'msg-item';
+    item.innerHTML = `
+      <div class="av" style="background:${student.color};width:34px;height:34px;font-size:13px;flex-shrink:0">${getInitial(student.name)}</div>
+      <div class="msg-body">
+        <div class="msg-top">
+          <span class="msg-name">${student.name}</span>
+          <span class="msg-time">${getNow()}</span>
+        </div>
+        <div class="msg-preview">Yangi o'quvchi sifatida qo'shildi</div>
+      </div>
+      <div class="unread-badge">1</div>
+    `;
+    msgList.insertBefore(item, document.getElementById('msg-empty'));
+
+    const total = msgList.querySelectorAll('.unread-badge').length;
+    msgCount.textContent = total + ' ta yangi';
+  }
+
+  function updateSelects() {
+    const opts = ['<option value="">O\'quvchini tanlang</option>',
+      ...students.map(s => `<option value="${s.id}">${s.name}</option>`)
+    ].join('');
+    const startSel = document.getElementById('start-student-select');
+    if (startSel) startSel.innerHTML = opts;
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  function closeAll() {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+  }
+
+  function togglePass(id, btn) {
+    const input = document.getElementById(id);
+    if (input.type === 'password') { input.type = 'text'; btn.style.opacity = '1'; }
+    else { input.type = 'password'; btn.style.opacity = '.5'; }
+  }
+
+  function openChangePassword() {
+    closeAll();
+    document.getElementById('modal-password').classList.add('open');
+  }
+
+  function openTwoFactor() {
+    closeAll();
+    document.getElementById('modal-twofactor').classList.add('open');
+  }
+
+  // KALIT TEKSHIRUVI — bot ichidagi HTTP server orqali
+  // Bot ishga tushganda localhost:8765 da server ochadi
+  const CHECK_URL = 'http://127.0.0.1:8765/checkkey';
+
+  function startBotPoll() {}
+  function stopBotPoll()  {}
+
+  async function validateTeacherKey(inputKey) {
+    const key = inputKey.trim();
+    try {
+      const res = await fetch(`${CHECK_URL}?key=${encodeURIComponent(key)}`, {
+        cache: 'no-store'
+      });
+      if (!res.ok) throw new Error('server javob bermadi');
+      const data = await res.json();
+      return data.ok === true;
+    } catch(e) {
+      alert(
+        '❌ Bot serveri bilan ulanib bo\'lmadi!\n\n' +
+        'Iltimos:\n' +
+        '1. bot.py ishlab turganligini tekshiring\n' +
+        '2. Terminalda "python bot.py" ishlang\n' +
+        '3. Keyin qayta urinib ko\'ring'
+      );
+      return false;
+    }
+  }
+  // AUTH
+  let currentRole = 'student';
+  let registeredTeachers = [];  // teachers.json dan yuklanadi
+
+  // teachers.json dan ustozlarni yuklash
+  async function loadTeachers() {
+    try {
+      const res = await fetch('http://127.0.0.1:8765/teachers', { cache: 'no-store' });
+      if (res.ok) {
+        registeredTeachers = await res.json();
+      }
+    } catch(e) { registeredTeachers = []; }
+  }
+
+  function showLogin() {
+    document.getElementById('form-login').style.display = '';
+    document.getElementById('form-register').style.display = 'none';
+    document.getElementById('login-error').style.display = 'none';
+    stopBotPoll();
+  }
+
+  function showRegister() {
+    document.getElementById('form-login').style.display = 'none';
+    document.getElementById('form-register').style.display = '';
+    document.getElementById('reg-error').style.display = 'none';
+    selectRole('student');
+    startBotPoll();
+  }
+
+  function selectRole(role) {
+    currentRole = role;
+    document.getElementById('tab-student').classList.toggle('active', role === 'student');
+    document.getElementById('tab-teacher').classList.toggle('active', role === 'teacher');
+    document.getElementById('teacher-code-row').style.display = role === 'teacher' ? '' : 'none';
+  }
+
+  async function doRegister() {
+    const name  = document.getElementById('reg-name').value.trim();
+    const phone = document.getElementById('reg-phone').value.trim();
+    const login = document.getElementById('reg-login').value.trim();
+    const pass  = document.getElementById('reg-pass').value.trim();
+    const err   = document.getElementById('reg-error');
+
+    err.style.display = 'none';
+    if (!name || !login || !pass) { showErr(err, 'Ism, login va parol majburiy!'); return; }
+
+    const allLogins = [...registeredTeachers, ...students].map(x => x.login);
+    if (allLogins.includes(login)) { showErr(err, 'Bu login band! Boshqa login tanlang.'); return; }
+
+    if (currentRole === 'teacher') {
+      const secret = document.getElementById('reg-secret').value.trim();
+      if (!secret) { showErr(err, 'Ustoz kalitini kiriting!'); return; }
+
+      // Tugmani bloklash
+      const btn = document.querySelector('#form-register .btn-primary');
+      const origText = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Tekshirilmoqda...'; }
+
+      const valid = await validateTeacherKey(secret);
+
+      if (btn) { btn.disabled = false; btn.textContent = origText; }
+
+      if (!valid) {
+        showErr(err, '❌ Kalit noto\'g\'ri yoki allaqachon ishlatilgan!');
+        return;
+      }
+      const newTeacher = { login, pass, name, phone };
+      // Serverga saqlash
+      try {
+        await fetch('http://127.0.0.1:8765/save_teacher', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newTeacher)
+        });
+      } catch(e) { console.warn('Teacher serverga saqlanmadi:', e); }
+      registeredTeachers.push(newTeacher);
+      clearRegForm();
+      stopBotPoll();
+      doLoginAs('teacher', newTeacher);
+    } else {
+      const student = { id: Date.now(), name, phone, login, pass, color: getColor(students.length) };
+      students.push(student);
+      renderStudents(); updateSelects();
+      clearRegForm();
+      stopBotPoll();
+      doLoginAs('student', student);
+    }
+  }
+
+  function fillTeacherProfile(user) {
+    const name    = user.name  || '';
+    const phone   = user.phone || '';
+    const initial = name.trim().charAt(0).toUpperCase() || 'U';
+
+    // Topbar
+    const chip = document.querySelector('.user-chip .user-name');
+    if (chip) chip.textContent = name;
+    const av = document.querySelector('.av-teacher');
+    if (av) av.textContent = initial;
+
+    // Welcome sarlavha
+    const wt = document.querySelector('#page-home .welcome-title');
+    if (wt) wt.textContent = `Xush kelibsiz, ${name}! 👋`;
+
+    // Profil avatar
+    const pavEl = document.querySelector('#page-profile [style*="border-radius:50%"]');
+    if (pavEl) pavEl.textContent = initial;
+
+    // Profil ism (katta)
+    const pnEl = document.querySelector('#page-profile [style*="font-size:20px"]');
+    if (pnEl) pnEl.textContent = name;
+
+    // Profil inputlar
+    const pName  = document.getElementById('profile-name');
+    const pPhone = document.getElementById('profile-phone');
+    const pEmail = document.getElementById('profile-email');
+    if (pName)  pName.value  = name;
+    if (pPhone) pPhone.value = phone;
+    if (pEmail) pEmail.value = '';   // email ro'yxatdan o'tishda yo'q, bo'sh qoladi
+  }
+
+  function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+
+  function clearRegForm() {
+    ['reg-name','reg-phone','reg-login','reg-pass','reg-secret'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
+
+  let currentTeacher = null;
+
+  function doLoginAs(role, user) {
+    document.getElementById('login-page').style.display = 'none';
+    if (role === 'teacher') {
+      currentTeacher = user;
+      fillTeacherProfile(user);
+      document.getElementById('dashboard').style.display = 'flex';
+      document.getElementById('student-dashboard').style.display = 'none';
+    } else {
+      document.getElementById('dashboard').style.display = 'none';
+      showStudentDashboard(user);
+    }
+  }
+
+  async function doLogin() {
+    const u = document.getElementById('login-username').value.trim();
+    const p = document.getElementById('login-password').value;
+    const err = document.getElementById('login-error');
+    err.style.display = 'none';
+
+    // Ustozlarni serverdan yangilab olish
+    await loadTeachers();
+
+    // Teacher login
+    const teacher = registeredTeachers.find(t => t.login === u && t.pass === p);
+    if (teacher) {
+      doLoginAs('teacher', teacher);
+      return;
+    }
+
+    // Student login
+    const student = students.find(s => s.login === u && s.pass === p);
+    if (student) {
+      doLoginAs('student', student);
+      return;
+    }
+
+    err.style.display = 'block';
+    document.getElementById('login-password').value = '';
+  }
+
+  function showStudentDashboard(student) {
+    const sd = document.getElementById('student-dashboard');
+    sd.style.display = 'flex';
+    // topbar
+    document.getElementById('sd-name').textContent = student.name;
+    document.getElementById('sd-avatar').textContent = getInitial(student.name);
+    document.getElementById('sd-avatar').style.background = student.color;
+    // content
+    document.getElementById('sd-name2').textContent = student.name;
+    document.getElementById('sd-fullname').textContent = student.name;
+    document.getElementById('sd-avatar2').textContent = getInitial(student.name);
+    document.getElementById('sd-avatar2').style.background = student.color;
+    document.getElementById('sd-phone-show').textContent = student.phone || '—';
+    document.getElementById('sd-login-show').textContent = student.login;
+  }
+
+  function doLogout() {
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('student-dashboard').style.display = 'none';
+    document.getElementById('login-page').style.display = 'flex';
+    document.getElementById('login-username').value = '';
+    document.getElementById('login-password').value = '';
+    showPage('home');
+    closeAll();
+  }
+
+  // HISTORY
+  let lessonHistory = [];
+
+  function addToHistory(studentName, color, initial, topic) {
+    const now = new Date();
+    const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    const dateStr = now.toLocaleDateString('uz-UZ', { day:'numeric', month:'long' });
+    const duration = Math.floor(Math.random() * 30 + 10) + ' daqiqa';
+    lessonHistory.unshift({ studentName, color, initial, topic, timeStr, dateStr, duration });
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('history-list');
+    const empty = document.getElementById('history-empty');
+    const count = document.getElementById('history-count');
+    count.textContent = lessonHistory.length + ' ta dars';
+    list.querySelectorAll('.history-item').forEach(e => e.remove());
+    if (lessonHistory.length === 0) { empty.style.display = 'flex'; return; }
+    empty.style.display = 'none';
+    lessonHistory.forEach(h => {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.innerHTML = `
+        <div class="history-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        </div>
+        <div class="av" style="background:${h.color};width:34px;height:34px;font-size:13px">${h.initial}</div>
+        <div class="history-info">
+          <div class="history-name">${h.studentName}</div>
+          <div class="history-meta">${h.dateStr} · ${h.timeStr} · ${h.topic || 'Mavzu kiritilmagan'}</div>
+        </div>
+        <span class="history-duration">${h.duration}</span>
+      `;
+      list.insertBefore(item, empty);
+    });
+  }
+
+  function showPage(name) {
+    ['home','profile','history'].forEach(p => {
+      const el = document.getElementById('page-' + p);
+      if (el) el.style.display = name === p ? '' : 'none';
+    });
+  }
+
+  function openProfile() {
+    closeAll();
+    showPage('profile');
+  }
+
+  function openAddStudent() {
+    closeAll();
+    document.getElementById('modal-student').classList.add('open');
+  }
+
+  function closeStudentModal() {
+    closeModal('modal-student');
+  }
+
+  function openCreateLesson() {
+    closeAll();
+    document.getElementById('modal-lesson-choice').classList.add('open');
+  }
+
+  function openLessonForm() {
+    closeAll();
+    document.getElementById('modal-lesson').classList.add('open');
+  }
+
+  function openStartNow() {
+    closeAll();
+    document.getElementById('modal-start-now').classList.add('open');
+  }
+
+  function startLesson() {
+    const sel = document.getElementById('start-student-select');
+    const topic = document.getElementById('start-topic').value.trim();
+    if (sel && sel.value) {
+      const s = students.find(x => x.id == sel.value);
+      if (s) addToHistory(s.name, s.color, getInitial(s.name), topic);
+    }
+    document.getElementById('start-topic').value = '';
+    closeAll();
+  }
+
+  function toggleNotif(e) {
+    e.stopPropagation();
+    document.getElementById('notif-panel').classList.toggle('open');
+  }
+
+  function markAllNotifsRead() {
+    document.querySelectorAll('.notif-item.unread').forEach(el => {
+      el.classList.remove('unread');
+      const dot = el.querySelector('.notif-unread-dot');
+      if (dot) dot.remove();
+    });
+    document.getElementById('notif-dot').style.display = 'none';
+  }
+
+  function readAllMessages() {
+    document.querySelectorAll('#msg-list .unread-badge').forEach(b => b.remove());
+    document.getElementById('msg-count').textContent = '0 ta yangi';
+    document.getElementById('msg-footer').querySelector('button').style.color = 'var(--green)';
+  }
+
+  document.addEventListener('click', function() {
+    document.getElementById('notif-panel').classList.remove('open');
+  });
+
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) closeAll();
+    });
+  });
+
+  renderStudents();
+  updateSelects();
+</script>
+
+<!-- STUDENT DASHBOARD -->
+<div id="student-dashboard" style="display:none;flex-direction:column;height:100vh">
+  <!-- STUDENT TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <span class="logo-text">O'quvchi kabineti</span>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip" onclick="doLogout()" style="cursor:pointer">
+        <div id="sd-avatar" class="av-teacher" style="background:#4f46e5">A</div>
+        <div>
+          <div class="user-name" id="sd-name">O'quvchi</div>
+          <div class="user-role">O'quvchi</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="color:var(--text-3);margin-left:2px"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDENT CONTENT -->
+  <div class="content">
+    <div class="welcome-title">Xush kelibsiz, <span id="sd-name2"></span>! 👋</div>
+    <div class="welcome-sub">Bu sizning shaxsiy kabinetingiz.</div>
+
+    <div class="home-grid" style="margin-top:24px">
+      <!-- PROFILE CARD -->
+      <div class="section-card">
+        <div class="section-card-header">Mening profilim</div>
+        <div style="padding:20px">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+            <div id="sd-avatar2" style="width:60px;height:60px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff" id="sd-initial">A</div>
+            <div>
+              <div style="font-size:18px;font-weight:700" id="sd-fullname">—</div>
+              <div style="font-size:12px;color:var(--text-3);margin-top:2px">O'quvchi</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px;color:var(--text-2)">Telefon</span>
+              <span style="font-size:13px;font-weight:500" id="sd-phone-show">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px;color:var(--text-2)">Login</span>
+              <span style="font-size:13px;font-weight:500" id="sd-login-show">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0">
+              <span style="font-size:13px;color:var(--text-2)">Holat</span>
+              <span style="font-size:12px;font-weight:600;color:var(--green);background:var(--green-soft);padding:3px 10px;border-radius:20px">Faol</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MESSAGES CARD -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <span>Xabarlar</span>
+          <span class="section-count">O'qituvchidan</span>
+        </div>
+        <div class="empty-state">
+          <div class="empty-icon" style="background:#f0fdf4;color:#12b76a">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="empty-text">Hozircha xabar yo'q.<br>O'qituvchi xabar yuborganda bu yerda ko'rinadi.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGOUT BTN -->
+    <div style="margin-top:20px">
+      <button class="btn btn-outline" style="color:var(--red);border-color:#fecaca" onclick="doLogout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Chiqish
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
