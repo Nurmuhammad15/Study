@@ -847,34 +847,66 @@
     document.getElementById('modal-twofactor').classList.add('open');
   }
 
-  // KALIT TEKSHIRUVI — bot ichidagi HTTP server orqali
-  // Bot ishga tushganda localhost:8765 da server ochadi
-  const CHECK_URL = 'http://127.0.0.1:8765/checkkey';
+  // ─── CONFIG — /api/config dan olinadi (Vercel ENV) ─────
+  let SUPA_URL = '';
+  let SUPA_KEY = '';
+  async function loadConfig() {
+    try {
+      const r = await fetch('/api/config');
+      const d = await r.json();
+      SUPA_URL = d.url;
+      SUPA_KEY = d.key;
+    } catch(e) { console.error('Config yuklanmadi', e); }
+  }
+  // ────────────────────────────────────────────────────────
 
   function startBotPoll() {}
   function stopBotPoll()  {}
 
+  async function supaFetch(path, opts={}) {
+    const r = await fetch(SUPA_URL + path, {
+      ...opts,
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+        ...(opts.headers||{})
+      }
+    });
+    return r;
+  }
+
   async function validateTeacherKey(inputKey) {
     const key = inputKey.trim();
     try {
-      const res = await fetch(`${CHECK_URL}?key=${encodeURIComponent(key)}`, {
-        cache: 'no-store'
-      });
-      if (!res.ok) throw new Error('server javob bermadi');
-      const data = await res.json();
-      return data.ok === true;
+      const r = await fetch(`/api/checkkey?key=${encodeURIComponent(key)}`, { cache: 'no-store' });
+      const d = await r.json();
+      return d.ok === true;
     } catch(e) {
-      alert(
-        '❌ Bot serveri bilan ulanib bo\'lmadi!\n\n' +
-        'Iltimos:\n' +
-        '1. bot.py ishlab turganligini tekshiring\n' +
-        '2. Terminalda "python bot.py" ishlang\n' +
-        '3. Keyin qayta urinib ko\'ring'
-      );
+      alert('Server bilan ulanishda xato!');
       return false;
     }
   }
-  // AUTH
+
+  async function loadTeachers() {
+    try {
+      const r = await fetch('/api/teachers', { cache: 'no-store' });
+      if (r.ok) registeredTeachers = await r.json();
+    } catch(e) { registeredTeachers = []; }
+  }
+
+  async function saveTeacherToServer(teacher) {
+    try {
+      await fetch('/api/save_teacher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(teacher)
+      });
+    } catch(e) { console.warn('Teacher saqlanmadi:', e); }
+  }
+
+    // AUTH
   let currentRole = 'student';
   let registeredTeachers = [];  // teachers.json dan yuklanadi
 
@@ -943,12 +975,8 @@
       const newTeacher = { login, pass, name, phone };
       // Serverga saqlash
       try {
-        await fetch('http://127.0.0.1:8765/save_teacher', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newTeacher)
-        });
-      } catch(e) { console.warn('Teacher serverga saqlanmadi:', e); }
+        await saveTeacherToServer(newTeacher);
+      } catch(e) { console.warn('Teacher saqlanmadi:', e); }
       registeredTeachers.push(newTeacher);
       clearRegForm();
       stopBotPoll();
