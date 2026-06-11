@@ -1,62 +1,109 @@
 #!/usr/bin/env python3
 """
-Teacher Dashboard - Telegram Bot (Supabase versiya)
-pip install pytelegrambotapi requests python-dotenv
+Teacher Dashboard - Telegram Bot (Neon PostgreSQL versiya)
+pip install pytelegrambotapi psycopg2-binary python-dotenv
 """
 
-import telebot, random, string, time, json, requests, sys, socket, os
+import telebot, random, string, time, sys, socket, os
+import psycopg2, psycopg2.extras
 from datetime import datetime
 
-# .env fayldan o'qish (ixtiyoriy)
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8553083980:AAGHrhOS8Z9OX4a4QKGk3BnV3psxtSZvtjo")
-SUPA_URL  = os.environ.get("SUPA_URL", "")   # .env yoki environment dan
-SUPA_KEY  = os.environ.get("SUPA_KEY", "")   # .env yoki environment dan
+BOT_TOKEN  = os.environ.get("BOT_TOKEN", "8553083980:AAGHrhOS8Z9OX4a4QKGk3BnV3psxtSZvtjo")
+DB_URL     = os.environ.get("DATABASE_URL", "")
 
-if not SUPA_URL or not SUPA_KEY:
-    print("⚠️  SUPA_URL va SUPA_KEY o'rnatilmagan!")
-    print("   .env fayl yarating yoki environment variable qiling:")
-    print("   SUPA_URL=https://xxxx.supabase.co")
-    print("   SUPA_KEY=eyJhbGc...")
+if not DB_URL:
+    print("⚠️  DATABASE_URL o'rnatilmagan!")
+    print("   .env faylga qo'shing:")
+    print("   DATABASE_URL=postgresql://neondb_owner:...@...neon.tech/neondb?sslmode=require")
     sys.exit(1)
-
-HEADERS = {
-    "apikey": SUPA_KEY,
-    "Authorization": f"Bearer {SUPA_KEY}",
-    "Content-Type": "application/json",
-    "Prefer": "return=minimal"
-}
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-def supa_get(path):
-    r = requests.get(SUPA_URL + path, headers=HEADERS, timeout=10)
-    r.raise_for_status()
-    return r.json()
+# ── Database ─────────────────────────────────
+def get_conn():
+    return psycopg2.connect(DB_URL)
 
-def supa_post(path, data):
-    r = requests.post(SUPA_URL + path, headers=HEADERS, json=data, timeout=10)
-    r.raise_for_status()
+def init_db():
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS keys (
+                    id serial primary key,
+                    key text unique,
+                    used boolean default false,
+                    created_at timestamptz default now()
+                );
+                CREATE TABLE IF NOT EXISTS teachers (
+                    id serial primary key,
+                    name text,
+                    login text unique,
+                    pass text,
+                    phone text,
+                    created_at timestamptz default now()
+                );
+            """)
+        conn.commit()
+    print("✅ Jadvallar tayyor")
+
+def add_key(key):
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO keys (key) VALUES (%s)", (key,))
+        conn.commit()
+
+def check_and_use_key(key):
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM keys WHERE key=%s AND used=false", (key,))
+            row = cur.fetchone()
+            if row:
+                cur.execute("UPDATE keys SET used=true WHERE key=%s", (key,))
+                conn.commit()
+                return True
+    return False
+
+def get_keys():
+    with get_conn() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute("SELECT key, used, created_at FROM keys ORDER BY created_at DESC LIMIT 15")
+            return cur.fetchall()
+
+def get_teachers():
+    with get_conn() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute("SELECT name, login, phone, created_at FROM teachers ORDER BY created_at DESC")
+            return cur.fetchall()
+
+def save_teacher(name, login, passw, phone):
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO teachers (name, login, pass, phone) VALUES (%s,%s,%s,%s)",
+                (name, login, passw, phone)
+            )
+        conn.commit()
+
+def get_stats():
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*), SUM(CASE WHEN used THEN 1 ELSE 0 END) FROM keys")
+            k = cur.fetchone()
+            cur.execute("SELECT COUNT(*) FROM teachers")
+            t = cur.fetchone()
+    return k[0] or 0, k[1] or 0, t[0] or 0
 
 def generate_key():
     p1 = ''.join(random.choices(string.ascii_uppercase, k=6))
     p2 = ''.join(random.choices(string.digits + string.ascii_uppercase, k=4))
     return f"USTOZ-{p1}-{p2}"
 
-def add_key(key):
-    supa_post("/rest/v1/keys", {"key": key, "used": False})
-
-def get_keys():
-    return supa_get("/rest/v1/keys?select=key,used,created_at&order=created_at.desc&limit=15")
-
-def get_teachers():
-    return supa_get("/rest/v1/teachers?select=name,login,phone,created_at")
-
+# ── Bot handlerlari ──────────────────────────
 @bot.message_handler(commands=['start'])
 def handle_start(message):
     cid  = message.chat.id
@@ -83,7 +130,8 @@ def send_new_key(cid):
         kb.add(telebot.types.InlineKeyboardButton("🔑 Yangi kalit", callback_data="getkey"))
         bot.send_message(cid,
             f"🔑 *Yangi ustoz kaliti:*\n\n`{key}`\n\n"
-            "⚠️ Faqat *bir marta* ishlatiladi",
+            "⚠️ Faqat *bir marta* ishlatiladi\n"
+            "📋 Ustozga yuboring",
             parse_mode="Markdown", reply_markup=kb)
     except Exception as e:
         bot.send_message(cid, f"❌ Xato: {e}")
@@ -99,7 +147,7 @@ def handle_keys(m):
         text = "🗝 *Kalitlar:*\n\n"
         for k in keys:
             st = "✅" if k["used"] else "⏳"
-            d  = k["created_at"][:16].replace("T"," ")
+            d  = str(k["created_at"])[:16]
             text += f"{st} `{k['key']}`\n{d}\n\n"
         bot.send_message(m.chat.id, text, parse_mode="Markdown")
     except Exception as e:
@@ -108,13 +156,11 @@ def handle_keys(m):
 @bot.message_handler(commands=['stats'])
 def handle_stats(m):
     try:
-        keys     = supa_get("/rest/v1/keys?select=used")
-        teachers = get_teachers()
-        used     = sum(1 for k in keys if k["used"])
+        total, used, teachers = get_stats()
         bot.send_message(m.chat.id,
             f"📊 *Statistika:*\n\n"
-            f"🔑 Kalitlar: *{len(keys)}* (ishlatilgan: *{used}*)\n"
-            f"👨‍🏫 Ustozlar: *{len(teachers)}* ta",
+            f"🔑 Kalitlar: *{total}* (ishlatilgan: *{used}*)\n"
+            f"👨‍🏫 Ustozlar: *{teachers}* ta",
             parse_mode="Markdown")
     except Exception as e:
         bot.send_message(m.chat.id, f"❌ {e}")
@@ -126,7 +172,7 @@ def handle_teachers(m):
         if not teachers: bot.send_message(m.chat.id, "📭 Ustoz yo'q."); return
         text = f"👨‍🏫 *Ustozlar ({len(teachers)} ta):*\n\n"
         for t in teachers:
-            d = t.get("created_at","")[:10]
+            d = str(t.get("created_at",""))[:10]
             text += f"👤 *{t['name']}* | 📱 {t['phone']} | 🔑 `{t['login']}` | {d}\n\n"
         bot.send_message(m.chat.id, text, parse_mode="Markdown")
     except Exception as e:
@@ -140,6 +186,7 @@ def handle_cb(call):
     elif call.data == "teachers" : handle_teachers(call.message)
     elif call.data == "keys"     : handle_keys(call.message)
 
+# ── MAIN ────────────────────────────────────
 if __name__ == "__main__":
     _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -148,13 +195,23 @@ if __name__ == "__main__":
     except OSError:
         print("⚠️  Bot allaqachon ishlab turibdi!"); sys.exit(1)
 
+    # Webhook tozalash
     try:
-        requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook?drop_pending_updates=true", timeout=8)
+        import requests as _r
+        _r.get(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook?drop_pending_updates=true", timeout=8)
     except: pass
 
+    # Jadvallarni yaratish
+    init_db()
+
     print("=" * 50)
-    print("  Teacher Dashboard Bot — ishga tushdi!")
-    print(f"  Supabase: {SUPA_URL[:35]}...")
+    print("  Teacher Dashboard Bot — Neon versiya")
+    print("=" * 50)
+    print("  /getkey   — kalit yaratish")
+    print("  /keys     — barcha kalitlar")
+    print("  /stats    — statistika")
+    print("  /teachers — ustozlar")
+    print("  Ctrl+C    — to'xtatish")
     print("=" * 50)
 
     bot.infinity_polling(timeout=30, long_polling_timeout=30, skip_pending=True)

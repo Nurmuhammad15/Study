@@ -1,3 +1,7 @@
+import pkg from 'pg';
+const { Pool } = pkg;
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
@@ -5,21 +9,14 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
   const { name, login, pass, phone } = req.body;
-  const SUPA_URL = process.env.SUPA_URL;
-  const SUPA_KEY = process.env.SUPA_KEY;
-
-  const headers = {
-    'apikey': SUPA_KEY,
-    'Authorization': `Bearer ${SUPA_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=minimal'
-  };
-
-  const r = await fetch(`${SUPA_URL}/rest/v1/teachers`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ name, login, pass, phone })
-  });
-
-  res.json({ ok: r.ok });
+  const client = await pool.connect();
+  try {
+    await client.query(
+      "INSERT INTO teachers (name, login, pass, phone) VALUES ($1,$2,$3,$4)",
+      [name, login, pass, phone]
+    );
+    res.json({ ok: true });
+  } catch(e) {
+    res.json({ ok: false, msg: e.message });
+  } finally { client.release(); }
 }
