@@ -1,5 +1,12 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/api/webhook",          "destination": "/api/webhook.py" },
+    { "source": "/api/login",            "destination": "/api/login.js" },
+    { "source": "/api/register_student", "destination": "/api/register_student.js" },
+    { "source": "/api/save_teacher",     "destination": "/api/save_teacher.js" },
+    { "source": "/api/teachers",         "destination": "/api/teachers.js" },
+    { "source": "/api/students",         "destination": "/api/students.js" },
+    { "source": "/api/checkkey",         "destination": "/api/checkkey.js" },
+    { "source": "/(.*)",                 "destination": "/index.html" }
   ]
 }
