@@ -15,9 +15,13 @@ except ImportError:
     pass
 
 BOT_TOKEN  = os.environ.get("BOT_TOKEN", "8553083980:AAGHrhOS8Z9OX4a4QKGk3BnV3psxtSZvtjo")
-DB_URL     = os.environ.get("DATABASE_URL", "postgresql://neondb_owner:npg_tOJGy8Xg4ape@ep-divine-moon-aplydm8b.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require")
+DB_URL     = os.environ.get("DATABASE_URL", "")
 
-
+if not DB_URL:
+    print("⚠️  DATABASE_URL o'rnatilmagan!")
+    print("   .env faylga qo'shing:")
+    print("   DATABASE_URL=postgresql://neondb_owner:...@...neon.tech/neondb?sslmode=require")
+    sys.exit(1)
 
 bot = telebot.TeleBot(BOT_TOKEN)
 

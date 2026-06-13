@@ -175,6 +175,31 @@
   .auth-switch { text-align: center; font-size: 13px; color: var(--text-2); margin-top: 14px; }
   .auth-switch span { color: var(--accent); cursor: pointer; font-weight: 600; }
   .auth-switch span:hover { text-decoration: underline; }
+
+  /* ── MOBILE RESPONSIVE ─────────────────────────────────── */
+  @media (max-width: 600px) {
+    .login-card { width: 92vw; padding: 24px 18px; border-radius: 14px; }
+    .login-title { font-size: 19px; }
+    .topbar { padding: 0 12px; gap: 8px; }
+    .search-wrap { display: none; }
+    .topbar-right { gap: 6px; }
+    .sidebar { width: 200px; }
+    .main-area { padding: 16px 12px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { padding: 14px; }
+    .card { padding: 0; }
+    .card-header { padding: 14px 16px; }
+    .student-item { padding: 10px 14px; }
+    .section-count { display: none; }
+    .modal-box { width: 95vw; padding: 20px 16px; }
+    .nav-item span { display: none; }
+    .nav-item { justify-content: center; padding: 10px; }
+    .sidebar { width: 56px; }
+    .logo-text { display: none; }
+    .user-chip .user-name { display: none; }
+    .field-input { font-size: 16px; } /* iOS zoom prevention */
+    .role-tab { font-size: 12px; padding: 8px 6px; }
+  }
 </style>
 </head>
 <body>
@@ -232,6 +257,10 @@
       <div class="field-row">
         <div class="field-label">Telefon</div>
         <input class="field-input" id="reg-phone" placeholder="+998 90 000 00 00">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Email</div>
+        <input class="field-input" id="reg-email" type="email" placeholder="example@gmail.com">
       </div>
       <div class="field-row">
         <div class="field-label">Login</div>
@@ -847,92 +876,38 @@
     document.getElementById('modal-twofactor').classList.add('open');
   }
 
-  // ─── CONFIG — /api/config dan olinadi (Vercel ENV) ─────
-  let SUPA_URL = '';
-  let SUPA_KEY = '';
-  async function loadConfig() {
-    try {
-      const r = await fetch('/api/config');
-      const d = await r.json();
-      SUPA_URL = d.url;
-      SUPA_KEY = d.key;
-    } catch(e) { console.error('Config yuklanmadi', e); }
-  }
-  // ────────────────────────────────────────────────────────
-
-  function startBotPoll() {}
-  function stopBotPoll()  {}
-
-  async function supaFetch(path, opts={}) {
-    const r = await fetch(SUPA_URL + path, {
-      ...opts,
-      headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': 'Bearer ' + SUPA_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal',
-        ...(opts.headers||{})
-      }
-    });
-    return r;
-  }
-
-  async function validateTeacherKey(inputKey) {
-    const key = inputKey.trim();
-    try {
-      const r = await fetch(`/api/checkkey?key=${encodeURIComponent(key)}`, { cache: 'no-store' });
-      const d = await r.json();
-      return d.ok === true;
-    } catch(e) {
-      alert('Server bilan ulanishda xato!');
-      return false;
-    }
-  }
-
-  async function loadTeachers() {
-    try {
-      const r = await fetch('/api/teachers', { cache: 'no-store' });
-      if (r.ok) registeredTeachers = await r.json();
-    } catch(e) { registeredTeachers = []; }
-  }
-
-  async function saveTeacherToServer(teacher) {
-    try {
-      await fetch('/api/save_teacher', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(teacher)
-      });
-    } catch(e) { console.warn('Teacher saqlanmadi:', e); }
-  }
-
-    // AUTH
+  // ─── AUTH — To'liq DB orqali (Neon PostgreSQL) ───────────
   let currentRole = 'student';
-  let registeredTeachers = [];  // teachers.json dan yuklanadi
+  let currentTeacher = null;
 
-  // teachers.json dan ustozlarni yuklash
-  async function loadTeachers() {
-    try {
-      const res = await fetch('http://127.0.0.1:8765/teachers', { cache: 'no-store' });
-      if (res.ok) {
-        registeredTeachers = await res.json();
-      }
-    } catch(e) { registeredTeachers = []; }
+  // ── Yordam funksiyalari ──
+  function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+  function hideErr(el) { el.style.display = 'none'; }
+
+  function setBtn(btn, loading, text) {
+    btn.disabled = loading;
+    btn.textContent = loading ? '⏳ Kutilmoqda...' : text;
   }
 
+  function clearRegForm() {
+    ['reg-name','reg-phone','reg-email','reg-login','reg-pass','reg-secret'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
+
+  // ── Forma almashtirish ──
   function showLogin() {
     document.getElementById('form-login').style.display = '';
     document.getElementById('form-register').style.display = 'none';
-    document.getElementById('login-error').style.display = 'none';
-    stopBotPoll();
+    hideErr(document.getElementById('login-error'));
   }
 
   function showRegister() {
     document.getElementById('form-login').style.display = 'none';
     document.getElementById('form-register').style.display = '';
-    document.getElementById('reg-error').style.display = 'none';
+    hideErr(document.getElementById('reg-error'));
     selectRole('student');
-    startBotPoll();
   }
 
   function selectRole(role) {
@@ -942,98 +917,127 @@
     document.getElementById('teacher-code-row').style.display = role === 'teacher' ? '' : 'none';
   }
 
-  async function doRegister() {
-    const name  = document.getElementById('reg-name').value.trim();
-    const phone = document.getElementById('reg-phone').value.trim();
-    const login = document.getElementById('reg-login').value.trim();
-    const pass  = document.getElementById('reg-pass').value.trim();
-    const err   = document.getElementById('reg-error');
+  // ── Login — DB orqali ──
+  async function doLogin() {
+    const u   = document.getElementById('login-username').value.trim();
+    const p   = document.getElementById('login-password').value;
+    const err = document.getElementById('login-error');
+    hideErr(err);
 
-    err.style.display = 'none';
-    if (!name || !login || !pass) { showErr(err, 'Ism, login va parol majburiy!'); return; }
+    if (!u || !p) { showErr(err, 'Login va parolni kiriting!'); return; }
 
-    const allLogins = [...registeredTeachers, ...students].map(x => x.login);
-    if (allLogins.includes(login)) { showErr(err, 'Bu login band! Boshqa login tanlang.'); return; }
+    const btn = document.querySelector('#form-login .btn-primary');
+    const origText = btn ? btn.textContent : 'Kirish';
+    if (btn) setBtn(btn, true, '');
 
-    if (currentRole === 'teacher') {
-      const secret = document.getElementById('reg-secret').value.trim();
-      if (!secret) { showErr(err, 'Ustoz kalitini kiriting!'); return; }
-
-      // Tugmani bloklash
-      const btn = document.querySelector('#form-register .btn-primary');
-      const origText = btn ? btn.textContent : '';
-      if (btn) { btn.disabled = true; btn.textContent = '⏳ Tekshirilmoqda...'; }
-
-      const valid = await validateTeacherKey(secret);
-
-      if (btn) { btn.disabled = false; btn.textContent = origText; }
-
-      if (!valid) {
-        showErr(err, '❌ Kalit noto\'g\'ri yoki allaqachon ishlatilgan!');
-        return;
+    try {
+      const r = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: u, pass: p })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        doLoginAs(d.role, d.user);
+      } else {
+        showErr(err, d.msg || 'Login yoki parol noto\'g\'ri!');
+        document.getElementById('login-password').value = '';
       }
-      const newTeacher = { login, pass, name, phone };
-      // Serverga saqlash
-      try {
-        await saveTeacherToServer(newTeacher);
-      } catch(e) { console.warn('Teacher saqlanmadi:', e); }
-      registeredTeachers.push(newTeacher);
-      clearRegForm();
-      stopBotPoll();
-      doLoginAs('teacher', newTeacher);
-    } else {
-      const student = { id: Date.now(), name, phone, login, pass, color: getColor(students.length) };
-      students.push(student);
-      renderStudents(); updateSelects();
-      clearRegForm();
-      stopBotPoll();
-      doLoginAs('student', student);
+    } catch(e) {
+      showErr(err, '❌ Server bilan ulanishda xato!');
+    } finally {
+      if (btn) setBtn(btn, false, origText);
     }
   }
 
+  // ── Ro'yxatdan o'tish — DB orqali ──
+  async function doRegister() {
+    const name  = document.getElementById('reg-name').value.trim();
+    const phone = document.getElementById('reg-phone').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const login = document.getElementById('reg-login').value.trim();
+    const pass  = document.getElementById('reg-pass').value.trim();
+    const err   = document.getElementById('reg-error');
+    hideErr(err);
+
+    if (!name || !login || !pass) { showErr(err, 'Ism, login va parol majburiy!'); return; }
+    if (pass.length < 4) { showErr(err, 'Parol kamida 4 ta belgidan iborat bo\'lsin!'); return; }
+
+    const btn = document.querySelector('#form-register .btn-primary');
+    const origText = btn ? btn.textContent : 'Ro\'yxatdan o\'tish';
+    if (btn) setBtn(btn, true, '');
+
+    try {
+      if (currentRole === 'teacher') {
+        // 1. Kalit tekshiruvi
+        const secret = document.getElementById('reg-secret').value.trim();
+        if (!secret) { showErr(err, 'Ustoz kalitini kiriting!'); if(btn) setBtn(btn,false,origText); return; }
+
+        const kr = await fetch(`/api/checkkey?key=${encodeURIComponent(secret)}`, { cache: 'no-store' });
+        const kd = await kr.json();
+        if (!kd.ok) { showErr(err, '❌ Kalit noto\'g\'ri yoki allaqachon ishlatilgan!'); if(btn) setBtn(btn,false,origText); return; }
+
+        // 2. Teacher saqlash
+        const tr = await fetch('/api/save_teacher', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone, email, login, pass })
+        });
+        const td = await tr.json();
+        if (!td.ok) { showErr(err, td.msg || 'Xato yuz berdi!'); if(btn) setBtn(btn,false,origText); return; }
+
+        clearRegForm();
+        doLoginAs('teacher', td.teacher);
+
+      } else {
+        // Student saqlash
+        const sr = await fetch('/api/register_student', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone, email, login, pass })
+        });
+        const sd = await sr.json();
+        if (!sd.ok) { showErr(err, sd.msg || 'Xato yuz berdi!'); if(btn) setBtn(btn,false,origText); return; }
+
+        clearRegForm();
+        doLoginAs('student', { ...sd.student, color: getColor(0) });
+      }
+    } catch(e) {
+      showErr(err, '❌ Server bilan ulanishda xato!');
+    } finally {
+      if (btn) setBtn(btn, false, origText);
+    }
+  }
+
+  // ── Profilni to'ldirish ──
   function fillTeacherProfile(user) {
     const name    = user.name  || '';
     const phone   = user.phone || '';
+    const email   = user.email || '';
     const initial = name.trim().charAt(0).toUpperCase() || 'U';
 
-    // Topbar
     const chip = document.querySelector('.user-chip .user-name');
     if (chip) chip.textContent = name;
     const av = document.querySelector('.av-teacher');
     if (av) av.textContent = initial;
 
-    // Welcome sarlavha
     const wt = document.querySelector('#page-home .welcome-title');
     if (wt) wt.textContent = `Xush kelibsiz, ${name}! 👋`;
 
-    // Profil avatar
     const pavEl = document.querySelector('#page-profile [style*="border-radius:50%"]');
     if (pavEl) pavEl.textContent = initial;
-
-    // Profil ism (katta)
     const pnEl = document.querySelector('#page-profile [style*="font-size:20px"]');
     if (pnEl) pnEl.textContent = name;
 
-    // Profil inputlar
     const pName  = document.getElementById('profile-name');
     const pPhone = document.getElementById('profile-phone');
     const pEmail = document.getElementById('profile-email');
     if (pName)  pName.value  = name;
     if (pPhone) pPhone.value = phone;
-    if (pEmail) pEmail.value = '';   // email ro'yxatdan o'tishda yo'q, bo'sh qoladi
+    if (pEmail) pEmail.value = email;
   }
 
-  function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
-
-  function clearRegForm() {
-    ['reg-name','reg-phone','reg-login','reg-pass','reg-secret'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-  }
-
-  let currentTeacher = null;
-
+  // ── Dashboard ochish ──
   function doLoginAs(role, user) {
     document.getElementById('login-page').style.display = 'none';
     if (role === 'teacher') {
@@ -1047,50 +1051,25 @@
     }
   }
 
-  async function doLogin() {
-    const u = document.getElementById('login-username').value.trim();
-    const p = document.getElementById('login-password').value;
-    const err = document.getElementById('login-error');
-    err.style.display = 'none';
-
-    // Ustozlarni serverdan yangilab olish
-    await loadTeachers();
-
-    // Teacher login
-    const teacher = registeredTeachers.find(t => t.login === u && t.pass === p);
-    if (teacher) {
-      doLoginAs('teacher', teacher);
-      return;
-    }
-
-    // Student login
-    const student = students.find(s => s.login === u && s.pass === p);
-    if (student) {
-      doLoginAs('student', student);
-      return;
-    }
-
-    err.style.display = 'block';
-    document.getElementById('login-password').value = '';
-  }
-
+  // ── Student dashboard ──
   function showStudentDashboard(student) {
     const sd = document.getElementById('student-dashboard');
     sd.style.display = 'flex';
-    // topbar
+    const color = student.color || getColor(0);
     document.getElementById('sd-name').textContent = student.name;
     document.getElementById('sd-avatar').textContent = getInitial(student.name);
-    document.getElementById('sd-avatar').style.background = student.color;
-    // content
+    document.getElementById('sd-avatar').style.background = color;
     document.getElementById('sd-name2').textContent = student.name;
     document.getElementById('sd-fullname').textContent = student.name;
     document.getElementById('sd-avatar2').textContent = getInitial(student.name);
-    document.getElementById('sd-avatar2').style.background = student.color;
+    document.getElementById('sd-avatar2').style.background = color;
     document.getElementById('sd-phone-show').textContent = student.phone || '—';
     document.getElementById('sd-login-show').textContent = student.login;
   }
 
+  // ── Chiqish ──
   function doLogout() {
+    currentTeacher = null;
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('student-dashboard').style.display = 'none';
     document.getElementById('login-page').style.display = 'flex';
