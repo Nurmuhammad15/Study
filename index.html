@@ -157,10 +157,15 @@
   --green-soft: #ecfdf3;
 
   /* PASSWORD TOGGLE */
-  .pass-wrap { position: relative; }
-  .pass-wrap .field-input { padding-right: 40px; }
-  .eye-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 16px; user-select: none; opacity: .5; transition: opacity .15s; }
-  .eye-btn:hover { opacity: 1; }
+  .pass-wrap { position: relative; display:flex; align-items:center; }
+  .pass-wrap .field-input { padding-right: 42px; width:100%; }
+  .eye-btn {
+    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+    cursor: pointer; font-size: 16px; user-select: none; opacity: .5; transition: opacity .15s;
+    width: 32px; height: 32px; display:flex; align-items:center; justify-content:center;
+    border-radius: 6px; z-index: 2;
+  }
+  .eye-btn:hover { opacity: 1; background: var(--bg-2, rgba(0,0,0,.04)); }
 
   /* TOGGLE */
   .toggle { width: 40px; height: 22px; background: var(--accent); border-radius: 11px; position: relative; cursor: pointer; transition: background .2s; }
@@ -198,7 +203,9 @@
     .logo-text { display: none; }
     .user-chip .user-name { display: none; }
     .field-input { font-size: 16px; } /* iOS zoom prevention */
-    .role-tab { font-size: 12px; padding: 8px 6px; }
+    .history-item { flex-wrap: wrap; gap: 8px; }
+    .history-item .btn-sm { font-size:11px !important; padding:5px 8px !important }
+    .history-duration { margin-left: auto; }
   }
   /* ── LIVE STREAM ───────────────────────────────────────── */
   .live-badge { display:inline-flex;align-items:center;gap:5px;background:#fee2e2;color:#dc2626;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px }
@@ -1401,6 +1408,16 @@
     renderHistory();
   }
 
+  function rewatchLesson(idx) {
+    const lesson = lessonHistory[idx];
+    if (!lesson) return;
+    if (lesson.recordingUrl) {
+      window.open(lesson.recordingUrl, '_blank');
+    } else {
+      alert("⚠️ Bu dars uchun video yozuvi mavjud emas.\n\nDarsni yozib olish uchun jonli dars davomida ⚙️ sozlamalar menyusidan \"Yozishni boshlash\" tugmasini bosing.");
+    }
+  }
+
   function renderHistory() {
     const list = document.getElementById('history-list');
     const empty = document.getElementById('history-empty');
@@ -1409,7 +1426,7 @@
     list.querySelectorAll('.history-item').forEach(e => e.remove());
     if (lessonHistory.length === 0) { empty.style.display = 'flex'; return; }
     empty.style.display = 'none';
-    lessonHistory.forEach(h => {
+    lessonHistory.forEach((h, idx) => {
       const item = document.createElement('div');
       item.className = 'history-item';
       item.innerHTML = `
@@ -1422,6 +1439,10 @@
           <div class="history-meta">${h.dateStr} · ${h.timeStr} · ${h.topic || 'Mavzu kiritilmagan'}</div>
         </div>
         <span class="history-duration">${h.duration}</span>
+        <button class="btn btn-outline btn-sm" style="font-size:12px;gap:5px;margin-left:10px" onclick="rewatchLesson(${idx})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Qayta ko'rish
+        </button>
       `;
       list.insertBefore(item, empty);
     });
