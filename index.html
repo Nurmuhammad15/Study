@@ -200,6 +200,20 @@
     .field-input { font-size: 16px; } /* iOS zoom prevention */
     .role-tab { font-size: 12px; padding: 8px 6px; }
   }
+  /* ── LIVE STREAM ───────────────────────────────────────── */
+  .live-badge { display:inline-flex;align-items:center;gap:5px;background:#fee2e2;color:#dc2626;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px }
+  .live-dot { width:7px;height:7px;border-radius:50%;background:#dc2626;animation:pulse 1.2s infinite }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+  .live-card { background:var(--card);border:2px solid #fca5a5;border-radius:var(--radius);overflow:hidden;box-shadow:0 4px 24px rgba(220,38,38,.12) }
+  .live-video-wrap { position:relative;background:#000;aspect-ratio:16/9;width:100% }
+  .live-video-wrap video { width:100%;height:100%;object-fit:cover;display:block }
+  .live-overlay { position:absolute;top:10px;left:10px }
+  .live-controls { display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--card) }
+  .live-info { font-size:13px;font-weight:600 }
+  .live-sub { font-size:12px;color:var(--text-3);margin-top:2px }
+  #teacher-video-preview { width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;object-fit:cover }
+  .assign-student-item { display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border) }
+  .assign-student-item:last-child { border-bottom:none }
 </style>
 </head>
 <body>
@@ -308,6 +322,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="color:var(--text-3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" placeholder="O'quvchilarni qidirish...">
     </div>
+    <button class="btn btn-outline btn-sm" onclick="showPage('students-page')" style="font-size:12px;gap:5px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      O'quvchilar
+    </button>
     <button class="btn btn-outline btn-sm" onclick="showPage('history')" style="font-size:12px;gap:5px">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
       Darslar tarixi
@@ -384,15 +402,40 @@
 </div>
 
 <!-- PAGE: HOME -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+
 <div id="page-home" class="content">
   <div class="welcome-title">Xush kelibsiz, Islomhon! 👋</div>
   <div class="welcome-sub">Bugun nima bo'layotganini ko'ring.</div>
 
-  <div class="top-action">
+  <div class="top-action" style="display:flex;gap:10px;flex-wrap:wrap">
     <button class="btn btn-primary" onclick="openCreateLesson()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Dars yaratish
     </button>
+    <button class="btn" id="live-start-btn" onclick="startLive()" style="background:#dc2626;color:#fff;border:none;display:flex;align-items:center;gap:7px">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><circle cx="12" cy="12" r="6"/></svg>
+      Jonli dars boshlash
+    </button>
+  </div>
+
+  <!-- LIVE STREAM PANEL (ustoz uchun) -->
+  <div id="teacher-live-panel" style="display:none;margin-top:18px">
+    <div class="live-card">
+      <div class="live-video-wrap">
+        <video id="teacher-video-preview" autoplay muted playsinline></video>
+        <div class="live-overlay"><span class="live-badge"><span class="live-dot"></span>JONLI</span></div>
+      </div>
+      <div class="live-controls">
+        <div>
+          <div class="live-info" id="live-title-show">Jonli dars</div>
+          <div class="live-sub" id="live-viewers-count">0 ta o'quvchi ulangan</div>
+        </div>
+        <button onclick="stopLive()" style="background:#dc2626;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+          ⏹ Tugatish
+        </button>
+      </div>
+    </div>
   </div>
 
   <div class="home-grid">
@@ -1065,11 +1108,89 @@
     document.getElementById('sd-avatar2').style.background = color;
     document.getElementById('sd-phone-show').textContent = student.phone || '—';
     document.getElementById('sd-login-show').textContent = student.login;
+
+    currentStudent = student;
+    checkLiveStream();
+    liveCheckInterval = setInterval(checkLiveStream, 8000);
+  }
+
+  // ── O'QUVCHI: JONLI DARSGA ULANISH ────────────────────────
+  let currentStudent     = null;
+  let liveCheckInterval  = null;
+  let studentPeer        = null;
+  let activeCall         = null;
+  let connectedRoomId    = null;
+
+  async function checkLiveStream() {
+    if (!currentStudent) return;
+    try {
+      // O'quvchining ustozlarini olish
+      const r = await fetch('/api/assign_student?student_login=' + currentStudent.login);
+      const teachers = await r.json();
+      if (!teachers.length) { showNoLive(); return; }
+
+      // Har bir ustoz uchun jonli darsni tekshirish
+      for (const t of teachers) {
+        const lr = await fetch('/api/live?teacher_login=' + t.login);
+        const sessions = await lr.json();
+        if (sessions.length > 0) {
+          const session = sessions[0];
+          if (connectedRoomId !== session.room_id) {
+            connectToLive(session, t.name);
+          }
+          return;
+        }
+      }
+      showNoLive();
+    } catch(e) { console.error(e); }
+  }
+
+  function showNoLive() {
+    document.getElementById('sd-live-section').style.display = 'none';
+    document.getElementById('sd-no-live').style.display = '';
+    if (connectedRoomId) disconnectLive();
+  }
+
+  function connectToLive(session, teacherName) {
+    connectedRoomId = session.room_id;
+    document.getElementById('sd-live-title').textContent = session.title || 'Jonli dars';
+    document.getElementById('sd-live-teacher').textContent = '👨‍🏫 ' + teacherName;
+    document.getElementById('sd-no-live').style.display = 'none';
+    document.getElementById('sd-live-section').style.display = '';
+
+    if (!studentPeer) studentPeer = new Peer(undefined, { debug: 0 });
+
+    const tryCall = () => {
+      const call = studentPeer.call(session.room_id, new MediaStream());
+      activeCall = call;
+      call.on('stream', remoteStream => {
+        document.getElementById('student-video').srcObject = remoteStream;
+      });
+      call.on('close', () => { connectedRoomId = null; });
+      call.on('error', () => { connectedRoomId = null; });
+    };
+
+    if (studentPeer.id) tryCall();
+    else studentPeer.on('open', tryCall);
+  }
+
+  function disconnectLive() {
+    if (activeCall) { activeCall.close(); activeCall = null; }
+    connectedRoomId = null;
+    document.getElementById('sd-live-section').style.display = 'none';
+    document.getElementById('sd-no-live').style.display = '';
   }
 
   // ── Chiqish ──
   function doLogout() {
     currentTeacher = null;
+    currentStudent = null;
+    if (liveCheckInterval) { clearInterval(liveCheckInterval); liveCheckInterval = null; }
+    if (activeCall) { activeCall.close(); activeCall = null; }
+    if (studentPeer) { studentPeer.destroy(); studentPeer = null; }
+    connectedRoomId = null;
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+    if (livePeer) { livePeer.destroy(); livePeer = null; }
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('student-dashboard').style.display = 'none';
     document.getElementById('login-page').style.display = 'flex';
@@ -1118,10 +1239,127 @@
   }
 
   function showPage(name) {
-    ['home','profile','history'].forEach(p => {
+    ['home','profile','history','students-page'].forEach(p => {
       const el = document.getElementById('page-' + p);
       if (el) el.style.display = name === p ? '' : 'none';
     });
+    if (name === 'students-page') loadAssignedStudents();
+  }
+
+  // ── JONLI DARS (ustoz) ────────────────────────────────────
+  let localStream = null;
+  let livePeer    = null;
+  let liveRoomId  = null;
+  let viewerCount = 0;
+  let viewerCountInterval = null;
+
+  async function startLive() {
+    const title = prompt('Dars mavzusi:', 'Jonli dars') || 'Jonli dars';
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      document.getElementById('teacher-video-preview').srcObject = localStream;
+
+      // Unique room id
+      liveRoomId = 'study-' + (currentTeacher?.login || 'ustoz') + '-' + Date.now();
+
+      livePeer = new Peer(liveRoomId, { debug: 0 });
+
+      livePeer.on('call', call => {
+        call.answer(localStream);
+        viewerCount++;
+        document.getElementById('live-viewers-count').textContent = viewerCount + " ta o'quvchi ulangan";
+        call.on('close', () => {
+          viewerCount = Math.max(0, viewerCount - 1);
+          document.getElementById('live-viewers-count').textContent = viewerCount + " ta o'quvchi ulangan";
+        });
+      });
+
+      // DB ga saqlash
+      await fetch('/api/live', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teacher_login: currentTeacher?.login,
+          teacher_name: currentTeacher?.name,
+          room_id: liveRoomId,
+          title
+        })
+      });
+
+      document.getElementById('live-title-show').textContent = title;
+      document.getElementById('live-start-btn').style.display = 'none';
+      document.getElementById('teacher-live-panel').style.display = '';
+    } catch(e) {
+      alert('Kamera/mikrofonga ruxsat bering: ' + e.message);
+    }
+  }
+
+  async function stopLive() {
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+    if (livePeer)    { livePeer.destroy(); livePeer = null; }
+    await fetch('/api/live', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ teacher_login: currentTeacher?.login })
+    });
+    document.getElementById('teacher-live-panel').style.display = 'none';
+    document.getElementById('live-start-btn').style.display = '';
+    viewerCount = 0;
+  }
+
+  // ── O'QUVCHI BIRIKTIRISH ──────────────────────────────────
+  let allStudentsDB = [];
+
+  async function loadAssignedStudents() {
+    if (!currentTeacher) return;
+    try {
+      // Barcha o'quvchilar
+      const r1 = await fetch('/api/students');
+      allStudentsDB = await r1.json();
+      // Biriktrilganlar
+      const r2 = await fetch('/api/assign_student?teacher_login=' + currentTeacher.login);
+      const assigned = await r2.json();
+      const assignedLogins = assigned.map(s => s.login);
+      renderAssignStudents(allStudentsDB, assignedLogins);
+    } catch(e) { console.error(e); }
+  }
+
+  function renderAssignStudents(all, assignedLogins) {
+    const list = document.getElementById('assign-student-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (!all.length) {
+      list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px">Hali o\'quvchi yo\'q</div>';
+      return;
+    }
+    all.forEach(s => {
+      const isAssigned = assignedLogins.includes(s.login);
+      const div = document.createElement('div');
+      div.className = 'assign-student-item';
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px">${s.name.charAt(0).toUpperCase()}</div>
+          <div>
+            <div style="font-size:13px;font-weight:600">${s.name}</div>
+            <div style="font-size:11px;color:var(--text-3)">${s.login}</div>
+          </div>
+        </div>
+        <button onclick="toggleAssign('${s.login}', ${isAssigned})" style="font-size:12px;padding:5px 12px;border-radius:7px;border:none;cursor:pointer;font-weight:600;${isAssigned ? 'background:#fee2e2;color:#dc2626' : 'background:#d1fae5;color:#059669'}">
+          ${isAssigned ? "✖ Chiqarish" : "✔ Qo'shish"}
+        </button>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  async function toggleAssign(studentLogin, isAssigned) {
+    if (!currentTeacher) return;
+    await fetch('/api/assign_student', {
+      method: isAssigned ? 'DELETE' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ teacher_login: currentTeacher.login, student_login: studentLogin })
+    });
+    loadAssignedStudents();
   }
 
   function openProfile() {
@@ -1199,6 +1437,24 @@
 </script>
 
 <!-- STUDENT DASHBOARD -->
+<!-- PAGE: STUDENTS ASSIGN (ustoz o'quvchilarni biriktiradi) -->
+<div id="page-students-page" class="content" style="display:none">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;cursor:pointer;width:fit-content" onclick="showPage('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color:var(--text-2)"><polyline points="15 18 9 12 15 6"/></svg>
+    <span style="font-size:14px;color:var(--text-2)">Orqaga</span>
+  </div>
+  <div style="font-size:22px;font-weight:700;margin-bottom:4px">O'quvchilarni boshqarish</div>
+  <div style="font-size:13px;color:var(--text-3);margin-bottom:20px">O'z sinfingizga o'quvchi qo'shing yoki chiqaring</div>
+  <div class="section-card">
+    <div class="section-card-header">
+      <span>Barcha o'quvchilar</span>
+    </div>
+    <div id="assign-student-list">
+      <div style="padding:30px;text-align:center;color:var(--text-3);font-size:13px">Yuklanmoqda...</div>
+    </div>
+  </div>
+</div>
+
 <div id="student-dashboard" style="display:none;flex-direction:column;height:100vh">
   <!-- STUDENT TOPBAR -->
   <div class="topbar">
@@ -1224,6 +1480,31 @@
   <div class="content">
     <div class="welcome-title">Xush kelibsiz, <span id="sd-name2"></span>! 👋</div>
     <div class="welcome-sub">Bu sizning shaxsiy kabinetingiz.</div>
+
+    <!-- JONLI DARS (o'quvchi uchun) -->
+    <div id="sd-live-section" style="margin-top:20px;display:none">
+      <div class="live-card">
+        <div class="live-video-wrap">
+          <video id="student-video" autoplay playsinline style="width:100%;aspect-ratio:16/9;background:#000;display:block;object-fit:cover"></video>
+          <div class="live-overlay"><span class="live-badge"><span class="live-dot"></span>JONLI DARS</span></div>
+        </div>
+        <div class="live-controls">
+          <div>
+            <div class="live-info" id="sd-live-title">Dars</div>
+            <div class="live-sub" id="sd-live-teacher">Ustoz</div>
+          </div>
+          <button onclick="disconnectLive()" style="background:#fee2e2;color:#dc2626;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+            ✖ Chiqish
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="sd-no-live" style="margin-top:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:30px;text-align:center">
+      <div style="font-size:32px;margin-bottom:8px">📺</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px">Hozircha jonli dars yo'q</div>
+      <div style="font-size:12px;color:var(--text-3)">Ustoz dars boshlaganda bu yerda avtomatik ko'rinadi</div>
+    </div>
 
     <div class="home-grid" style="margin-top:24px">
       <!-- PROFILE CARD -->

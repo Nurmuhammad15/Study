@@ -7,6 +7,8 @@
     { "source": "/api/teachers",         "destination": "/api/teachers.js" },
     { "source": "/api/students",         "destination": "/api/students.js" },
     { "source": "/api/checkkey",         "destination": "/api/checkkey.js" },
+    { "source": "/api/live",             "destination": "/api/live.js" },
+    { "source": "/api/assign_student",   "destination": "/api/assign_student.js" },
     { "source": "/(.*)",                 "destination": "/index.html" }
   ]
 }
