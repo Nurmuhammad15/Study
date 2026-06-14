@@ -214,9 +214,202 @@
   #teacher-video-preview { width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;object-fit:cover }
   .assign-student-item { display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border) }
   .assign-student-item:last-child { border-bottom:none }
+  /* ── CALL MODAL (Telegram-style) ──────────────────────────── */
+  .call-overlay {
+    position: fixed; inset: 0; background: #17212b; z-index: 9999;
+    display: none; flex-direction: column; color: #fff;
+  }
+  .call-overlay.open { display: flex; }
+  .call-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; background: #0e1621; flex-shrink: 0; gap: 14px;
+  }
+  .call-topbar-title { font-size: 14px; font-weight: 600; display:flex; align-items:center; gap:8px }
+  .call-topbar-info { font-size: 14px; font-weight: 600; display:flex; align-items:center; gap:8px; flex:1 }
+  .call-rec-dot { width:8px;height:8px;border-radius:50%;background:#e53e3e;animation:pulse 1.2s infinite }
+  .call-timer { font-size: 13px; color: #8b9aab; font-weight: 500 }
+
+  /* Settings button + dropdown */
+  .call-settings-btn {
+    width:36px;height:36px;border-radius:50%;border:none;background:transparent;color:#8b9aab;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;
+  }
+  .call-settings-btn:hover { background:#1f2c38; color:#fff }
+  .call-settings-menu {
+    display:none; position:absolute; top:46px; left:0; min-width:260px;
+    background:#232e3c; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.5);
+    padding:6px; z-index:10000; flex-direction:column;
+  }
+  .call-settings-menu.open { display:flex }
+  .call-menu-item {
+    display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:7px;
+    font-size:13px; font-weight:500; color:#fff; cursor:pointer; white-space:nowrap; transition:.1s;
+  }
+  .call-menu-item:hover { background:#2f3d4f }
+  .call-menu-item.danger { color:#f55 }
+  .call-menu-item.danger:hover { background:rgba(245,85,85,.12) }
+  .call-menu-item svg:first-child { flex-shrink:0; color:#8b9aab }
+  .call-menu-item.danger svg { color:#f55 }
+  .call-menu-arrow { margin-left:auto; color:#5b6b7c; flex-shrink:0 }
+  .call-menu-sep { height:1px; background:#2f3d4f; margin:5px 8px }
+  .call-record-active { color:#e53e3e !important }
+  .call-body { flex: 1; display: flex; overflow: hidden; min-height: 0 }
+  .call-main-video-wrap {
+    flex: 1; background: #000; display:flex; align-items:center; justify-content:center;
+    position: relative; min-width: 0;
+  }
+  .call-main-video-wrap video { width:100%; height:100%; object-fit: cover; display:block }
+  .call-main-placeholder {
+    display:flex; flex-direction:column; align-items:center; gap:14px; color:#5b6b7c;
+  }
+  .call-main-placeholder .avatar-big {
+    width:96px; height:96px; border-radius:50%; background:#2b5278; display:flex;
+    align-items:center; justify-content:center; font-size:36px; font-weight:700; color:#fff;
+  }
+  .call-sidebar {
+    width: 260px; background: #0e1621; border-left: 1px solid #1f2c38;
+    display:flex; flex-direction:column; flex-shrink:0; overflow-y:auto;
+  }
+  .call-sidebar-header { padding:14px 16px; font-size:13px; color:#8b9aab; font-weight:600; border-bottom:1px solid #1f2c38 }
+  .call-participant {
+    display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid #1a242e;
+  }
+  .call-participant .av { width:38px;height:38px;border-radius:50%;background:#2b5278;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0 }
+  .call-participant-info { flex:1; min-width:0 }
+  .call-participant-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  .call-participant-sub { font-size:11px; color:#5b6b7c; margin-top:1px }
+  .call-self-thumb {
+    position: absolute; bottom: 90px; right: 20px; width: 140px; height: 100px;
+    border-radius: 10px; overflow: hidden; background:#1a242e; border:2px solid #2b5278;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  }
+  .call-self-thumb video { width:100%; height:100%; object-fit:cover; display:block }
+  .call-controls {
+    display:flex; align-items:center; justify-content:center; gap:18px;
+    padding: 18px; background:#0e1621; flex-shrink:0;
+  }
+  .call-btn {
+    width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    background:#2b3a4a; color:#fff; transition:.15s; flex-direction:column; gap:4px;
+  }
+  .call-btn:hover { background:#374b5e }
+  .call-btn.active { background:#3a8ee6 }
+  .call-btn.muted  { background:#3a8ee6 }
+  .call-btn.end    { background:#e53e3e }
+  .call-btn.end:hover { background:#c53030 }
+  .call-btn-label { font-size:10px; margin-top:2px; color:#8b9aab; text-align:center }
+  .call-btn-col { display:flex; flex-direction:column; align-items:center; gap:6px }
+
+  @media (max-width: 700px) {
+    .call-sidebar { display:none }
+    .call-self-thumb { width:90px;height:64px;bottom:80px;right:12px }
+    .call-controls { gap:12px; padding:14px }
+    .call-btn { width:46px;height:46px }
+    .call-settings-menu { min-width:220px; left:-6px }
+    .call-topbar-info { font-size:13px }
+  }
 </style>
 </head>
 <body>
+
+<!-- TELEGRAM-STYLE CALL OVERLAY -->
+<div id="call-overlay" class="call-overlay">
+  <div class="call-topbar">
+    <div class="call-topbar-title" style="position:relative">
+      <button class="call-settings-btn" id="call-settings-btn" onclick="toggleCallSettings(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+
+      <!-- DROPDOWN MENU -->
+      <div class="call-settings-menu" id="call-settings-menu">
+        <div class="call-menu-item" onclick="alert('Tez orada qo\'shiladi')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Ko'rsatish nomi...
+        </div>
+        <div class="call-menu-item" onclick="renameLiveTitle()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Translatsiya nomi
+        </div>
+        <div class="call-menu-item" id="call-record-item" onclick="toggleRecording()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/></svg>
+          <span id="call-record-label">Yozishni boshlash</span>
+        </div>
+        <div class="call-menu-item" onclick="shareScreen()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Ekranni translatsiya qilish
+        </div>
+        <div class="call-menu-sep"></div>
+        <div class="call-menu-item" onclick="openDeviceSubmenu('camera', event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          Kamera
+          <svg class="call-menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="call-menu-item" onclick="openDeviceSubmenu('mic', event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+          Mikrofon
+          <svg class="call-menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="call-menu-item" onclick="openDeviceSubmenu('speaker', event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          Karnay va quloqchin
+          <svg class="call-menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="call-menu-item" onclick="toggleNoiseSuppression(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" id="noise-check-icon"><polyline points="20 6 9 17 4 12"/></svg>
+          Shovqinni bostirish
+        </div>
+        <div class="call-menu-sep"></div>
+        <div class="call-menu-item danger" onclick="endCall()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          Translatsiyani yakunlash
+        </div>
+      </div>
+    </div>
+
+    <div class="call-topbar-info">
+      <span class="call-rec-dot"></span>
+      <span id="call-title-text">Jonli dars</span>
+    </div>
+    <div class="call-timer" id="call-timer">00:00</div>
+  </div>
+  <div class="call-body">
+    <div class="call-main-video-wrap">
+      <video id="call-main-video" autoplay playsinline style="display:none"></video>
+      <div class="call-main-placeholder" id="call-main-placeholder">
+        <div class="avatar-big" id="call-main-avatar">?</div>
+        <div id="call-main-name" style="font-size:14px;color:#8b9aab">Kutilmoqda...</div>
+      </div>
+      <div class="call-self-thumb" id="call-self-thumb" style="display:none">
+        <video id="call-self-video" autoplay playsinline muted></video>
+      </div>
+    </div>
+    <div class="call-sidebar" id="call-sidebar">
+      <div class="call-sidebar-header" id="call-sidebar-header">Ishtirokchilar</div>
+      <div id="call-participant-list"></div>
+    </div>
+  </div>
+  <div class="call-controls">
+    <div class="call-btn-col">
+      <button class="call-btn active" id="call-cam-btn" onclick="toggleCallCam()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      </button>
+      <span class="call-btn-label">Video</span>
+    </div>
+    <div class="call-btn-col">
+      <button class="call-btn active" id="call-mic-btn" onclick="toggleCallMic()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+      </button>
+      <span class="call-btn-label">Mikrofon</span>
+    </div>
+    <div class="call-btn-col">
+      <button class="call-btn end" onclick="endCall()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22" style="transform:rotate(135deg)"><path d="M21 15.46l-5.27-.61a2 2 0 0 0-1.69.55l-2.2 2.2a15.05 15.05 0 0 1-6.59-6.59l2.2-2.21a2 2 0 0 0 .55-1.69L7.4 1.18a2 2 0 0 0-2.21-1.13l-4.13.9A2 2 0 0 0 0 2.96C0 13.13 8.87 22 19.04 22a2 2 0 0 0 1.96-1.06l.9-4.13a2 2 0 0 0-1.13-2.21z"/></svg>
+      </button>
+      <span class="call-btn-label">Yakunlash</span>
+    </div>
+  </div>
+</div>
 
 <!-- LOGIN / REGISTER PAGE -->
 <div class="login-page" id="login-page">
@@ -419,24 +612,6 @@
     </button>
   </div>
 
-  <!-- LIVE STREAM PANEL (ustoz uchun) -->
-  <div id="teacher-live-panel" style="display:none;margin-top:18px">
-    <div class="live-card">
-      <div class="live-video-wrap">
-        <video id="teacher-video-preview" autoplay muted playsinline></video>
-        <div class="live-overlay"><span class="live-badge"><span class="live-dot"></span>JONLI</span></div>
-      </div>
-      <div class="live-controls">
-        <div>
-          <div class="live-info" id="live-title-show">Jonli dars</div>
-          <div class="live-sub" id="live-viewers-count">0 ta o'quvchi ulangan</div>
-        </div>
-        <button onclick="stopLive()" style="background:#dc2626;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
-          ⏹ Tugatish
-        </button>
-      </div>
-    </div>
-  </div>
 
   <div class="home-grid">
     <!-- STUDENTS -->
@@ -1151,9 +1326,13 @@
     if (connectedRoomId) disconnectLive();
   }
 
+  let currentLiveTeacherName = null;
+
   function connectToLive(session, teacherName) {
     connectedRoomId = session.room_id;
-    document.getElementById('sd-live-title').textContent = session.title || 'Jonli dars';
+    currentLiveTeacherName = teacherName;
+    liveTitle = session.title || 'Jonli dars';
+    document.getElementById('sd-live-title').textContent = liveTitle;
     document.getElementById('sd-live-teacher').textContent = '👨‍🏫 ' + teacherName;
     document.getElementById('sd-no-live').style.display = 'none';
     document.getElementById('sd-live-section').style.display = '';
@@ -1165,13 +1344,23 @@
       activeCall = call;
       call.on('stream', remoteStream => {
         document.getElementById('student-video').srcObject = remoteStream;
+        const mainVideo = document.getElementById('call-main-video');
+        mainVideo.srcObject = remoteStream;
+        mainVideo.muted = false;
+        document.getElementById('call-main-placeholder').style.display = 'none';
+        mainVideo.style.display = '';
       });
-      call.on('close', () => { connectedRoomId = null; });
+      call.on('close', () => { connectedRoomId = null; closeCallOverlay(); });
       call.on('error', () => { connectedRoomId = null; });
     };
 
     if (studentPeer.id) tryCall();
     else studentPeer.on('open', tryCall);
+
+    // Telegram-style call overlayni ochish
+    if (!document.getElementById('call-overlay').classList.contains('open')) {
+      openCallOverlay('student');
+    }
   }
 
   function disconnectLive() {
@@ -1203,11 +1392,11 @@
   // HISTORY
   let lessonHistory = [];
 
-  function addToHistory(studentName, color, initial, topic) {
+  function addToHistory(studentName, color, initial, topic, durationOverride) {
     const now = new Date();
     const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
     const dateStr = now.toLocaleDateString('uz-UZ', { day:'numeric', month:'long' });
-    const duration = Math.floor(Math.random() * 30 + 10) + ' daqiqa';
+    const duration = durationOverride || (Math.floor(Math.random() * 30 + 10) + ' daqiqa');
     lessonHistory.unshift({ studentName, color, initial, topic, timeStr, dateStr, duration });
     renderHistory();
   }
@@ -1250,31 +1439,162 @@
   let localStream = null;
   let livePeer    = null;
   let liveRoomId  = null;
+  let liveTitle   = '';
   let viewerCount = 0;
-  let viewerCountInterval = null;
+  let activeViewerCalls = {}; // peerId -> call
 
+  // ── Call overlay umumiy holat ──
+  let callTimerInterval = null;
+  let callStartTime = null;
+  let callMode = null; // 'teacher' | 'student'
+  let camOn = true, micOn = true;
+
+  function startCallTimer() {
+    callStartTime = Date.now();
+    callTimerInterval = setInterval(() => {
+      const sec = Math.floor((Date.now() - callStartTime) / 1000);
+      const m = Math.floor(sec / 60).toString().padStart(2,'0');
+      const s = (sec % 60).toString().padStart(2,'0');
+      document.getElementById('call-timer').textContent = `${m}:${s}`;
+    }, 1000);
+  }
+
+  function stopCallTimer() {
+    if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
+    document.getElementById('call-timer').textContent = '00:00';
+  }
+
+  function getCallDuration() {
+    if (!callStartTime) return '0 daqiqa';
+    const min = Math.max(1, Math.round((Date.now() - callStartTime) / 60000));
+    return min + ' daqiqa';
+  }
+
+  function toggleCallCam() {
+    camOn = !camOn;
+    const btn = document.getElementById('call-cam-btn');
+    btn.classList.toggle('active', camOn);
+    if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
+  }
+
+  function toggleCallMic() {
+    micOn = !micOn;
+    const btn = document.getElementById('call-mic-btn');
+    btn.classList.toggle('active', micOn);
+    if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+  }
+
+  // ── SETTINGS DROPDOWN MENU ─────────────────────────────────
+  let isRecording = false;
+  let noiseSuppression = true;
+  let screenStream = null;
+
+  function toggleCallSettings(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('call-settings-menu');
+    menu.classList.toggle('open');
+  }
+
+  // Tashqariga bosilganda menyuni yopish
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('call-settings-menu');
+    const btn  = document.getElementById('call-settings-btn');
+    if (menu && menu.classList.contains('open') && !menu.contains(e.target) && e.target !== btn) {
+      menu.classList.remove('open');
+    }
+  });
+
+  function renameLiveTitle() {
+    const newTitle = prompt('Translatsiya nomi:', liveTitle || 'Jonli dars');
+    if (newTitle) {
+      liveTitle = newTitle;
+      document.getElementById('call-title-text').textContent = '🔴 ' + liveTitle;
+    }
+    document.getElementById('call-settings-menu').classList.remove('open');
+  }
+
+  function toggleRecording() {
+    isRecording = !isRecording;
+    const label = document.getElementById('call-record-label');
+    const item  = document.getElementById('call-record-item');
+    if (isRecording) {
+      label.textContent = "Yozishni to'xtatish";
+      item.classList.add('call-record-active');
+    } else {
+      label.textContent = 'Yozishni boshlash';
+      item.classList.remove('call-record-active');
+    }
+    document.getElementById('call-settings-menu').classList.remove('open');
+  }
+
+  async function shareScreen() {
+    document.getElementById('call-settings-menu').classList.remove('open');
+    try {
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      const screenTrack = screenStream.getVideoTracks()[0];
+
+      if (localStream && livePeer) {
+        // Eski video trekni almashtirish, barcha ulanishlarda
+        Object.values(activeViewerCalls).forEach(call => {
+          const sender = call.peerConnection?.getSenders().find(s => s.track && s.track.kind === 'video');
+          if (sender) sender.replaceTrack(screenTrack);
+        });
+        // Mahalliy ko'rinishni yangilash
+        const mainVideo = document.getElementById('call-main-video');
+        const newStream = new MediaStream([screenTrack, ...localStream.getAudioTracks()]);
+        mainVideo.srcObject = newStream;
+      }
+
+      screenTrack.onended = () => {
+        // Ekran ulashish to'xtaganda kameraga qaytish
+        if (localStream && livePeer) {
+          const camTrack = localStream.getVideoTracks()[0];
+          Object.values(activeViewerCalls).forEach(call => {
+            const sender = call.peerConnection?.getSenders().find(s => s.track && s.track.kind === 'video');
+            if (sender && camTrack) sender.replaceTrack(camTrack);
+          });
+          document.getElementById('call-main-video').srcObject = localStream;
+        }
+      };
+    } catch(e) {
+      console.log('Ekran ulashish bekor qilindi');
+    }
+  }
+
+  function openDeviceSubmenu(type, e) {
+    e.stopPropagation();
+    const labels = { camera: 'Kamera', mic: 'Mikrofon', speaker: 'Karnay va quloqchin' };
+    alert(`${labels[type]} sozlamalari — qurilma tanlash tez orada qo'shiladi`);
+  }
+
+  function toggleNoiseSuppression(e) {
+    e.stopPropagation();
+    noiseSuppression = !noiseSuppression;
+    const icon = document.getElementById('noise-check-icon');
+    icon.style.opacity = noiseSuppression ? '1' : '0.25';
+  }
+
+  // ── USTOZ: Jonli dars boshlash ────────────────────────────
   async function startLive() {
-    const title = prompt('Dars mavzusi:', 'Jonli dars') || 'Jonli dars';
+    liveTitle = prompt('Dars mavzusi:', 'Jonli dars') || 'Jonli dars';
     try {
       localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      document.getElementById('teacher-video-preview').srcObject = localStream;
 
-      // Unique room id
       liveRoomId = 'study-' + (currentTeacher?.login || 'ustoz') + '-' + Date.now();
-
       livePeer = new Peer(liveRoomId, { debug: 0 });
 
       livePeer.on('call', call => {
         call.answer(localStream);
         viewerCount++;
-        document.getElementById('live-viewers-count').textContent = viewerCount + " ta o'quvchi ulangan";
+        activeViewerCalls[call.peer] = call;
+        updateCallSidebarTeacher();
         call.on('close', () => {
           viewerCount = Math.max(0, viewerCount - 1);
-          document.getElementById('live-viewers-count').textContent = viewerCount + " ta o'quvchi ulangan";
+          delete activeViewerCalls[call.peer];
+          updateCallSidebarTeacher();
         });
       });
 
-      // DB ga saqlash
       await fetch('/api/live', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1282,29 +1602,140 @@
           teacher_login: currentTeacher?.login,
           teacher_name: currentTeacher?.name,
           room_id: liveRoomId,
-          title
+          title: liveTitle
         })
       });
 
-      document.getElementById('live-title-show').textContent = title;
-      document.getElementById('live-start-btn').style.display = 'none';
-      document.getElementById('teacher-live-panel').style.display = '';
+      openCallOverlay('teacher');
     } catch(e) {
       alert('Kamera/mikrofonga ruxsat bering: ' + e.message);
     }
   }
 
+  function updateCallSidebarTeacher() {
+    document.getElementById('call-sidebar-header').textContent = `Ishtirokchilar (${viewerCount + 1})`;
+    const list = document.getElementById('call-participant-list');
+    list.innerHTML = `
+      <div class="call-participant">
+        <div class="av" style="background:#4f46e5">${getInitial(currentTeacher?.name || 'U')}</div>
+        <div class="call-participant-info">
+          <div class="call-participant-name">${currentTeacher?.name || 'Ustoz'}</div>
+          <div class="call-participant-sub">Siz (Ustoz)</div>
+        </div>
+      </div>
+    `;
+    for (let i = 0; i < viewerCount; i++) {
+      list.innerHTML += `
+        <div class="call-participant">
+          <div class="av" style="background:#0ea5e9">👤</div>
+          <div class="call-participant-info">
+            <div class="call-participant-name">O'quvchi ${i+1}</div>
+            <div class="call-participant-sub">Tomosha qilmoqda</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // ── Call overlay ochish ───────────────────────────────────
+  function openCallOverlay(mode) {
+    callMode = mode;
+    camOn = true; micOn = true;
+    document.getElementById('call-cam-btn').classList.add('active');
+    document.getElementById('call-mic-btn').classList.add('active');
+
+    const settingsBtn = document.getElementById('call-settings-btn');
+    const camBtnCol = document.getElementById('call-cam-btn').closest('.call-btn-col');
+    const micBtnCol = document.getElementById('call-mic-btn').closest('.call-btn-col');
+
+    if (mode === 'teacher') {
+      settingsBtn.style.display = '';
+      camBtnCol.style.display = '';
+      micBtnCol.style.display = '';
+      document.getElementById('call-title-text').textContent = '🔴 ' + liveTitle;
+      document.getElementById('call-main-placeholder').style.display = 'none';
+      const mainVideo = document.getElementById('call-main-video');
+      mainVideo.style.display = '';
+      mainVideo.muted = true;
+      mainVideo.srcObject = localStream;
+      document.getElementById('call-self-thumb').style.display = 'none';
+      updateCallSidebarTeacher();
+    } else {
+      // student — sozlamalar va kamera/mikrofon tugmalari yashiriladi (faqat tomosha qiladi)
+      settingsBtn.style.display = 'none';
+      camBtnCol.style.display = 'none';
+      micBtnCol.style.display = 'none';
+      document.getElementById('call-title-text').textContent = '🔴 ' + liveTitle;
+      document.getElementById('call-main-placeholder').style.display = 'none';
+      document.getElementById('call-self-thumb').style.display = 'none';
+      document.getElementById('call-sidebar-header').textContent = 'Dars';
+      document.getElementById('call-participant-list').innerHTML = `
+        <div class="call-participant">
+          <div class="av" style="background:#4f46e5">${getInitial(currentLiveTeacherName || 'U')}</div>
+          <div class="call-participant-info">
+            <div class="call-participant-name">${currentLiveTeacherName || 'Ustoz'}</div>
+            <div class="call-participant-sub">Efir olib boruvchi</div>
+          </div>
+        </div>
+        <div class="call-participant">
+          <div class="av" style="background:#0ea5e9">${getInitial(currentStudent?.name || 'O')}</div>
+          <div class="call-participant-info">
+            <div class="call-participant-name">${currentStudent?.name || 'Siz'}</div>
+            <div class="call-participant-sub">Siz</div>
+          </div>
+        </div>
+      `;
+    }
+
+    document.getElementById('call-overlay').classList.add('open');
+    startCallTimer();
+  }
+
+  function closeCallOverlay() {
+    document.getElementById('call-overlay').classList.remove('open');
+    document.getElementById('call-main-video').srcObject = null;
+    document.getElementById('call-main-video').style.display = 'none';
+    document.getElementById('call-main-placeholder').style.display = '';
+    document.getElementById('call-self-video').srcObject = null;
+    document.getElementById('call-settings-menu').classList.remove('open');
+    stopCallTimer();
+  }
+
+  // ── USTOZ: Yakunlash → Darslar tarixiga saqlash ──────────
+  async function endCall() {
+    if (callMode === 'teacher') {
+      await stopLive();
+    } else {
+      disconnectLive();
+      closeCallOverlay();
+    }
+  }
+
   async function stopLive() {
+    // Darslar tarixiga saqlash
+    const duration = getCallDuration();
+    addToHistory(
+      `${viewerCount} ta o'quvchi`,
+      '#dc2626',
+      '🔴',
+      liveTitle,
+      duration
+    );
+
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     if (livePeer)    { livePeer.destroy(); livePeer = null; }
+    Object.values(activeViewerCalls).forEach(c => c.close());
+    activeViewerCalls = {};
+
     await fetch('/api/live', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ teacher_login: currentTeacher?.login })
     });
-    document.getElementById('teacher-live-panel').style.display = 'none';
-    document.getElementById('live-start-btn').style.display = '';
+
     viewerCount = 0;
+    closeCallOverlay();
+    showPage('history');
   }
 
   // ── O'QUVCHI BIRIKTIRISH ──────────────────────────────────
