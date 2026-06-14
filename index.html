@@ -860,32 +860,15 @@
 <div class="modal-overlay" id="modal-student">
   <div class="modal">
     <h2>O'quvchi qo'shish</h2>
-    <p>Yangi o'quvchi ma'lumotlarini kiriting</p>
-    <div class="field-row">
-      <div class="field-label">Ism</div>
-      <input class="field-input" id="input-name" placeholder="Ismni kiriting">
+    <p>Ro'yxatdan o'tgan o'quvchining loginini kiriting</p>
+    <div class="field-row" style="margin-bottom:0">
+      <div class="field-label">O'quvchi login</div>
+      <input class="field-input" id="input-find-login" placeholder="o'quvchi login">
     </div>
-    <div class="field-row">
-      <div class="field-label">Telefon raqami</div>
-      <input class="field-input" id="input-phone" placeholder="+998 90 000 00 00">
-    </div>
-    <div style="border-top:1px solid var(--border);margin:16px 0 14px;padding-top:14px">
-      <div style="font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:12px">Kirish ma'lumotlari</div>
-      <div class="field-row">
-        <div class="field-label">Login</div>
-        <input class="field-input" id="input-login" placeholder="login kiriting">
-      </div>
-      <div class="field-row" style="margin-bottom:0">
-        <div class="field-label">Parol</div>
-        <div class="pass-wrap">
-          <input class="field-input" id="input-student-pass" type="password" placeholder="••••••••">
-          <span class="eye-btn" onclick="togglePass('input-student-pass',this)">👁</span>
-        </div>
-      </div>
-    </div>
+    <div id="find-student-result" style="margin-top:10px;font-size:13px"></div>
     <div class="modal-btns" style="margin-top:16px">
       <button class="btn btn-outline" onclick="closeStudentModal()">Bekor qilish</button>
-      <button class="btn btn-primary" onclick="addStudent()">Qo'shish</button>
+      <button class="btn btn-primary" onclick="findAndAddStudent()">Qo'shish</button>
     </div>
   </div>
 </div>
@@ -983,34 +966,69 @@
     return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
   }
 
-  function addStudent() {
-    const nameEl  = document.getElementById('input-name');
-    const phoneEl = document.getElementById('input-phone');
-    const loginEl = document.getElementById('input-login');
-    const passEl  = document.getElementById('input-student-pass');
-    const name  = nameEl.value.trim();
-    const phone = phoneEl.value.trim();
+  async function findAndAddStudent() {
+    const loginEl = document.getElementById('input-find-login');
+    const resultEl = document.getElementById('find-student-result');
     const login = loginEl.value.trim();
-    const pass  = passEl.value.trim();
-    if (!name)  { nameEl.focus(); return; }
+    resultEl.innerHTML = '';
+
     if (!login) { loginEl.focus(); return; }
-    if (!pass)  { passEl.focus(); return; }
+    if (!currentTeacher) return;
 
-    const student = { id: Date.now(), name, phone, login, pass, color: getColor(students.length) };
-    students.push(student);
+    resultEl.innerHTML = '<span style="color:var(--text-3)">⏳ Qidirilmoqda...</span>';
 
-    nameEl.value = ''; phoneEl.value = ''; loginEl.value = ''; passEl.value = '';
-    closeModal('modal-student');
+    try {
+      // Barcha o'quvchilarni olib, login bo'yicha tekshirish
+      const r = await fetch('/api/students');
+      const all = await r.json();
+      const found = all.find(s => s.login === login);
 
-    renderStudents();
-    renderMessages(student);
-    updateSelects();
+      if (!found) {
+        resultEl.innerHTML = '<span style="color:#dc2626">❌ Bu o\'quvchi ro\'yxatdan o\'tmagan!</span>';
+        return;
+      }
+
+      // Biriktirish
+      const ar = await fetch('/api/assign_student', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teacher_login: currentTeacher.login, student_login: login })
+      });
+      const ad = await ar.json();
+
+      if (ad.ok) {
+        resultEl.innerHTML = `<span style="color:#059669">✅ ${found.name} qo'shildi!</span>`;
+        loginEl.value = '';
+        setTimeout(() => {
+          closeStudentModal();
+          loadAssignedStudents();
+          renderStudents();
+          updateSelects();
+        }, 800);
+      } else {
+        resultEl.innerHTML = `<span style="color:#dc2626">❌ ${ad.msg || 'Xato yuz berdi'}</span>`;
+      }
+    } catch(e) {
+      resultEl.innerHTML = '<span style="color:#dc2626">❌ Server bilan ulanishda xato</span>';
+    }
   }
 
-  function renderStudents() {
+  async function renderStudents() {
     const list = document.getElementById('student-list');
     const addBtn = document.getElementById('student-add-btn-wrap');
     const count = document.getElementById('student-count');
+
+    if (!currentTeacher) {
+      students = [];
+    } else {
+      try {
+        const r = await fetch('/api/assign_student?teacher_login=' + currentTeacher.login);
+        const assigned = await r.json();
+        students = assigned.map((s, i) => ({
+          ...s, color: getColor(i)
+        }));
+      } catch(e) { students = []; }
+    }
 
     count.textContent = students.length;
 
@@ -1071,7 +1089,7 @@
 
   function updateSelects() {
     const opts = ['<option value="">O\'quvchini tanlang</option>',
-      ...students.map(s => `<option value="${s.id}">${s.name}</option>`)
+      ...students.map(s => `<option value="${s.login}">${s.name}</option>`)
     ].join('');
     const startSel = document.getElementById('start-student-select');
     if (startSel) startSel.innerHTML = opts;
@@ -1270,6 +1288,8 @@
       fillTeacherProfile(user);
       document.getElementById('dashboard').style.display = 'flex';
       document.getElementById('student-dashboard').style.display = 'none';
+      renderStudents();
+      updateSelects();
     } else {
       document.getElementById('dashboard').style.display = 'none';
       showStudentDashboard(user);
@@ -1812,6 +1832,8 @@
       body: JSON.stringify({ teacher_login: currentTeacher.login, student_login: studentLogin })
     });
     loadAssignedStudents();
+    renderStudents();
+    updateSelects();
   }
 
   function openProfile() {
@@ -1821,10 +1843,13 @@
 
   function openAddStudent() {
     closeAll();
+    document.getElementById('input-find-login').value = '';
+    document.getElementById('find-student-result').innerHTML = '';
     document.getElementById('modal-student').classList.add('open');
   }
 
   function closeStudentModal() {
+    document.getElementById('find-student-result').innerHTML = '';
     closeModal('modal-student');
   }
 
@@ -1847,7 +1872,7 @@
     const sel = document.getElementById('start-student-select');
     const topic = document.getElementById('start-topic').value.trim();
     if (sel && sel.value) {
-      const s = students.find(x => x.id == sel.value);
+      const s = students.find(x => x.login == sel.value);
       if (s) addToHistory(s.name, s.color, getInitial(s.name), topic);
     }
     document.getElementById('start-topic').value = '';
