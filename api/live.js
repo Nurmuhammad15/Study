@@ -42,7 +42,7 @@ export default async function handler(req, res) {
           ON CONFLICT (room_id, peer_id) DO UPDATE SET updated_at=now(), name=$3
         `, [room_id, peer_id, name, role]);
         // 20 soniyadan beri yangilanmagan ishtirokchilarni o'chirish (stale)
-        await client.query(`DELETE FROM live_participants WHERE updated_at < now() - interval '20 seconds'`);
+        await client.query(`DELETE FROM live_participants WHERE updated_at < now() - interval '8 seconds'`);
         const r = await client.query('SELECT peer_id, name, role FROM live_participants WHERE room_id=$1', [room_id]);
         res.json({ ok: true, participants: r.rows });
         return;
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
 
       if (room_id) {
         // Stale ishtirokchilarni tozalash va ro'yxatni qaytarish
-        await client.query(`DELETE FROM live_participants WHERE updated_at < now() - interval '20 seconds'`);
+        await client.query(`DELETE FROM live_participants WHERE updated_at < now() - interval '8 seconds'`);
         const r = await client.query('SELECT peer_id, name, role FROM live_participants WHERE room_id=$1', [room_id]);
         res.json(r.rows);
         return;

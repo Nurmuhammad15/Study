@@ -1648,8 +1648,8 @@
       renderParticipantSidebar();
       // Serverga join so'rovini yuboramiz
       await joinRoom();
-      heartbeatInterval = setInterval(joinRoom, 5000);
-      participantsPollInterval = setInterval(refreshParticipants, 4000);
+      heartbeatInterval = setInterval(joinRoom, 2000);
+      // joinRoom allaqachon participants ro'yxatini qaytaradi, alohida poll shart emas
     });
 
     // Kelayotgan qo'ng'iroqlarga javob berish
@@ -1684,6 +1684,18 @@
         connectToAllParticipants();
         renderParticipantSidebar();
         rebuildVideoGrid();
+
+        // Agar ustoz darsni tugatgan bo'lsa (o'quvchi uchun)
+        if (callMode === 'student' && !participantsList.find(p => p.role === 'teacher')) {
+          // Ustoz yo'q — sessiya tugagan, lekin bir marta tekshirib ko'ramiz
+          if (currentLiveTeacherLogin) {
+            const lr = await fetch('/api/live?teacher_login=' + encodeURIComponent(currentLiveTeacherLogin));
+            const sessions = await lr.json();
+            if (!sessions.length || sessions[0].room_id !== liveRoomId) {
+              leaveCall(false); return;
+            }
+          }
+        }
       }
     } catch(e) { console.error('joinRoom xato:', e); }
   }
