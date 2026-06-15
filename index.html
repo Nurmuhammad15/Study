@@ -1632,20 +1632,24 @@
       })
     });
 
-    initPeerAndJoin(myPeerId, currentTeacher?.name || 'Ustoz', 'teacher');
     openCallOverlay('teacher');
+    initPeerAndJoin(myPeerId, currentTeacher?.name || 'Ustoz', 'teacher');
   }
 
   // ── PeerJS — ulanish va mesh boshlash ─────────────────────
   function initPeerAndJoin(peerId, myName, role) {
     myPeer = new Peer(peerId, { debug: 0 });
 
-    myPeer.on('open', () => {
-      myPeerId = myPeer.id;
-      joinRoom();
+    myPeer.on('open', async (id) => {
+      // PeerJS tasdiqlagan haqiqiy ID ni ishlatamiz
+      myPeerId = id;
+      // O'z kamera tile'ni yangilaymiz (ID o'zgargan bo'lishi mumkin)
+      rebuildVideoGrid();
+      renderParticipantSidebar();
+      // Serverga join so'rovini yuboramiz
+      await joinRoom();
       heartbeatInterval = setInterval(joinRoom, 5000);
       participantsPollInterval = setInterval(refreshParticipants, 4000);
-      ensureMyTile();
     });
 
     // Kelayotgan qo'ng'iroqlarga javob berish
@@ -1783,7 +1787,6 @@
     const video = document.createElement('video');
     video.autoplay = true; video.playsinline = true;
     if (isSelf) video.muted = true;
-    if (stream) video.srcObject = stream;
     tile.appendChild(video);
 
     const avatar = document.createElement('div');
@@ -1791,6 +1794,12 @@
     avatar.textContent = getInitial(name || 'U');
     avatar.style.display = (camEnabled && stream) ? 'none' : 'flex';
     tile.appendChild(avatar);
+
+    // srcObject DOM'ga qo'shilgandan keyin o'rnatilishi kerak
+    if (stream) {
+      video.srcObject = stream;
+      video.play().catch(() => {});
+    }
 
     const label = document.createElement('div');
     label.className = 'tile-label';
@@ -1812,9 +1821,17 @@
     const list   = document.getElementById('call-participant-list');
     if (!header || !list) return;
 
-    header.textContent = `Ishtirokchilar (${participantsList.length})`;
+    // Agar server hali javob bermagan bo'lsa, o'zimizni qo'shib ko'rsatamiz
+    let displayList = participantsList.slice();
+    const alreadyInList = displayList.find(p => p.peer_id === myPeerId);
+    if (!alreadyInList && myPeerId) {
+      const myName = (callMode === 'teacher' ? currentTeacher?.name : currentStudent?.name) || 'Foydalanuvchi';
+      displayList.unshift({ peer_id: myPeerId, name: myName, role: callMode });
+    }
+
+    header.textContent = `Ishtirokchilar (${displayList.length})`;
     list.innerHTML = '';
-    participantsList.forEach(p => {
+    displayList.forEach(p => {
       const isMe = p.peer_id === myPeerId;
       const div = document.createElement('div');
       div.className = 'call-participant';
@@ -2039,10 +2056,12 @@
 
   function afterStudentStreamReady() {
     myPeerId = 'peer-' + (currentStudent?.login || 'student') + '-' + Math.floor(Math.random()*100000);
-    initPeerAndJoin(myPeerId, currentStudent?.name || "O'quvchi", 'student');
     if (!document.getElementById('call-overlay').classList.contains('open')) {
       openCallOverlay('student');
+    } else {
+      rebuildVideoGrid();
     }
+    initPeerAndJoin(myPeerId, currentStudent?.name || "O'quvchi", 'student');
   }
 
   // ── O'QUVCHI BIRIKTIRISH ──────────────────────────────────
