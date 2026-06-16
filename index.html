@@ -207,42 +207,6 @@
     .history-item .btn-sm { font-size:11px !important; padding:5px 8px !important }
     .history-duration { margin-left: auto; }
   }
-  /* ── O'TGAN DARS KARTOCHKASI ───────────────────────────── */
-  .past-lesson-card {
-    background: var(--card); border: 1.5px solid #fca5a5; border-radius: var(--radius);
-    overflow: hidden; box-shadow: 0 4px 16px rgba(220,38,38,.1); margin-top: 20px;
-  }
-  .past-lesson-video-wrap {
-    position: relative; background: #0e1621; aspect-ratio: 16/9; width: 100%;
-    display: flex; align-items: center; justify-content: center; overflow: hidden;
-  }
-  .past-lesson-video-wrap video {
-    width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0.6;
-  }
-  .past-lesson-overlay-badge {
-    position: absolute; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 8px;
-  }
-  .past-lesson-ended-badge {
-    background: rgba(0,0,0,0.6); color: #fff; font-size: 12px; font-weight: 700;
-    padding: 5px 14px; border-radius: 20px; letter-spacing: .5px;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .past-lesson-ended-dot {
-    width: 7px; height: 7px; border-radius: 50%; background: #ef4444;
-  }
-  .past-lesson-info {
-    padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  }
-  .past-lesson-title { font-size: 14px; font-weight: 700; }
-  .past-lesson-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
-  .btn-join-lesson {
-    background: #3b5bdb; color: #fff; border: none; padding: 9px 18px;
-    border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
-    display: flex; align-items: center; gap: 6px; flex-shrink: 0; transition: background .15s;
-  }
-  .btn-join-lesson:hover { background: #2f4ac0; }
-
   /* ── LIVE STREAM ───────────────────────────────────────── */
   .live-badge { display:inline-flex;align-items:center;gap:5px;background:#fee2e2;color:#dc2626;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px }
   .live-dot { width:7px;height:7px;border-radius:50%;background:#dc2626;animation:pulse 1.2s infinite }
@@ -1964,13 +1928,10 @@
 
     // O'quvchi dashboard'da "Darsga qaytish" ko'rsatish
     if (callMode === 'student') {
-      const emptyDiv = document.getElementById('sd-no-live-empty');
-      if (emptyDiv) {
-        document.getElementById('sd-no-live-icon').textContent = '🔴';
-        document.getElementById('sd-no-live-title').textContent = 'Jonli dars davom etmoqda';
-        document.getElementById('sd-no-live-sub').textContent = liveTitle;
-        document.getElementById('sd-return-live-btn').style.display = '';
-      }
+      document.getElementById('sd-no-live-icon').textContent = '🔴';
+      document.getElementById('sd-no-live-title').textContent = 'Jonli dars davom etmoqda';
+      document.getElementById('sd-no-live-sub').textContent = liveTitle;
+      document.getElementById('sd-return-live-btn').style.display = '';
     }
   }
 
@@ -1981,13 +1942,30 @@
     renderParticipantSidebar();
 
     if (callMode === 'student') {
-      const emptyDiv = document.getElementById('sd-no-live-empty');
-      if (emptyDiv) {
-        document.getElementById('sd-no-live-icon').textContent = '📺';
-        document.getElementById('sd-no-live-title').textContent = "Hozircha jonli dars yo'q";
-        document.getElementById('sd-no-live-sub').textContent = 'Ustoz dars boshlaganda bu yerda avtomatik ko\'rinadi';
-        document.getElementById('sd-return-live-btn').style.display = 'none';
+      document.getElementById('sd-no-live-icon') && (document.getElementById('sd-no-live-icon').textContent = '📺');
+      document.getElementById('sd-no-live-title') && (document.getElementById('sd-no-live-title').textContent = "Hozircha jonli dars yo'q");
+      document.getElementById('sd-no-live-sub') && (document.getElementById('sd-no-live-sub').textContent = 'Ustoz dars boshlaganda bu yerda avtomatik ko\'rinadi');
+      document.getElementById('sd-return-live-btn') && (document.getElementById('sd-return-live-btn').style.display = 'none');
+    }
+  }
+
+  // Dars tugagandan keyin "Darsga kirish" tugmasi orqali qayta ulanish
+  async function reconnectToLive() {
+    if (!currentLiveTeacherLogin) return;
+    try {
+      const r = await fetch('/api/live?teacher_login=' + encodeURIComponent(currentLiveTeacherLogin));
+      const sessions = await r.json();
+      if (!sessions.length) {
+        alert("Dars tugagan yoki mavjud emas.");
+        return;
       }
+      const session = sessions[0];
+      const tr = await fetch('/api/teachers');
+      const teachers = await tr.json();
+      const teacher = teachers.find(t => t.login === currentLiveTeacherLogin) || { login: currentLiveTeacherLogin, name: currentLiveTeacherName || 'Ustoz' };
+      connectToLive(session, teacher);
+    } catch(e) {
+      alert("Ulanishda xatolik: " + e.message);
     }
   }
 
@@ -2003,13 +1981,6 @@
     peerConnections = {};
 
     if (myPeer) { myPeer.destroy(); myPeer = null; }
-    // O'quvchi uchun: tugagan darsning video snapshot'ini saqlash (audio yo'q)
-    if (localStream && callMode === 'student' && !isLogout) {
-      const videoTracks = localStream.getVideoTracks();
-      if (videoTracks.length > 0) {
-        lastLiveSnapshot = new MediaStream([videoTracks[0].clone()]);
-      }
-    }
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
 
     if (liveRoomId && myPeerId) {
@@ -2023,17 +1994,73 @@
     closeCallOverlay();
 
     if (callMode === 'student') {
-      document.getElementById('sd-live-section').style.display = 'none';
-      document.getElementById('sd-no-live').style.display = '';
-      document.getElementById('sd-return-live-btn').style.display = 'none';
-      connectedRoomId = null;
+      // Ustoz streamini saqlash (agar mavjud bo'lsa)
+      let teacherLastStream = null;
+      const savedLiveRoomId = liveRoomId;
+      const savedTitle = liveTitle;
+      const savedTeacherName = currentLiveTeacherName || 'Ustoz';
+      Object.values(peerConnections).forEach(pc => {
+        if (pc.stream && pc.stream.getVideoTracks().length > 0) {
+          teacherLastStream = pc.stream;
+        }
+      });
 
-      // Tugagan dars kartochkasini ko'rsatish (video mutedsiz, audio yo'q)
-      if (!isLogout && lastLiveTitle) {
-        showPastLessonCard();
+      document.getElementById('sd-live-section').style.display = 'none';
+      document.getElementById('sd-return-live-btn').style.display = 'none';
+
+      const noLive = document.getElementById('sd-no-live');
+      if (teacherLastStream && savedLiveRoomId) {
+        // Video preview ko'rsatish
+        noLive.style.padding = '0';
+        noLive.style.textAlign = 'left';
+        noLive.style.overflow = 'hidden';
+        noLive.style.cursor = 'pointer';
+        noLive.innerHTML = `
+          <div style="position:relative;border-radius:var(--radius);overflow:hidden;">
+            <video id="sd-last-stream-video" autoplay muted playsinline loop
+              style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#000;"></video>
+            <div style="position:absolute;inset:0;background:rgba(0,0,0,0.18);pointer-events:none;"></div>
+            <div style="position:absolute;top:10px;left:12px;background:rgba(220,38,38,0.92);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.5px;">🔴 JONLI</div>
+            <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 14px 10px;background:linear-gradient(transparent,rgba(0,0,0,0.7));">
+              <div style="color:#fff;font-size:13px;font-weight:700;margin-bottom:2px;">${savedTitle}</div>
+              <div style="color:rgba(255,255,255,0.8);font-size:11px;">👨‍🏫 ${savedTeacherName}</div>
+            </div>
+            <div id="sd-join-overlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;background:rgba(0,0,0,0.35);">
+              <button onclick="event.stopPropagation();reconnectToLive()" style="background:#3a8ee6;color:#fff;border:none;padding:11px 22px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+                ▶ Darsga kirish
+              </button>
+            </div>
+          </div>
+        `;
+        noLive.style.display = '';
+        const vid = document.getElementById('sd-last-stream-video');
+        vid.srcObject = teacherLastStream;
+        vid.play().catch(()=>{});
+
+        // Hover — join tugmasini ko'rsatish
+        noLive.onmouseenter = () => { document.getElementById('sd-join-overlay').style.opacity = '1'; };
+        noLive.onmouseleave = () => { document.getElementById('sd-join-overlay').style.opacity = '0'; };
+        // Mobile: tap
+        noLive.onclick = () => {
+          const ov = document.getElementById('sd-join-overlay');
+          if (ov) ov.style.opacity = ov.style.opacity === '1' ? '0' : '1';
+        };
       } else {
-        hidePastLessonCard();
+        noLive.style.padding = '';
+        noLive.style.textAlign = 'center';
+        noLive.style.cursor = '';
+        noLive.onmouseenter = null;
+        noLive.onmouseleave = null;
+        noLive.onclick = null;
+        noLive.innerHTML = `
+          <div style="font-size:32px;margin-bottom:8px" id="sd-no-live-icon">📺</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px" id="sd-no-live-title">Hozircha jonli dars yo'q</div>
+          <div style="font-size:12px;color:var(--text-3)" id="sd-no-live-sub">Ustoz dars boshlaganda bu yerda avtomatik ko'rinadi</div>
+          <button id="sd-return-live-btn" onclick="restoreCallOverlay()" style="display:none;margin-top:14px;background:#3a8ee6;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">🔴 Darsga qaytish</button>
+        `;
+        noLive.style.display = '';
       }
+      connectedRoomId = null;
     }
 
     liveRoomId = null;
@@ -2109,12 +2136,9 @@
     currentLiveTeacherName = teacher.name;
     currentLiveTeacherLogin = teacher.login;
     liveTitle = session.title || 'Jonli dars';
-    lastLiveTitle = liveTitle;
-    lastLiveTeacherName = teacher.name;
     liveRoomId = session.room_id;
     callMode = 'student';
     userLeftLive = false;
-    hidePastLessonCard();
 
     document.getElementById('sd-live-title').textContent = liveTitle;
     document.getElementById('sd-live-teacher').textContent = '👨‍🏫 ' + teacher.name;
@@ -2277,63 +2301,6 @@
 
   // ── DARS HAVOLASI ORQALI KIRISH (?join=room_id) ───────────
   let pendingJoinRoomId = null;
-  let lastLiveTitle = '';
-  let lastLiveTeacherName = '';
-  let lastLiveSnapshot = null; // localStream dan olingan kadr
-
-  // ── O'TGAN DARS KARTOCHKASINI KO'RSATISH ─────────────────
-  function showPastLessonCard() {
-    const card = document.getElementById('sd-past-lesson-card');
-    const empty = document.getElementById('sd-no-live-empty');
-    if (!card || !empty) return;
-    document.getElementById('sd-past-title').textContent = lastLiveTitle || 'Jonli dars';
-    document.getElementById('sd-past-sub').textContent = '👨‍🏫 ' + (lastLiveTeacherName || 'Ustoz') + ' · Az avval';
-
-    // Video: oxirgi localStream kadrini mutedsiz (video bor, audio yo'q) ko'rsatish
-    const vid = document.getElementById('sd-past-video');
-    if (lastLiveSnapshot && vid) {
-      vid.srcObject = lastLiveSnapshot;
-      vid.muted = true; // audio eshitilmasin!
-      vid.play().catch(()=>{});
-    }
-    card.style.display = '';
-    empty.style.display = 'none';
-  }
-
-  function hidePastLessonCard() {
-    const card = document.getElementById('sd-past-lesson-card');
-    const empty = document.getElementById('sd-no-live-empty');
-    if (card) card.style.display = 'none';
-    if (empty) empty.style.display = '';
-    // video streamini to'xtatish
-    const vid = document.getElementById('sd-past-video');
-    if (vid) { vid.srcObject = null; }
-  }
-
-  // "Darsga kirish" — dars hali serverda faol bo'lsa qayta ulanadi
-  async function rejoinFromPastCard() {
-    hidePastLessonCard();
-    if (!currentStudent) return;
-    // Serverni tekshirish — dars hali faolmi?
-    try {
-      const r = await fetch('/api/assign_student?student_login=' + currentStudent.login);
-      const teachers = await r.json();
-      for (const t of teachers) {
-        const lr = await fetch('/api/live?teacher_login=' + encodeURIComponent(t.login));
-        const sessions = await lr.json();
-        if (sessions.length > 0) {
-          userLeftLive = false;
-          connectToLive(sessions[0], t);
-          return;
-        }
-      }
-    } catch(e) {}
-    // Dars tugagan bo'lsa — xabar
-    alert("⚠️ Dars allaqachon tugagan. Ustoz yangi dars boshlasa avtomatik ko'rinadi.");
-    hidePastLessonCard();
-  }
-
-
   (function checkJoinLink() {
     const params = new URLSearchParams(window.location.search);
     const joinRoom = params.get('join');
@@ -2444,38 +2411,13 @@
       <span id="sd-live-teacher"></span>
     </div>
 
-    <div id="sd-no-live" style="margin-top:20px">
-      <div id="sd-no-live-empty" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:30px;text-align:center">
-        <div style="font-size:32px;margin-bottom:8px" id="sd-no-live-icon">📺</div>
-        <div style="font-size:14px;font-weight:600;margin-bottom:4px" id="sd-no-live-title">Hozircha jonli dars yo'q</div>
-        <div style="font-size:12px;color:var(--text-3)" id="sd-no-live-sub">Ustoz dars boshlaganda bu yerda avtomatik ko'rinadi</div>
-        <button id="sd-return-live-btn" onclick="restoreCallOverlay()" style="display:none;margin-top:14px;background:#3a8ee6;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
-          🔴 Darsga qaytish
-        </button>
-      </div>
-
-      <!-- TUGAGAN DARS KARTOCHKASI (dars yakunlanganidan keyin ko'rinadi) -->
-      <div id="sd-past-lesson-card" class="past-lesson-card" style="display:none">
-        <div class="past-lesson-video-wrap">
-          <video id="sd-past-video" autoplay playsinline muted loop style="width:100%;height:100%;object-fit:cover;opacity:0.5"></video>
-          <div class="past-lesson-overlay-badge">
-            <div class="past-lesson-ended-badge">
-              <div class="past-lesson-ended-dot"></div>
-              Dars tugadi
-            </div>
-          </div>
-        </div>
-        <div class="past-lesson-info">
-          <div>
-            <div class="past-lesson-title" id="sd-past-title">Jonli dars</div>
-            <div class="past-lesson-sub" id="sd-past-sub">👨‍🏫 Ustoz · Az avval</div>
-          </div>
-          <button class="btn-join-lesson" onclick="rejoinFromPastCard()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Darsga kirish
-          </button>
-        </div>
-      </div>
+    <div id="sd-no-live" style="margin-top:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:30px;text-align:center">
+      <div style="font-size:32px;margin-bottom:8px" id="sd-no-live-icon">📺</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px" id="sd-no-live-title">Hozircha jonli dars yo'q</div>
+      <div style="font-size:12px;color:var(--text-3)" id="sd-no-live-sub">Ustoz dars boshlaganda bu yerda avtomatik ko'rinadi</div>
+      <button id="sd-return-live-btn" onclick="restoreCallOverlay()" style="display:none;margin-top:14px;background:#3a8ee6;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+        🔴 Darsga qaytish
+      </button>
     </div>
 
     <div class="home-grid" style="margin-top:24px">
