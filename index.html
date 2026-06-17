@@ -696,6 +696,7 @@
     <div class="notif-btn" id="notif-btn" onclick="toggleNotif(event)" style="position:relative">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <div class="notif-dot" id="notif-dot"></div>
+      <div id="notif-badge" style="display:none;position:absolute;top:-5px;right:-5px;background:#dc2626;color:#fff;border-radius:10px;font-size:10px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;border:2px solid var(--bg)"></div>
       <!-- NOTIFICATION PANEL -->
       <div class="notif-panel" id="notif-panel" onclick="event.stopPropagation()">
         <div class="notif-panel-header">
@@ -1141,8 +1142,7 @@
     resultEl.innerHTML = '<span style="color:var(--text-3)">⏳ Qidirilmoqda...</span>';
 
     try {
-      // Barcha o'quvchilarni olib, login bo'yicha tekshirish
-      const r = await fetch('/api/students');
+      const r = await fetch('/api/students', { headers: authHeaders() });
       const all = await r.json();
       const found = all.find(s => s.login === login);
 
@@ -1151,25 +1151,26 @@
         return;
       }
 
-      // Biriktirish
+      // Biriktirish — faqat currentTeacher.login ishlatiladi (body da ham yuborilmaydi)
       const ar = await fetch('/api/assign_student', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ teacher_login: currentTeacher.login, student_login: login })
       });
       const ad = await ar.json();
 
       if (ad.ok) {
-        resultEl.innerHTML = `<span style="color:#059669">✅ ${found.name} qo'shildi!</span>`;
+        resultEl.innerHTML = `<span style="color:#059669">✅ ${escapeHtml(found.name)} qo'shildi!</span>`;
         loginEl.value = '';
         setTimeout(() => {
           closeStudentModal();
           loadAssignedStudents();
           renderStudents();
           updateSelects();
+          loadChatList();
         }, 800);
       } else {
-        resultEl.innerHTML = `<span style="color:#dc2626">❌ ${ad.msg || 'Xato yuz berdi'}</span>`;
+        resultEl.innerHTML = `<span style="color:#dc2626">❌ ${escapeHtml(ad.msg || 'Xato yuz berdi')}</span>`;
       }
     } catch(e) {
       resultEl.innerHTML = '<span style="color:#dc2626">❌ Server bilan ulanishda xato</span>';
@@ -1463,15 +1464,15 @@
       document.getElementById('student-dashboard').style.display = 'none';
       renderStudents();
       updateSelects();
-      // Chat va unread badge yuklash
-      setTimeout(() => { loadChatList(); updateUnreadBadge(); }, 400);
-      setInterval(() => { loadChatList(); updateUnreadBadge(); }, 15000);
+      setTimeout(() => { loadChatList(); updateUnreadBadge(); requestNotifPermission(); startBgPoll(); }, 400);
     } else {
       document.getElementById('dashboard').style.display = 'none';
       showStudentDashboard(user);
       setTimeout(() => {
         if (typeof tryJoinPendingRoom === 'function') tryJoinPendingRoom();
         loadStudentChatList();
+        requestNotifPermission();
+        startBgPoll();
       }, 300);
     }
   }
@@ -1499,7 +1500,11 @@
   // ── O'QUVCHI: JONLI DARSGA ULANISH ────────────────────────
   // ── Chiqish ──
   function doLogout() {
-    leaveCall(true); // sessiyani to'liq tark etish
+    leaveCall(true);
+    if (bgPollInterval)   { clearInterval(bgPollInterval);   bgPollInterval = null; }
+    if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+    currentChatId = null; currentChatStudentLogin = null;
+    lastUnreadCount = 0; lastMessageCount = 0;
     currentTeacher = null;
     currentStudent = null;
     document.getElementById('dashboard').style.display = 'none';
@@ -2483,36 +2488,73 @@
   }
 
   // ══════════════════════════════════════════════════════════
-  // CHAT TIZIMI
+  // CHAT TIZIMI — real-time polling + bildirishlar
   // ══════════════════════════════════════════════════════════
   let currentChatId = null;
   let currentChatStudentLogin = null;
   let currentChatColor = '#4f46e5';
-  let chatPollInterval = null;
-  let lastMessageCount = 0;
+  let chatPollInterval    = null;  // ochiq chat uchun (3s)
+  let bgPollInterval      = null;  // fon polling (8s) — yangi xabar bormi?
+  let lastMessageCount    = 0;
+  let lastUnreadCount     = 0;
+  let notifPermission     = false; // Browser notification ruxsat
 
+  // Browser notification ruxsat so'rash
+  function requestNotifPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(p => { notifPermission = p === 'granted'; });
+    } else if (Notification.permission === 'granted') {
+      notifPermission = true;
+    }
+  }
+
+  function showNotif(title, body, onClick) {
+    // Browser notification
+    if (notifPermission && document.hidden) {
+      const n = new Notification(title, { body, icon: '/favicon.ico' });
+      if (onClick) n.onclick = () => { window.focus(); onClick(); n.close(); };
+    }
+    // In-app toast
+    showToast(title + ': ' + body);
+  }
+
+  function showToast(msg) {
+    let toast = document.getElementById('chat-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'chat-toast';
+      toast.style.cssText = `
+        position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+        background:#1e293b;color:#fff;padding:12px 20px;border-radius:10px;
+        font-size:13px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.3);
+        display:none;max-width:320px;text-align:center;cursor:pointer;
+      `;
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    if (toast._timer) clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 4000);
+  }
+
+  // ── Chat ochish (ustoz) ────────────────────────────────────
   async function openChatWith(studentLogin, studentName, color) {
     if (!currentTeacher) return;
     currentChatStudentLogin = studentLogin;
     currentChatColor = color || '#4f46e5';
 
-    document.getElementById('chat-header-av').textContent   = getInitial(studentName);
+    document.getElementById('chat-header-av').textContent    = getInitial(studentName);
     document.getElementById('chat-header-av').style.background = currentChatColor;
-    document.getElementById('chat-header-name').textContent = escapeHtml(studentName);
-    document.getElementById('chat-header-sub').textContent  = '@' + escapeHtml(studentLogin);
-
+    document.getElementById('chat-header-name').textContent  = escapeHtml(studentName);
+    document.getElementById('chat-header-sub').textContent   = '@' + escapeHtml(studentLogin);
     document.getElementById('chat-modal').classList.add('open');
 
-    // Chat ID ni DB dan olish yoki yaratish
+    // Chat ID olish yoki yaratish
     try {
-      const r = await fetch('/api/chat?action=create', {
+      const r = await fetch('/api/chat', {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({
-          action: 'create',
-          teacher_login: currentTeacher.login,
-          student_login: studentLogin
-        })
+        body: JSON.stringify({ action: 'create', teacher_login: currentTeacher.login, student_login: studentLogin })
       });
       const d = await r.json();
       if (d.ok) {
@@ -2523,14 +2565,14 @@
     } catch(e) { console.error(e); }
   }
 
-  // O'quvchi tomonidan ustoz bilan chat ochish
+  // ── Chat ochish (o'quvchi) ─────────────────────────────────
   async function openStudentChat(teacherLogin, teacherName) {
     if (!currentStudent) return;
 
-    document.getElementById('chat-header-av').textContent   = getInitial(teacherName);
+    document.getElementById('chat-header-av').textContent    = getInitial(teacherName);
     document.getElementById('chat-header-av').style.background = '#4f46e5';
-    document.getElementById('chat-header-name').textContent = escapeHtml(teacherName);
-    document.getElementById('chat-header-sub').textContent  = 'Ustoz';
+    document.getElementById('chat-header-name').textContent  = escapeHtml(teacherName);
+    document.getElementById('chat-header-sub').textContent   = 'Ustoz';
     document.getElementById('chat-modal').classList.add('open');
 
     try {
@@ -2546,6 +2588,7 @@
     } catch(e) { console.error(e); }
   }
 
+  // ── Xabarlarni yuklash ─────────────────────────────────────
   async function loadChatMessages() {
     if (!currentChatId) return;
     try {
@@ -2561,8 +2604,8 @@
     const container = document.getElementById('chat-messages');
     const myLogin = (currentTeacher || currentStudent)?.login;
     const empty = document.getElementById('chat-empty');
+    const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 60;
 
-    // Eski xabarlarni tozalash
     container.querySelectorAll('.msg-bubble').forEach(el => el.remove());
 
     if (!msgs.length) { empty.style.display = 'flex'; return; }
@@ -2580,24 +2623,71 @@
       container.appendChild(bubble);
     });
 
-    // Oxiriga scroll
-    container.scrollTop = container.scrollHeight;
+    // Yangi xabar bo'lsa scroll
+    if (wasAtBottom || msgs.length !== lastMessageCount) {
+      container.scrollTop = container.scrollHeight;
+    }
     lastMessageCount = msgs.length;
   }
 
+  // ── Active chat poll (3s) ──────────────────────────────────
   function startChatPoll() {
     if (chatPollInterval) clearInterval(chatPollInterval);
     chatPollInterval = setInterval(async () => {
-      if (!currentChatId || !document.getElementById('chat-modal').classList.contains('open')) return;
+      if (!currentChatId) return;
+      if (!document.getElementById('chat-modal').classList.contains('open')) return;
       await loadChatMessages();
     }, 3000);
+  }
+
+  // ── Fon polling (8s) — xabar bormi, bildirishlar ──────────
+  function startBgPoll() {
+    if (bgPollInterval) clearInterval(bgPollInterval);
+    bgPollInterval = setInterval(async () => {
+      try {
+        if (currentTeacher) {
+          // Ustoz: o'qilmagan xabarlar
+          const r = await fetch('/api/chat?action=unread_count', { headers: authHeaders() });
+          const d = await r.json();
+          const newCount = parseInt(d.count) || 0;
+          if (newCount > lastUnreadCount && lastUnreadCount >= 0) {
+            showNotif('💬 Yangi xabar', `${newCount} ta o'qilmagan xabar`, () => {
+              // Yaqinda xabar yozgan o'quvchi bilan chatni ochish
+              loadChatList();
+            });
+          }
+          lastUnreadCount = newCount;
+          updateUnreadBadgeCount(newCount);
+          // Chat ro'yxatini ham yangilash
+          loadChatList();
+        } else if (currentStudent) {
+          // O'quvchi: o'z chatida yangi xabar bormi
+          if (currentChatId && !document.getElementById('chat-modal').classList.contains('open')) {
+            const r = await fetch(`/api/chat?action=messages&chat_id=${currentChatId}`, { headers: authHeaders() });
+            const msgs = await r.json();
+            if (Array.isArray(msgs) && msgs.length > lastMessageCount) {
+              const last = msgs[msgs.length - 1];
+              if (last.sender_login !== currentStudent.login) {
+                showNotif('💬 Yangi xabar', last.content?.slice(0, 60) || 'Ustoz xabar yozdi', () => {
+                  document.getElementById('chat-modal').classList.add('open');
+                  loadChatMessages();
+                  startChatPoll();
+                });
+              }
+              lastMessageCount = msgs.length;
+            }
+          }
+          // O'quvchi chat ro'yxatini yangilash
+          loadStudentChatList();
+        }
+      } catch(e) {}
+    }, 8000);
   }
 
   function closeChat() {
     document.getElementById('chat-modal').classList.remove('open');
     if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
-    currentChatId = null;
-    currentChatStudentLogin = null;
+    // currentChatId ni saqlaymiz — fon polling uchun
     document.getElementById('chat-messages').querySelectorAll('.msg-bubble').forEach(el => el.remove());
     document.getElementById('chat-empty').style.display = 'flex';
   }
@@ -2623,7 +2713,7 @@
         await loadChatMessages();
       } else {
         input.value = text;
-        alert(d.msg || 'Xabar yuborishda xato');
+        showToast('❌ ' + (d.msg || 'Xabar yuborishda xato'));
       }
     } catch(e) {
       input.value = text;
@@ -2633,7 +2723,7 @@
     }
   }
 
-  // Ustoz uchun — xabarlar bo'limini yangilash
+  // ── Ustoz: chat ro'yxati (home sahifasida) ─────────────────
   async function loadChatList() {
     if (!currentTeacher) return;
     try {
@@ -2665,7 +2755,7 @@
     chats.forEach((c, i) => {
       const color = colors[i % colors.length];
       const item = document.createElement('div');
-      item.className = 'chat-list-item';
+      item.className = 'chat-list-item' + (currentChatStudentLogin === c.student_login ? ' active' : '');
       const preview = c.last_msg ? escapeHtml(c.last_msg).slice(0, 40) + (c.last_msg.length > 40 ? '…' : '') : 'Hali xabar yo\'q';
       const timeStr = c.last_time ? new Date(c.last_time).toLocaleTimeString('uz-UZ', { hour:'2-digit', minute:'2-digit' }) : '';
       item.innerHTML = `
@@ -2684,24 +2774,26 @@
     });
   }
 
-  // Unread badge topbar da
+  // ── Unread badge ───────────────────────────────────────────
+  function updateUnreadBadgeCount(count) {
+    const badge = document.getElementById('notif-badge');
+    if (badge) { badge.textContent = count || ''; badge.style.display = count > 0 ? '' : 'none'; }
+  }
+
   async function updateUnreadBadge() {
     if (!currentTeacher) return;
     try {
       const r = await fetch('/api/chat?action=unread_count', { headers: authHeaders() });
       const d = await r.json();
-      const badge = document.getElementById('notif-badge');
-      if (badge) {
-        badge.textContent = d.count || '';
-        badge.style.display = d.count > 0 ? '' : 'none';
-      }
+      updateUnreadBadgeCount(parseInt(d.count) || 0);
     } catch(e) {}
   }
 
-  // O'quvchi uchun — "Xabarlar" bo'limida ustozlar chati
+  // ── O'quvchi: FAQAT O'Z USTOZI ko'rinadi ──────────────────
   async function loadStudentChatList() {
     if (!currentStudent) return;
     try {
+      // Faqat bu o'quvchiga biriktirilgan ustozlar (teacher_students jadvalidan)
       const r = await fetch(`/api/assign_student?student_login=${encodeURIComponent(currentStudent.login)}`, {
         headers: authHeaders()
       });
@@ -2709,19 +2801,22 @@
       const sdMsgList = document.getElementById('sd-msg-list');
       if (!sdMsgList) return;
       sdMsgList.innerHTML = '';
-      if (!teachers.length) {
+
+      if (!Array.isArray(teachers) || !teachers.length) {
         sdMsgList.innerHTML = '<div style="padding:20px;text-align:center;font-size:13px;color:var(--text-3)">Hali ustoz biriktirilmagan</div>';
         return;
       }
+
       teachers.forEach(t => {
         const btn = document.createElement('div');
         btn.className = 'chat-list-item';
         btn.innerHTML = `
           <div class="av" style="background:#4f46e5;width:36px;height:36px;font-size:14px;flex-shrink:0">${getInitial(t.name)}</div>
-          <div>
+          <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600">${escapeHtml(t.name)}</div>
-            <div style="font-size:12px;color:var(--text-3)">Ustoz</div>
+            <div style="font-size:12px;color:var(--text-3)">Ustoz • ${escapeHtml(t.phone || '')}</div>
           </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:#4f46e5;flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         `;
         btn.onclick = () => openStudentChat(t.login, t.name);
         sdMsgList.appendChild(btn);

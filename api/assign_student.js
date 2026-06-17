@@ -27,9 +27,14 @@ export default async function handler(req, res) {
     `);
 
     if (req.method === 'POST') {
-      const tl = sanitize(req.body?.teacher_login || '', 100);
+      // teacher_login header dan olinadi (xavfsizlik)
+      const tl = sanitize(req.headers['x-user-login'] || req.body?.teacher_login || '', 100);
       const sl = sanitize(req.body?.student_login || '', 100);
       if (!tl || !sl) { res.json({ ok: false, msg: 'Parametrlar kerak' }); return; }
+
+      // Faqat teacher role assign qila oladi
+      const role = req.headers['x-user-role'] || '';
+      if (role && role !== 'teacher') { res.status(403).json({ ok: false, msg: 'Faqat ustoz uchun' }); return; }
 
       await client.query(
         'INSERT INTO teacher_students (teacher_login, student_login) VALUES ($1,$2) ON CONFLICT DO NOTHING',
