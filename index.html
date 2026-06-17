@@ -374,6 +374,53 @@
     padding:6px 10px; border-radius:7px; cursor:pointer; flex-shrink:0;
   }
   @media (max-width:600px) { .live-floating-banner { left:12px; right:12px; max-width:none } }
+  /* ── CHAT UI ──────────────────────────────────────────────── */
+  .chat-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;display:none;align-items:center;justify-content:center }
+  .chat-modal-overlay.open { display:flex }
+  .chat-box { background:var(--card);border-radius:16px;width:min(500px,95vw);height:min(600px,85vh);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.18) }
+  .chat-header { display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0 }
+  .chat-header-av { width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:15px;flex-shrink:0 }
+  .chat-header-info { flex:1;min-width:0 }
+  .chat-header-name { font-size:14px;font-weight:700 }
+  .chat-header-sub { font-size:11px;color:var(--text-3) }
+  .chat-close-btn { background:none;border:none;color:var(--text-3);cursor:pointer;padding:4px;border-radius:6px }
+  .chat-close-btn:hover { background:var(--bg-2);color:var(--text) }
+  .chat-messages { flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0 }
+  .chat-messages::-webkit-scrollbar { width:4px }
+  .chat-messages::-webkit-scrollbar-thumb { background:var(--border);border-radius:4px }
+  .msg-bubble { max-width:75%;padding:9px 14px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word }
+  .msg-bubble.mine { align-self:flex-end;background:#4f46e5;color:#fff;border-bottom-right-radius:4px }
+  .msg-bubble.theirs { align-self:flex-start;background:var(--bg-2);color:var(--text);border-bottom-left-radius:4px }
+  .msg-bubble.mine .msg-time-label { color:rgba(255,255,255,.6);font-size:10px;margin-top:4px;text-align:right }
+  .msg-bubble.theirs .msg-time-label { color:var(--text-3);font-size:10px;margin-top:4px }
+  .msg-typing { font-size:12px;color:var(--text-3);padding:4px 0 }
+  .chat-input-row { display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0 }
+  .chat-input { flex:1;border:1px solid var(--border);border-radius:10px;padding:9px 14px;font-size:13px;font-family:inherit;outline:none;background:var(--bg);color:var(--text);resize:none }
+  .chat-input:focus { border-color:var(--accent) }
+  .chat-send-btn { background:#4f46e5;color:#fff;border:none;border-radius:10px;padding:0 18px;cursor:pointer;font-size:14px;flex-shrink:0 }
+  .chat-send-btn:hover { background:#4338ca }
+  .chat-send-btn:disabled { opacity:.5;cursor:not-allowed }
+  .chat-list-item { display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;cursor:pointer;transition:.12s }
+  .chat-list-item:hover { background:var(--bg-2) }
+  .chat-list-item.active { background:#eef2ff }
+  .chat-unread-dot { min-width:18px;height:18px;border-radius:9px;background:#4f46e5;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px }
+  .chat-empty-state { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-3);gap:8px;font-size:13px }
+
+  /* ── CONFIRM MODAL ─────────────────────────────────────────── */
+  .confirm-overlay { position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:none;align-items:center;justify-content:center }
+  .confirm-overlay.open { display:flex }
+  .confirm-box { background:var(--card);border-radius:14px;padding:28px 24px;width:min(380px,90vw);box-shadow:0 8px 40px rgba(0,0,0,.2) }
+  .confirm-icon { font-size:36px;text-align:center;margin-bottom:12px }
+  .confirm-title { font-size:16px;font-weight:700;text-align:center;margin-bottom:8px }
+  .confirm-sub { font-size:13px;color:var(--text-2);text-align:center;margin-bottom:20px;line-height:1.5 }
+  .confirm-btns { display:flex;gap:10px }
+  .confirm-btns button { flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:600;cursor:pointer }
+  .confirm-cancel { background:var(--bg-2);color:var(--text) }
+  .confirm-danger { background:#dc2626;color:#fff }
+  .confirm-danger:hover { background:#b91c1c }
+
+  /* ── SECURITY — hide sensitive info ───────────────────────── */
+  input[type=password] { font-family: monospace }
 </style>
 </head>
 <body>
@@ -489,6 +536,49 @@
     <div class="lf-time" id="lf-timer">00:00</div>
   </div>
   <button class="lf-return" onclick="event.stopPropagation(); restoreCallOverlay()">Qaytish</button>
+</div>
+
+<!-- CHAT MODAL -->
+<div class="chat-modal-overlay" id="chat-modal">
+  <div class="chat-box">
+    <div class="chat-header">
+      <div class="chat-header-av" id="chat-header-av">A</div>
+      <div class="chat-header-info">
+        <div class="chat-header-name" id="chat-header-name">O'quvchi</div>
+        <div class="chat-header-sub" id="chat-header-sub">Online</div>
+      </div>
+      <button class="chat-close-btn" onclick="closeChat()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-empty-state" id="chat-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Hali xabar yo'q.<br>Birinchi bo'lib yozing!</span>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chat-input" placeholder="Xabar yozing..." rows="1" maxlength="2000"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg()}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+      <button class="chat-send-btn" id="chat-send-btn" onclick="sendChatMsg()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE MODAL -->
+<div class="confirm-overlay" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div>
+    <div class="confirm-title" id="confirm-title">Ishonchingiz komilmi?</div>
+    <div class="confirm-sub" id="confirm-sub">Bu amalni qaytarib bo'lmaydi.</div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">Bekor qilish</button>
+      <button class="confirm-danger" id="confirm-ok-btn" onclick="executeConfirm()">O'chirish</button>
+    </div>
+  </div>
 </div>
 
 <!-- LOGIN / REGISTER PAGE -->
@@ -1121,14 +1211,24 @@
       const item = document.createElement('div');
       item.className = 'student-item';
       item.innerHTML = `
-        <div class="student-left">
+        <div class="student-left" style="cursor:pointer" onclick="openChatWith('${escapeHtml(s.login)}','${escapeHtml(s.name)}','${s.color}')">
           <div class="av" style="background:${s.color}">${getInitial(s.name)}</div>
           <div>
-            <div class="student-name">${s.name}</div>
-            <div class="student-meta">${s.phone || 'Raqam kiritilmagan'}</div>
+            <div class="student-name">${escapeHtml(s.name)}</div>
+            <div class="student-meta">${escapeHtml(s.phone || 'Raqam kiritilmagan')}</div>
           </div>
         </div>
-        <div style="width:8px;height:8px;border-radius:50%;background:#d1d5db;flex-shrink:0"></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button onclick="openChatWith('${escapeHtml(s.login)}','${escapeHtml(s.name)}','${s.color}')"
+            style="background:#eef2ff;color:#4f46e5;border:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Chat
+          </button>
+          <button onclick="confirmRemoveStudent('${escapeHtml(s.login)}','${escapeHtml(s.name)}')"
+            style="background:#fee2e2;color:#dc2626;border:none;padding:6px 10px;border-radius:7px;font-size:12px;cursor:pointer" title="O'chirish">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          </button>
+        </div>
       `;
       list.insertBefore(item, document.getElementById('student-empty'));
     });
@@ -1363,11 +1463,16 @@
       document.getElementById('student-dashboard').style.display = 'none';
       renderStudents();
       updateSelects();
+      // Chat va unread badge yuklash
+      setTimeout(() => { loadChatList(); updateUnreadBadge(); }, 400);
+      setInterval(() => { loadChatList(); updateUnreadBadge(); }, 15000);
     } else {
       document.getElementById('dashboard').style.display = 'none';
       showStudentDashboard(user);
-      // Agar dars havolasi orqali kelgan bo'lsa — to'g'ridan-to'g'ri darsga ulanish
-      setTimeout(() => { if (typeof tryJoinPendingRoom === 'function') tryJoinPendingRoom(); }, 300);
+      setTimeout(() => {
+        if (typeof tryJoinPendingRoom === 'function') tryJoinPendingRoom();
+        loadStudentChatList();
+      }, 300);
     }
   }
 
@@ -2299,7 +2404,332 @@
   renderStudents();
   updateSelects();
 
-  // ── DARS HAVOLASI ORQALI KIRISH (?join=room_id) ───────────
+  // ══════════════════════════════════════════════════════════
+  // XAVFSIZLIK — Security helpers
+  // ══════════════════════════════════════════════════════════
+  function escapeHtml(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+              .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // Auth headers — har bir so'rovga qo'shiladi
+  function authHeaders() {
+    const login = (currentTeacher || currentStudent)?.login || '';
+    const role  = currentTeacher ? 'teacher' : 'student';
+    return {
+      'Content-Type': 'application/json',
+      'X-User-Login': login,
+      'X-User-Role':  role
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // TASDIQLASH MODALI (Confirm Modal)
+  // ══════════════════════════════════════════════════════════
+  let confirmCallback = null;
+
+  function showConfirm(title, sub, okText, onOk) {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-sub').textContent   = sub;
+    document.getElementById('confirm-ok-btn').textContent = okText || 'O\'chirish';
+    confirmCallback = onOk;
+    document.getElementById('confirm-modal').classList.add('open');
+  }
+
+  function closeConfirm() {
+    document.getElementById('confirm-modal').classList.remove('open');
+    confirmCallback = null;
+  }
+
+  function executeConfirm() {
+    closeConfirm();
+    if (typeof confirmCallback === 'function') confirmCallback();
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // O'QUVCHINI O'CHIRISH (tasdiqlash bilan)
+  // ══════════════════════════════════════════════════════════
+  function confirmRemoveStudent(studentLogin, studentName) {
+    showConfirm(
+      `"${escapeHtml(studentName)}" ni o'chirish`,
+      `Bu o'quvchi sizning sinfingizdan chiqariladi va chat tarixi o'chadi. Bu amalni qaytarib bo'lmaydi.`,
+      'Ha, o\'chirish',
+      () => removeStudent(studentLogin, studentName)
+    );
+  }
+
+  async function removeStudent(studentLogin, studentName) {
+    if (!currentTeacher) return;
+    try {
+      const r = await fetch('/api/remove_student', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ student_login: studentLogin, confirm: true })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        renderStudents();
+        updateSelects();
+        // Agar chat ochiq bo'lsa — yopish
+        if (currentChatStudentLogin === studentLogin) closeChat();
+        loadChatList();
+      } else {
+        alert('Xato: ' + (d.msg || 'Noma\'lum xato'));
+      }
+    } catch(e) {
+      alert('Server bilan ulanishda xato');
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // CHAT TIZIMI
+  // ══════════════════════════════════════════════════════════
+  let currentChatId = null;
+  let currentChatStudentLogin = null;
+  let currentChatColor = '#4f46e5';
+  let chatPollInterval = null;
+  let lastMessageCount = 0;
+
+  async function openChatWith(studentLogin, studentName, color) {
+    if (!currentTeacher) return;
+    currentChatStudentLogin = studentLogin;
+    currentChatColor = color || '#4f46e5';
+
+    document.getElementById('chat-header-av').textContent   = getInitial(studentName);
+    document.getElementById('chat-header-av').style.background = currentChatColor;
+    document.getElementById('chat-header-name').textContent = escapeHtml(studentName);
+    document.getElementById('chat-header-sub').textContent  = '@' + escapeHtml(studentLogin);
+
+    document.getElementById('chat-modal').classList.add('open');
+
+    // Chat ID ni DB dan olish yoki yaratish
+    try {
+      const r = await fetch('/api/chat?action=create', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          action: 'create',
+          teacher_login: currentTeacher.login,
+          student_login: studentLogin
+        })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        currentChatId = d.chat_id;
+        await loadChatMessages();
+        startChatPoll();
+      }
+    } catch(e) { console.error(e); }
+  }
+
+  // O'quvchi tomonidan ustoz bilan chat ochish
+  async function openStudentChat(teacherLogin, teacherName) {
+    if (!currentStudent) return;
+
+    document.getElementById('chat-header-av').textContent   = getInitial(teacherName);
+    document.getElementById('chat-header-av').style.background = '#4f46e5';
+    document.getElementById('chat-header-name').textContent = escapeHtml(teacherName);
+    document.getElementById('chat-header-sub').textContent  = 'Ustoz';
+    document.getElementById('chat-modal').classList.add('open');
+
+    try {
+      const r = await fetch(`/api/chat?action=student_chat&teacher_login=${encodeURIComponent(teacherLogin)}`, {
+        headers: authHeaders()
+      });
+      const d = await r.json();
+      if (d && d.chat_id) {
+        currentChatId = d.chat_id;
+        renderMessages(d.messages || []);
+        startChatPoll();
+      }
+    } catch(e) { console.error(e); }
+  }
+
+  async function loadChatMessages() {
+    if (!currentChatId) return;
+    try {
+      const r = await fetch(`/api/chat?action=messages&chat_id=${currentChatId}`, {
+        headers: authHeaders()
+      });
+      const msgs = await r.json();
+      if (Array.isArray(msgs)) renderMessages(msgs);
+    } catch(e) { console.error(e); }
+  }
+
+  function renderMessages(msgs) {
+    const container = document.getElementById('chat-messages');
+    const myLogin = (currentTeacher || currentStudent)?.login;
+    const empty = document.getElementById('chat-empty');
+
+    // Eski xabarlarni tozalash
+    container.querySelectorAll('.msg-bubble').forEach(el => el.remove());
+
+    if (!msgs.length) { empty.style.display = 'flex'; return; }
+    empty.style.display = 'none';
+
+    msgs.forEach(m => {
+      const isMine = m.sender_login === myLogin;
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble ' + (isMine ? 'mine' : 'theirs');
+      const time = new Date(m.created_at).toLocaleTimeString('uz-UZ', { hour:'2-digit', minute:'2-digit' });
+      bubble.innerHTML = `
+        ${escapeHtml(m.content)}
+        <div class="msg-time-label">${time}${isMine && m.is_read ? ' ✓✓' : isMine ? ' ✓' : ''}</div>
+      `;
+      container.appendChild(bubble);
+    });
+
+    // Oxiriga scroll
+    container.scrollTop = container.scrollHeight;
+    lastMessageCount = msgs.length;
+  }
+
+  function startChatPoll() {
+    if (chatPollInterval) clearInterval(chatPollInterval);
+    chatPollInterval = setInterval(async () => {
+      if (!currentChatId || !document.getElementById('chat-modal').classList.contains('open')) return;
+      await loadChatMessages();
+    }, 3000);
+  }
+
+  function closeChat() {
+    document.getElementById('chat-modal').classList.remove('open');
+    if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+    currentChatId = null;
+    currentChatStudentLogin = null;
+    document.getElementById('chat-messages').querySelectorAll('.msg-bubble').forEach(el => el.remove());
+    document.getElementById('chat-empty').style.display = 'flex';
+  }
+
+  async function sendChatMsg() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !currentChatId) return;
+
+    const btn = document.getElementById('chat-send-btn');
+    btn.disabled = true;
+    input.value = '';
+    input.style.height = 'auto';
+
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ action: 'send', chat_id: currentChatId, content: text })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        await loadChatMessages();
+      } else {
+        input.value = text;
+        alert(d.msg || 'Xabar yuborishda xato');
+      }
+    } catch(e) {
+      input.value = text;
+    } finally {
+      btn.disabled = false;
+      input.focus();
+    }
+  }
+
+  // Ustoz uchun — xabarlar bo'limini yangilash
+  async function loadChatList() {
+    if (!currentTeacher) return;
+    try {
+      const r = await fetch(`/api/chat?action=list&teacher_login=${encodeURIComponent(currentTeacher.login)}`, {
+        headers: authHeaders()
+      });
+      const chats = await r.json();
+      renderChatList(chats);
+    } catch(e) { console.error(e); }
+  }
+
+  function renderChatList(chats) {
+    const list = document.getElementById('msg-list');
+    const msgCount = document.getElementById('msg-count');
+    list.querySelectorAll('.chat-list-item').forEach(el => el.remove());
+
+    const totalUnread = chats.reduce((s, c) => s + parseInt(c.unread || 0), 0);
+    msgCount.textContent = totalUnread > 0 ? totalUnread + ' ta yangi' : '0 ta yangi';
+
+    if (!chats.length) {
+      document.getElementById('msg-empty').style.display = 'flex';
+      document.getElementById('msg-footer').style.display = 'none';
+      return;
+    }
+    document.getElementById('msg-empty').style.display = 'none';
+    document.getElementById('msg-footer').style.display = 'block';
+
+    const colors = ['#4f46e5','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6'];
+    chats.forEach((c, i) => {
+      const color = colors[i % colors.length];
+      const item = document.createElement('div');
+      item.className = 'chat-list-item';
+      const preview = c.last_msg ? escapeHtml(c.last_msg).slice(0, 40) + (c.last_msg.length > 40 ? '…' : '') : 'Hali xabar yo\'q';
+      const timeStr = c.last_time ? new Date(c.last_time).toLocaleTimeString('uz-UZ', { hour:'2-digit', minute:'2-digit' }) : '';
+      item.innerHTML = `
+        <div class="av" style="background:${color};width:36px;height:36px;font-size:14px;flex-shrink:0">${getInitial(c.student_name || c.student_login)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+            <span style="font-size:13px;font-weight:600">${escapeHtml(c.student_name || c.student_login)}</span>
+            <span style="font-size:11px;color:var(--text-3)">${timeStr}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${preview}</div>
+        </div>
+        ${parseInt(c.unread) > 0 ? `<div class="chat-unread-dot">${c.unread}</div>` : ''}
+      `;
+      item.onclick = () => openChatWith(c.student_login, c.student_name || c.student_login, color);
+      list.insertBefore(item, document.getElementById('msg-empty'));
+    });
+  }
+
+  // Unread badge topbar da
+  async function updateUnreadBadge() {
+    if (!currentTeacher) return;
+    try {
+      const r = await fetch('/api/chat?action=unread_count', { headers: authHeaders() });
+      const d = await r.json();
+      const badge = document.getElementById('notif-badge');
+      if (badge) {
+        badge.textContent = d.count || '';
+        badge.style.display = d.count > 0 ? '' : 'none';
+      }
+    } catch(e) {}
+  }
+
+  // O'quvchi uchun — "Xabarlar" bo'limida ustozlar chati
+  async function loadStudentChatList() {
+    if (!currentStudent) return;
+    try {
+      const r = await fetch(`/api/assign_student?student_login=${encodeURIComponent(currentStudent.login)}`, {
+        headers: authHeaders()
+      });
+      const teachers = await r.json();
+      const sdMsgList = document.getElementById('sd-msg-list');
+      if (!sdMsgList) return;
+      sdMsgList.innerHTML = '';
+      if (!teachers.length) {
+        sdMsgList.innerHTML = '<div style="padding:20px;text-align:center;font-size:13px;color:var(--text-3)">Hali ustoz biriktirilmagan</div>';
+        return;
+      }
+      teachers.forEach(t => {
+        const btn = document.createElement('div');
+        btn.className = 'chat-list-item';
+        btn.innerHTML = `
+          <div class="av" style="background:#4f46e5;width:36px;height:36px;font-size:14px;flex-shrink:0">${getInitial(t.name)}</div>
+          <div>
+            <div style="font-size:13px;font-weight:600">${escapeHtml(t.name)}</div>
+            <div style="font-size:12px;color:var(--text-3)">Ustoz</div>
+          </div>
+        `;
+        btn.onclick = () => openStudentChat(t.login, t.name);
+        sdMsgList.appendChild(btn);
+      });
+    } catch(e) { console.error(e); }
+  }
+
+
   let pendingJoinRoomId = null;
   (function checkJoinLink() {
     const params = new URLSearchParams(window.location.search);
@@ -2455,11 +2885,13 @@
           <span>Xabarlar</span>
           <span class="section-count">O'qituvchidan</span>
         </div>
-        <div class="empty-state">
-          <div class="empty-icon" style="background:#f0fdf4;color:#12b76a">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <div id="sd-msg-list">
+          <div class="empty-state">
+            <div class="empty-icon" style="background:#f0fdf4;color:#12b76a">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="empty-text">Hozircha xabar yo'q.<br>O'qituvchi xabar yuborganda bu yerda ko'rinadi.</div>
           </div>
-          <div class="empty-text">Hozircha xabar yo'q.<br>O'qituvchi xabar yuborganda bu yerda ko'rinadi.</div>
         </div>
       </div>
     </div>

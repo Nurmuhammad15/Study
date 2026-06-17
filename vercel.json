@@ -1,4 +1,17 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options",    "value": "nosniff" },
+        { "key": "X-Frame-Options",           "value": "DENY" },
+        { "key": "X-XSS-Protection",          "value": "1; mode=block" },
+        { "key": "Referrer-Policy",           "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",        "value": "camera=self, microphone=self, geolocation=()" },
+        { "key": "Content-Security-Policy",   "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; connect-src 'self' https://0.peerjs.com wss://0.peerjs.com https://api.telegram.org; frame-ancestors 'none';" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/api/webhook",          "destination": "/api/webhook.py" },
     { "source": "/api/login",            "destination": "/api/login.js" },
@@ -9,6 +22,8 @@
     { "source": "/api/checkkey",         "destination": "/api/checkkey.js" },
     { "source": "/api/live",             "destination": "/api/live.js" },
     { "source": "/api/assign_student",   "destination": "/api/assign_student.js" },
+    { "source": "/api/chat",             "destination": "/api/chat.js" },
+    { "source": "/api/remove_student",   "destination": "/api/remove_student.js" },
     { "source": "/(.*)",                 "destination": "/index.html" }
   ]
 }
