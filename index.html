@@ -10,15 +10,15 @@
    TOKENS
 ══════════════════════════════════════════════════ */
 :root {
-  --bg:       #080b14;
-  --bg2:      #0d1120;
-  --card:     #111827;
-  --card2:    #1a2035;
-  --border:   #1f2d45;
-  --border2:  #243350;
-  --text:     #e2e8f4;
-  --text2:    #8896b3;
-  --text3:    #4a5878;
+  --bg:       #ffffff;
+  --bg2:      #f4f6fb;
+  --card:     #ffffff;
+  --card2:    #f0f4ff;
+  --border:   #dde3f0;
+  --border2:  #c8d2e8;
+  --text:     #1a2035;
+  --text2:    #4a5878;
+  --text3:    #8896b3;
   --accent:   #4f6ef7;
   --accent2:  #6b82f8;
   --accent3:  #3451d1;
@@ -28,8 +28,8 @@
   --purple:   #8b5cf6;
   --radius:   14px;
   --radius-sm:8px;
-  --shadow:   0 8px 32px rgba(0,0,0,.45);
-  --shadow-sm:0 2px 12px rgba(0,0,0,.3);
+  --shadow:   0 8px 32px rgba(79,110,247,.10);
+  --shadow-sm:0 2px 12px rgba(79,110,247,.07);
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
@@ -50,7 +50,7 @@ body{
    LOADING
 ══════════════════════════════════════════════════ */
 #loading{
-  position:fixed;inset:0;background:var(--bg);
+  position:fixed;inset:0;background:#f4f6fb;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;
 }
 .loader-ring{
@@ -67,20 +67,18 @@ body{
 ══════════════════════════════════════════════════ */
 #login-page{
   display:none;position:fixed;inset:0;z-index:9000;
-  background:radial-gradient(ellipse at 60% 20%,rgba(79,110,247,.12) 0%,transparent 60%),
-             radial-gradient(ellipse at 10% 80%,rgba(139,92,246,.08) 0%,transparent 50%),
-             var(--bg);
+  background:#f4f6fb;
   align-items:center;justify-content:center;
 }
 
-/* Animated grid background */
+/* Subtle light grid background */
 #login-page::before{
   content:'';position:absolute;inset:0;
   background-image:
     linear-gradient(var(--border) 1px,transparent 1px),
     linear-gradient(90deg,var(--border) 1px,transparent 1px);
   background-size:50px 50px;
-  opacity:.25;
+  opacity:.5;
   mask-image:radial-gradient(ellipse at center,black 30%,transparent 80%);
 }
 
@@ -98,8 +96,8 @@ body{
   box-shadow:0 12px 40px rgba(79,110,247,.35);
 }
 .login-brand{font-size:30px;font-weight:800;letter-spacing:-.5px;
-  background:linear-gradient(135deg,#fff 30%,var(--text2));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  color:var(--text);}
+
 .login-brand-sub{font-size:13px;color:var(--text3);margin-top:4px}
 
 .login-card{
@@ -107,7 +105,7 @@ body{
   border:1px solid var(--border2);
   border-radius:22px;
   padding:32px;
-  box-shadow:var(--shadow),0 0 0 1px rgba(255,255,255,.04) inset;
+  box-shadow:0 8px 40px rgba(79,110,247,.10), 0 1px 0 rgba(255,255,255,1) inset;
 }
 .login-card-title{font-size:16px;font-weight:700;margin-bottom:6px}
 .login-card-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.5}
@@ -120,12 +118,12 @@ body{
 #link-input{
   width:100%;padding:14px 16px 14px 42px;
   border-radius:12px;border:1.5px solid var(--border2);
-  background:var(--bg2);color:var(--text);
+  background:#f8faff;color:var(--text);
   font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;
   font-family:inherit;
 }
 #link-input::placeholder{color:var(--text3)}
-#link-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,110,247,.15)}
+#link-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,110,247,.10)}
 
 .login-err{
   font-size:12px;color:#fb7185;min-height:20px;
@@ -154,7 +152,7 @@ body{
 }
 
 .login-hint-card{
-  background:rgba(79,110,247,.06);
+  background:rgba(79,110,247,.05);
   border:1px solid rgba(79,110,247,.15);
   border-radius:10px;padding:12px 14px;
   font-size:12px;color:var(--text2);line-height:1.6;
@@ -170,7 +168,7 @@ body{
    ERROR PAGE
 ══════════════════════════════════════════════════ */
 #error-page{
-  display:none;position:fixed;inset:0;background:var(--bg);
+  display:none;position:fixed;inset:0;background:#f4f6fb;
   flex-direction:column;align-items:center;justify-content:center;
   gap:16px;padding:32px;text-align:center;
 }
@@ -190,7 +188,7 @@ body{
 ══════════════════════════════════════════════════ */
 #waiting{
   display:none;position:fixed;inset:0;
-  background:radial-gradient(ellipse at center,rgba(79,110,247,.08),transparent 70%),var(--bg);
+  background:radial-gradient(ellipse at center,rgba(79,110,247,.05),transparent 70%),#f4f6fb;
   flex-direction:column;align-items:center;justify-content:center;
   gap:20px;text-align:center;padding:32px;
 }
@@ -222,7 +220,7 @@ body{
 .room-header{
   display:flex;align-items:center;justify-content:space-between;
   padding:12px 18px;
-  background:rgba(17,24,39,.95);
+  background:rgba(255,255,255,.97);
   border-bottom:1px solid var(--border);
   flex-shrink:0;backdrop-filter:blur(8px);
   -webkit-backdrop-filter:blur(8px);
@@ -350,15 +348,15 @@ body{
   border-radius:12px;
 }
 .msg.mine{background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff;border-bottom-right-radius:4px}
-.msg.theirs{background:var(--card2);color:var(--text);border-bottom-left-radius:4px;border:1px solid var(--border)}
+.msg.theirs{background:#f0f4ff;color:var(--text);border-bottom-left-radius:4px;border:1px solid var(--border)}
 .msg-time{font-size:10px;opacity:.55;margin-top:3px;text-align:right}
 
 .chat-input-row{
   display:flex;gap:8px;padding:10px;
-  border-top:1px solid var(--border);flex-shrink:0;background:var(--card);
+  border-top:1px solid var(--border);flex-shrink:0;background:#ffffff;
 }
 .chat-inp{
-  flex:1;background:var(--card2);border:1px solid var(--border2);
+  flex:1;background:#f8faff;border:1px solid var(--border2);
   border-radius:10px;padding:9px 13px;font-size:13px;
   color:var(--text);outline:none;font-family:inherit;resize:none;max-height:80px;
   transition:border-color .15s;
@@ -403,7 +401,7 @@ body{
 .room-controls{
   display:flex;align-items:center;justify-content:center;gap:20px;
   padding:14px 20px;
-  background:rgba(17,24,39,.97);border-top:1px solid var(--border);
+  background:rgba(255,255,255,.97);border-top:1px solid var(--border);
   flex-shrink:0;backdrop-filter:blur(8px);
 }
 .ctrl-col{display:flex;flex-direction:column;align-items:center;gap:6px}
@@ -413,7 +411,7 @@ body{
   transition:.15s;flex-shrink:0;position:relative;
 }
 .ctrl-btn svg{width:20px;height:20px;pointer-events:none}
-.ctrl-btn.on{background:var(--card2);color:var(--text);border:1.5px solid var(--border2)}
+.ctrl-btn.on{background:#f0f4ff;color:var(--text);border:1.5px solid var(--border2)}
 .ctrl-btn.on:hover{background:var(--border2)}
 .ctrl-btn.off{background:rgba(239,68,68,.12);color:#f87171;border:1.5px solid rgba(239,68,68,.2)}
 .ctrl-btn.off:hover{background:rgba(239,68,68,.2)}
@@ -425,10 +423,10 @@ body{
 /* Toast */
 .toast{
   position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(8px);
-  background:var(--card2);color:var(--text);
+  background:#1a2035;color:#fff;
   padding:11px 20px;border-radius:10px;font-size:13px;
   z-index:99999;box-shadow:var(--shadow);
-  border:1px solid var(--border2);
+  border:1px solid rgba(0,0,0,.08);
   display:none;max-width:90vw;text-align:center;
   pointer-events:none;opacity:0;
   transition:opacity .2s,transform .2s;
@@ -452,7 +450,6 @@ body{
 <div id="login-page">
   <div class="login-wrap">
     <div class="login-logo-area">
-      <div class="login-icon">📚</div>
       <div class="login-brand">Study</div>
       <div class="login-brand-sub">Onlayn dars platformasi</div>
     </div>
@@ -744,48 +741,106 @@ async function getMedia() {
 // ══════════════════════════════════════════════════════════════
 // PEER
 // ══════════════════════════════════════════════════════════════
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:stun4.l.google.com:19302' },
+  { urls: 'stun:openrelay.metered.ca:80' },
+  // Free TURN relay — works behind NAT/firewalls
+  { urls: 'turn:openrelay.metered.ca:80',    username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443',   username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+];
+
+let peerRetries = 0;
+
 function startPeer() {
   const peerId = (myRole === 'teacher' ? 'tr-' : 'st-') +
                   peerRoomId + '-' + Math.random().toString(36).slice(2,8);
   myPeer = new Peer(peerId, {
-    debug: 0,
-    config: { iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' }
-    ]}
+    debug: 1,
+    config: {
+      iceServers: ICE_SERVERS,
+      iceTransportPolicy: 'all',
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: 'require',
+    }
   });
 
   myPeer.on('open', id => {
     myPeerId = id;
+    peerRetries = 0;
     showRoom();
     joinRoomServer();
-    syncInterval = setInterval(syncParticipants, 6000);
+    syncInterval = setInterval(syncParticipants, 4000);
     startTimer();
   });
-  myPeer.on('call', call => { call.answer(localStream || new MediaStream()); handleCall(call); });
-  myPeer.on('error', e => { if (e.type === 'unavailable-id') setTimeout(startPeer, 500); });
-  myPeer.on('disconnected', () => setTimeout(() => myPeer?.reconnect(), 2000));
+  myPeer.on('call', call => {
+    call.answer(localStream || new MediaStream());
+    handleCall(call);
+  });
+  myPeer.on('error', e => {
+    console.warn('PeerJS error:', e.type, e);
+    if (e.type === 'unavailable-id') {
+      setTimeout(startPeer, 800);
+    } else if (e.type === 'network' || e.type === 'server-error' || e.type === 'socket-error') {
+      peerRetries++;
+      setTimeout(startPeer, Math.min(1000 * peerRetries, 8000));
+    }
+  });
+  myPeer.on('disconnected', () => {
+    console.warn('PeerJS disconnected, reconnecting...');
+    setTimeout(() => {
+      if (myPeer && !myPeer.destroyed) myPeer.reconnect();
+    }, 1500);
+  });
+  myPeer.on('close', () => {
+    console.warn('PeerJS connection closed');
+  });
 }
 
 function handleCall(call) {
   const pid = call.peer;
-  if (peers[pid]) return;
-  peers[pid] = { call, stream: null, name: '...', role: '?' };
-  call.on('stream', s => { peers[pid].stream = s; rebuildGrid(); });
+  if (peers[pid]?.call) {
+    peers[pid].call.close();
+  }
+  peers[pid] = { call, stream: null, name: peers[pid]?.name || '...', role: peers[pid]?.role || '?' };
+  call.on('stream', s => {
+    peers[pid].stream = s;
+    rebuildGrid();
+    // ensure video plays after track loads
+    setTimeout(() => {
+      const el = document.querySelector('#tile-' + pid.replace(/[^a-z0-9]/gi,'_') + ' video');
+      if (el && el.paused) el.play().catch(()=>{});
+    }, 300);
+  });
   call.on('close',  () => { delete peers[pid]; rebuildGrid(); updateParticipants(); });
   call.on('error',  () => { delete peers[pid]; rebuildGrid(); });
 }
 
 async function connectToPeer(peerId) {
-  if (!myPeer || !myPeerId || peers[peerId] || peerId === myPeerId) return;
-  peers[peerId] = { call: null, stream: null, name: '...', role: '?' };
+  if (!myPeer || !myPeerId || peerId === myPeerId) return;
+  if (peers[peerId]?.call) return; // already connected
+  peers[peerId] = { call: null, stream: null, name: peers[peerId]?.name || '...', role: peers[peerId]?.role || '?' };
   try {
-    const call = myPeer.call(peerId, localStream || new MediaStream());
+    const call = myPeer.call(peerId, localStream || new MediaStream(), {
+      sdpTransform: (sdp) => sdp // pass-through
+    });
+    if (!call) { delete peers[peerId]; return; }
     peers[peerId].call = call;
-    call.on('stream', s => { peers[peerId].stream = s; rebuildGrid(); });
+    call.on('stream', s => {
+      peers[peerId].stream = s;
+      rebuildGrid();
+      setTimeout(() => {
+        const el = document.querySelector('#tile-' + peerId.replace(/[^a-z0-9]/gi,'_') + ' video');
+        if (el && el.paused) el.play().catch(()=>{});
+      }, 300);
+    });
     call.on('close',  () => { delete peers[peerId]; rebuildGrid(); });
     call.on('error',  () => { delete peers[peerId]; rebuildGrid(); });
-  } catch { delete peers[peerId]; }
+  } catch(e) { console.warn('connectToPeer error:', e); delete peers[peerId]; }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -819,8 +874,22 @@ async function syncParticipants() {
 function handleParticipants(list) {
   participantsList = list;
   list.forEach(p => {
-    if (p.peer_id !== myPeerId && !peers[p.peer_id]) connectToPeer(p.peer_id);
-    if (peers[p.peer_id]) { peers[p.peer_id].name = p.name; peers[p.peer_id].role = p.role; }
+    if (p.peer_id === myPeerId) return;
+    // Connect if not yet connected or call was lost
+    if (!peers[p.peer_id] || !peers[p.peer_id].call) {
+      connectToPeer(p.peer_id);
+    }
+    if (peers[p.peer_id]) {
+      peers[p.peer_id].name = p.name;
+      peers[p.peer_id].role = p.role;
+    }
+  });
+  // Remove peers no longer in list
+  Object.keys(peers).forEach(pid => {
+    if (!list.find(p => p.peer_id === pid)) {
+      peers[pid]?.call?.close();
+      delete peers[pid];
+    }
   });
   updateParticipants();
   rebuildGrid();
@@ -855,9 +924,19 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
   tile.id = 'tile-' + pid.replace(/[^a-z0-9]/gi, '_');
 
   const video = document.createElement('video');
-  video.autoplay = true; video.playsinline = true;
+  video.autoplay = true;
+  video.playsinline = true;
+  video.setAttribute('playsinline', '');
+  video.setAttribute('webkit-playsinline', '');
   if (isSelf) video.muted = true;
-  if (stream) video.srcObject = stream;
+  if (stream) {
+    video.srcObject = stream;
+    video.play().catch(() => {});
+  }
+  // retry play on loadedmetadata in case autoplay blocked
+  video.addEventListener('loadedmetadata', () => {
+    video.play().catch(() => {});
+  });
   tile.appendChild(video);
 
   const av = document.createElement('div');

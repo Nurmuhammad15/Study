@@ -148,8 +148,8 @@ export default async function handler(req, res) {
         ON CONFLICT (room_id, peer_id) DO UPDATE SET last_seen=now(), name=$3
       `, [user.room_id, peer_id, name, user.role]);
 
-      // Eskirgan (20s) ishtirokchilarni tozalash
-      await client.query(`DELETE FROM room_participants WHERE last_seen < now() - interval '20 seconds'`);
+      // Eskirgan (15s) ishtirokchilarni tozalash
+      await client.query(`DELETE FROM room_participants WHERE last_seen < now() - interval '15 seconds'`);
 
       const participants = await client.query(
         'SELECT peer_id, name, role FROM room_participants WHERE room_id=$1',
@@ -185,7 +185,7 @@ export default async function handler(req, res) {
       const user  = verifyRoomToken(token);
       if (!user) { res.status(401).end(); return; }
 
-      await client.query(`DELETE FROM room_participants WHERE last_seen < now() - interval '20 seconds'`);
+      await client.query(`DELETE FROM room_participants WHERE last_seen < now() - interval '15 seconds'`);
       const r = await client.query(
         'SELECT peer_id, name, role FROM room_participants WHERE room_id=$1',
         [user.room_id]
