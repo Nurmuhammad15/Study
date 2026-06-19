@@ -1,7 +1,24 @@
 {
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,OPTIONS"
+        }
+      ]
+    },
+    {
+      "source": "/((?!api).*)",
       "headers": [
         {
           "key": "X-Content-Type-Options",
@@ -21,7 +38,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=self, microphone=self, display-capture=self"
+          "value": "camera=self, microphone=self"
         },
         {
           "key": "Content-Security-Policy",
