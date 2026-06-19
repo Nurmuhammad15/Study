@@ -129,9 +129,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .room-controls{gap:12px;padding:12px}
   .vtile-label{font-size:11px}
 }
+/* ── Login page ─────────────────────────────────────────────── */
+#login-page{display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center}
+.login-box{width:100%;max-width:380px;margin:0 auto;padding:40px 32px;background:var(--card);border-radius:20px;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.25);text-align:center}
+.login-logo{font-size:48px;margin-bottom:12px}
+.login-title{font-size:26px;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,var(--accent),#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
+.login-form{display:flex;flex-direction:column;gap:12px}
+#link-input{width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none;box-sizing:border-box;transition:border-color .2s}
+#link-input:focus{border-color:var(--accent)}
+.login-err{font-size:12px;color:#f87171;min-height:18px;text-align:left}
+.login-btn{padding:13px;border-radius:12px;background:var(--accent);color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.login-btn:hover{opacity:.88}
+.login-btn:active{opacity:.75}
+.login-hint{margin-top:20px;font-size:12px;color:var(--text2)}
+@media(max-width:440px){.login-box{margin:16px;padding:28px 20px;border-radius:16px}}
 </style>
 </head>
 <body>
+
+<!-- Login / Havola kiritish sahifasi -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">📚</div>
+    <div class="login-title">Study</div>
+    <div class="login-sub">Darsga kirish uchun havolani kiriting</div>
+    <div class="login-form">
+      <input
+        id="link-input"
+        type="text"
+        placeholder="Havolani yoki tokenni kiriting..."
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        onkeydown="if(event.key==='Enter')doEnter()"
+      />
+      <div id="login-err" class="login-err"></div>
+      <button class="login-btn" onclick="doEnter()">Kirish →</button>
+    </div>
+    <div class="login-hint">Havola bot orqali yuboriladi</div>
+  </div>
+</div>
 
 <!-- Loading -->
 <div id="loading">
@@ -265,31 +303,103 @@ let syncInterval  = null;
 // ══════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+
+// Havoladan token ajratib olish
+function extractToken(input) {
+  input = (input || '').trim();
+  if (!input) return { token: null, role: null };
+  try {
+    const url = new URL(input);
+    const t = url.searchParams.get('t');
+    const s = url.searchParams.get('s');
+    if (t) return { token: t, role: 'teacher' };
+    if (s) return { token: s, role: 'student' };
+  } catch {}
+  // Token o'zi kiritilgan
+  if (input.includes('.')) return { token: input, role: null };
+  return { token: null, role: null };
+}
+
+// "Kirish" tugmasi
+async function doEnter() {
+  const input = document.getElementById('link-input').value;
+  const errEl = document.getElementById('login-err');
+  const btn   = document.querySelector('.login-btn');
+  errEl.textContent = '';
+
+  const { token, role } = extractToken(input);
+  if (!token) {
+    errEl.textContent = "❌ Havola noto'g'ri. Bot yuborgan havolani to'liq kiriting.";
+    return;
+  }
+
+  btn.textContent = 'Tekshirilmoqda...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch('/api/room?action=info', {
+      headers: { 'X-Room-Token': token }
+    });
+    const d = await r.json();
+
+    btn.textContent = 'Kirish →';
+    btn.disabled = false;
+
+    if (!d.ok) {
+      errEl.textContent = '❌ ' + (d.msg || "Havola noto'g'ri yoki muddati o'tgan");
+      return;
+    }
+
+    roomToken = token;
+    myRole    = role || d.user.role || 'student';
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('loading').style.display = 'flex';
+    await enterRoom(d);
+  } catch(e) {
+    btn.textContent = 'Kirish →';
+    btn.disabled = false;
+    errEl.textContent = "❌ Server bilan aloqa yo'q. Qayta urinib ko'ring.";
+  }
+}
+
 async function init() {
   // URL dan token olish
   const params = new URLSearchParams(window.location.search);
-  const tToken = params.get('t'); // teacher
-  const sToken = params.get('s'); // student
+  const tToken = params.get('t');
+  const sToken = params.get('s');
 
   roomToken = tToken || sToken || null;
   myRole    = tToken ? 'teacher' : 'student';
 
   if (!roomToken) {
-    showError('🔒', 'Havola topilmadi', 'Dars xonasiga kirish uchun ustozingizdan havola so\'rang.');
+    // Token yo'q — login sahifasini ko'rsatish
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('login-page').style.display = 'flex';
+    setTimeout(() => document.getElementById('link-input').focus(), 150);
     return;
   }
 
-  // URL ni tozalash (token brauzer tarixida qolmasligi uchun)
+  // URL ni tozalash
   window.history.replaceState({}, '', window.location.pathname);
 
-  // Server dan xona ma'lumotlarini olish
   try {
     const r = await fetch('/api/room?action=info', {
       headers: { 'X-Room-Token': roomToken }
     });
     const d = await r.json();
     if (!d.ok) { showError('🚫', 'Kirish rad etildi', d.msg); return; }
+    await enterRoom(d);
+  } catch(e) {
+    showError('⚠️', 'Ulanish xatosi', "Server bilan ulanib bo'lmadi. Qayta urinib ko'ring.");
+  }
+}
+
+async function enterRoom(d) {
     roomInfo   = d.room;
+    myRole     = myRole || d.user.role;
     myName     = d.user.name + (myRole === 'teacher' ? ' (Ustoz)' : '');
     roomId     = d.room.id;
     peerRoomId = d.room.peer_room_id;
@@ -300,13 +410,8 @@ async function init() {
       document.getElementById('screen-ctrl').style.display = '';
       document.getElementById('copy-link-btn').style.display = '';
     }
-  } catch(e) {
-    showError('⚠️', 'Ulanish xatosi', 'Server bilan ulanib bo\'lmadi. Qayta urinib ko\'ring.');
-    return;
-  }
 
-  // Media olish
-  await getMedia();
+    await getMedia();
 }
 
 async function getMedia() {
