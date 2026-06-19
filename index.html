@@ -6,9 +6,6 @@
 <title>Study — Onlayn Dars</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <style>
-/* ══════════════════════════════════════════════════
-   TOKENS
-══════════════════════════════════════════════════ */
 :root {
   --bg:       #ffffff;
   --bg2:      #f4f6fb;
@@ -27,245 +24,95 @@
   --yellow:   #f59e0b;
   --purple:   #8b5cf6;
   --radius:   14px;
-  --radius-sm:8px;
   --shadow:   0 8px 32px rgba(79,110,247,.10);
-  --shadow-sm:0 2px 12px rgba(79,110,247,.07);
 }
-
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden;
-}
-
-/* ══════════════════════════════════════════════════
-   SCROLLBAR
-══════════════════════════════════════════════════ */
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden;}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
 
-/* ══════════════════════════════════════════════════
-   LOADING
-══════════════════════════════════════════════════ */
-#loading{
-  position:fixed;inset:0;background:#f4f6fb;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;
-}
-.loader-ring{
-  width:48px;height:48px;border-radius:50%;
-  border:3px solid var(--border2);
-  border-top-color:var(--accent);
-  animation:spin .7s linear infinite;
-}
+/* LOADING */
+#loading{position:fixed;inset:0;background:#f4f6fb;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;}
+.loader-ring{width:48px;height:48px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--accent);animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{font-size:13px;color:var(--text3);letter-spacing:.5px}
 
-/* ══════════════════════════════════════════════════
-   LOGIN PAGE
-══════════════════════════════════════════════════ */
-#login-page{
-  display:none;position:fixed;inset:0;z-index:9000;
-  background:#f4f6fb;
-  align-items:center;justify-content:center;
-}
-
-/* Subtle light grid background */
-#login-page::before{
-  content:'';position:absolute;inset:0;
-  background-image:
-    linear-gradient(var(--border) 1px,transparent 1px),
-    linear-gradient(90deg,var(--border) 1px,transparent 1px);
-  background-size:50px 50px;
-  opacity:.5;
-  mask-image:radial-gradient(ellipse at center,black 30%,transparent 80%);
-}
-
-.login-wrap{
-  position:relative;z-index:1;
-  width:100%;max-width:440px;padding:16px;
-}
-
+/* LOGIN */
+#login-page{display:none;position:fixed;inset:0;z-index:9000;background:#f4f6fb;align-items:center;justify-content:center;}
+#login-page::before{content:'';position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:50px 50px;opacity:.5;mask-image:radial-gradient(ellipse at center,black 30%,transparent 80%);}
+.login-wrap{position:relative;z-index:1;width:100%;max-width:440px;padding:16px;}
 .login-logo-area{text-align:center;margin-bottom:36px}
-.login-icon{
-  width:72px;height:72px;border-radius:22px;
-  background:linear-gradient(135deg,var(--accent),var(--purple));
-  display:inline-flex;align-items:center;justify-content:center;
-  font-size:32px;margin-bottom:16px;
-  box-shadow:0 12px 40px rgba(79,110,247,.35);
-}
-.login-brand{font-size:30px;font-weight:800;letter-spacing:-.5px;
-  color:var(--text);}
-
+.login-brand{font-size:30px;font-weight:800;letter-spacing:-.5px;color:var(--text);}
 .login-brand-sub{font-size:13px;color:var(--text3);margin-top:4px}
-
-.login-card{
-  background:var(--card);
-  border:1px solid var(--border2);
-  border-radius:22px;
-  padding:32px;
-  box-shadow:0 8px 40px rgba(79,110,247,.10), 0 1px 0 rgba(255,255,255,1) inset;
-}
+.login-card{background:var(--card);border:1px solid var(--border2);border-radius:22px;padding:32px;box-shadow:0 8px 40px rgba(79,110,247,.10);}
 .login-card-title{font-size:16px;font-weight:700;margin-bottom:6px}
 .login-card-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.5}
-
 .input-group{position:relative;margin-bottom:8px}
-.input-icon{
-  position:absolute;left:14px;top:50%;transform:translateY(-50%);
-  color:var(--text3);font-size:16px;pointer-events:none;
-}
-#link-input{
-  width:100%;padding:14px 16px 14px 42px;
-  border-radius:12px;border:1.5px solid var(--border2);
-  background:#f8faff;color:var(--text);
-  font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;
-  font-family:inherit;
-}
+.input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;pointer-events:none;}
+#link-input{width:100%;padding:14px 16px 14px 42px;border-radius:12px;border:1.5px solid var(--border2);background:#f8faff;color:var(--text);font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;font-family:inherit;}
 #link-input::placeholder{color:var(--text3)}
 #link-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,110,247,.10)}
-
-.login-err{
-  font-size:12px;color:#fb7185;min-height:20px;
-  padding:0 4px;margin-bottom:8px;
-  display:flex;align-items:center;gap:6px;
-}
-
-.login-btn{
-  width:100%;padding:14px;border-radius:12px;
-  background:linear-gradient(135deg,var(--accent),var(--accent3));
-  color:#fff;border:none;font-size:15px;font-weight:700;
-  cursor:pointer;transition:opacity .15s,transform .1s;
-  box-shadow:0 4px 20px rgba(79,110,247,.4);
-  display:flex;align-items:center;justify-content:center;gap:8px;
-}
+.login-err{font-size:12px;color:#fb7185;min-height:20px;padding:0 4px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.login-btn{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;box-shadow:0 4px 20px rgba(79,110,247,.4);display:flex;align-items:center;justify-content:center;gap:8px;}
 .login-btn:hover{opacity:.92;transform:translateY(-1px)}
-.login-btn:active{opacity:.82;transform:translateY(0)}
 .login-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
-
-.login-divider{
-  display:flex;align-items:center;gap:12px;
-  margin:20px 0;color:var(--text3);font-size:12px;
-}
-.login-divider::before,.login-divider::after{
-  content:'';flex:1;height:1px;background:var(--border2);
-}
-
-.login-hint-card{
-  background:rgba(79,110,247,.05);
-  border:1px solid rgba(79,110,247,.15);
-  border-radius:10px;padding:12px 14px;
-  font-size:12px;color:var(--text2);line-height:1.6;
-}
+.login-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--text3);font-size:12px;}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border2);}
+.login-hint-card{background:rgba(79,110,247,.05);border:1px solid rgba(79,110,247,.15);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.6;}
 .login-hint-card strong{color:var(--text)}
+@media(max-width:480px){.login-card{padding:24px 20px;border-radius:18px}.login-brand{font-size:26px}}
 
-@media(max-width:480px){
-  .login-card{padding:24px 20px;border-radius:18px}
-  .login-brand{font-size:26px}
-}
-
-/* ══════════════════════════════════════════════════
-   ERROR PAGE
-══════════════════════════════════════════════════ */
-#error-page{
-  display:none;position:fixed;inset:0;background:#f4f6fb;
-  flex-direction:column;align-items:center;justify-content:center;
-  gap:16px;padding:32px;text-align:center;
-}
+/* ERROR */
+#error-page{display:none;position:fixed;inset:0;background:#f4f6fb;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;text-align:center;}
 .error-icon{font-size:64px;line-height:1;margin-bottom:8px}
 .error-title{font-size:22px;font-weight:800}
 .error-sub{font-size:14px;color:var(--text2);max-width:380px;line-height:1.7}
-.error-btn{
-  margin-top:12px;padding:12px 28px;
-  background:var(--accent);color:#fff;border:none;
-  border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;
-  transition:.15s;
-}
+.error-btn{margin-top:12px;padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;}
 .error-btn:hover{background:var(--accent2)}
 
-/* ══════════════════════════════════════════════════
-   WAITING SCREEN
-══════════════════════════════════════════════════ */
-#waiting{
-  display:none;position:fixed;inset:0;
-  background:radial-gradient(ellipse at center,rgba(79,110,247,.05),transparent 70%),#f4f6fb;
-  flex-direction:column;align-items:center;justify-content:center;
-  gap:20px;text-align:center;padding:32px;
-}
-.waiting-av{
-  width:88px;height:88px;border-radius:50%;
-  background:linear-gradient(135deg,var(--accent),var(--purple));
-  display:flex;align-items:center;justify-content:center;
-  font-size:36px;font-weight:800;color:#fff;
-  box-shadow:0 0 0 12px rgba(79,110,247,.1),0 0 0 24px rgba(79,110,247,.05);
-  animation:pulse-ring 2s ease-in-out infinite;
-}
-@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 12px rgba(79,110,247,.1),0 0 0 24px rgba(79,110,247,.05)}
-  50%{box-shadow:0 0 0 16px rgba(79,110,247,.07),0 0 0 32px rgba(79,110,247,.03)}}
+/* WAITING */
+#waiting{display:none;position:fixed;inset:0;background:#f4f6fb;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center;padding:32px;}
+.waiting-av{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:800;color:#fff;animation:pulse-ring 2s ease-in-out infinite;}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 12px rgba(79,110,247,.1),0 0 0 24px rgba(79,110,247,.05)}50%{box-shadow:0 0 0 16px rgba(79,110,247,.07),0 0 0 32px rgba(79,110,247,.03)}}
 .waiting-title{font-size:22px;font-weight:700}
 .waiting-sub{font-size:14px;color:var(--text2);line-height:1.7;max-width:360px}
 .waiting-dots{display:flex;gap:7px}
-.wdot{width:9px;height:9px;border-radius:50%;background:var(--accent);
-  animation:wbounce .9s ease-in-out infinite}
+.wdot{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:wbounce .9s ease-in-out infinite}
 .wdot:nth-child(2){animation-delay:.18s}
 .wdot:nth-child(3){animation-delay:.36s}
 @keyframes wbounce{0%,80%,100%{transform:scale(.35);opacity:.4}40%{transform:scale(1);opacity:1}}
 
-/* ══════════════════════════════════════════════════
-   ROOM
-══════════════════════════════════════════════════ */
+/* ROOM */
 #room{display:none;flex-direction:column;height:100vh;height:100dvh}
 
 /* Header */
-.room-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 18px;
-  background:rgba(255,255,255,.97);
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
-}
+.room-header{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:rgba(255,255,255,.97);border-bottom:1px solid var(--border);flex-shrink:0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
 .room-title-area{display:flex;align-items:center;gap:12px}
-.room-logo{
-  width:36px;height:36px;border-radius:10px;
-  background:linear-gradient(135deg,var(--accent),var(--purple));
-  display:flex;align-items:center;justify-content:center;font-size:16px;
-  flex-shrink:0;
-}
-.room-title-text{font-size:15px;font-weight:700;line-height:1.2}
-.room-title-sub{font-size:11px;color:var(--text3);margin-top:2px}
-.live-chip{
-  display:inline-flex;align-items:center;gap:5px;
-  background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);
-  color:#fca5a5;font-size:10px;font-weight:700;letter-spacing:.8px;
-  padding:3px 8px;border-radius:20px;flex-shrink:0;
-}
+.room-logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.room-title-text{font-size:14px;font-weight:700;line-height:1.2;color:var(--text)}
+.room-title-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.live-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#ef4444;font-size:10px;font-weight:700;letter-spacing:.8px;padding:3px 8px;border-radius:20px;flex-shrink:0;}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 1.2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.header-center{display:flex;align-items:center;gap:8px}
+.room-timer{font-size:13px;color:var(--text2);font-variant-numeric:tabular-nums;letter-spacing:.5px;background:var(--card2);padding:5px 12px;border-radius:20px;border:1px solid var(--border);}
+.header-right{display:flex;align-items:center;gap:6px}
+.hdr-btn{display:flex;align-items:center;gap:6px;background:rgba(79,110,247,.08);border:1px solid rgba(79,110,247,.18);color:var(--accent);padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap;}
+.hdr-btn:hover{background:rgba(79,110,247,.15)}
+.hdr-btn.active{background:rgba(79,110,247,.18);border-color:var(--accent)}
 
-.header-center{display:flex;align-items:center}
-.room-timer{
-  font-size:13px;color:var(--text2);
-  font-variant-numeric:tabular-nums;letter-spacing:.5px;
-  background:var(--card2);padding:5px 12px;border-radius:20px;
-  border:1px solid var(--border);
-}
-
-.header-right{display:flex;align-items:center;gap:8px}
-.hdr-btn{
-  display:flex;align-items:center;gap:6px;
-  background:rgba(79,110,247,.1);border:1px solid rgba(79,110,247,.2);
-  color:var(--accent2);padding:7px 14px;border-radius:8px;
-  font-size:12px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap;
-}
-.hdr-btn:hover{background:rgba(79,110,247,.18);border-color:rgba(79,110,247,.35)}
-.hdr-btn.copied{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:var(--green)}
+/* View tabs in header */
+.view-tabs{display:flex;gap:4px;background:var(--bg2);border-radius:10px;padding:3px;}
+.view-tab{padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text3);border:none;background:transparent;transition:.15s;}
+.view-tab.active{background:#fff;color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.08);}
 
 /* Body */
-.room-body{flex:1;display:flex;min-height:0}
+.room-body{flex:1;display:flex;min-height:0;position:relative;}
 
 /* Video Area */
-.video-area{flex:1;background:#030508;position:relative;overflow:hidden}
+.video-area{flex:1;background:#f0f2f8;position:relative;overflow:hidden;display:flex;flex-direction:column;}
 .video-grid{width:100%;height:100%;display:grid;gap:4px;padding:4px}
 .video-grid.g1{grid-template-columns:1fr}
 .video-grid.g2{grid-template-columns:1fr 1fr}
@@ -274,179 +121,118 @@ body{
 .video-grid.g7,.video-grid.g8,.video-grid.g9{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
 
 /* Video Tile */
-.vtile{
-  position:relative;border-radius:10px;overflow:hidden;
-  background:#0a0d15;display:flex;align-items:center;justify-content:center;
-  transition:outline .15s;
-}
+.vtile{position:relative;border-radius:10px;overflow:hidden;background:#1a1f2e;display:flex;align-items:center;justify-content:center;transition:outline .15s;}
 .vtile video{width:100%;height:100%;object-fit:cover;display:block}
 .vtile.no-cam video{display:none}
-
-.vtile-av{
-  width:clamp(48px,14%,88px);aspect-ratio:1;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-weight:800;color:#fff;font-size:clamp(20px,5%,36px);
-  position:relative;
-}
-.vtile-av::after{
-  content:'';position:absolute;inset:-3px;border-radius:50%;
-  border:2px solid rgba(255,255,255,.1);
-}
-
-.vtile-label{
-  position:absolute;bottom:10px;left:10px;
-  display:flex;align-items:center;gap:5px;
-  background:rgba(0,0,0,.65);backdrop-filter:blur(4px);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:8px;padding:5px 10px;
-  font-size:12px;font-weight:600;color:#fff;
-  max-width:calc(100% - 20px);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.vtile-label .muted-icon{color:#f87171;font-size:10px}
-
+.vtile-av{width:clamp(48px,14%,88px);aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:clamp(20px,5%,36px);position:relative;}
+.vtile-label{position:absolute;bottom:10px;left:10px;display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;color:#fff;max-width:calc(100% - 20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .vtile.self-tile{outline:2px solid var(--accent);outline-offset:-2px}
 .vtile.teacher-tile{outline:2px solid var(--yellow);outline-offset:-2px}
-.vtile.no-stream{background:radial-gradient(circle at center,#0d1529,#030508)}
+
+/* WHITEBOARD AREA */
+#board-area{display:none;flex:1;flex-direction:column;background:#fff;position:relative;}
+#board-area.active{display:flex;}
+.board-toolbar{display:flex;align-items:center;gap:4px;padding:8px 12px;background:#fff;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;}
+.board-toolbar .tb-group{display:flex;align-items:center;gap:2px;padding:2px;background:var(--bg2);border-radius:8px;}
+.tb-btn{width:34px;height:34px;border:none;border-radius:6px;cursor:pointer;background:transparent;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:.15s;font-size:14px;position:relative;}
+.tb-btn:hover{background:var(--border)}
+.tb-btn.active{background:var(--accent);color:#fff;}
+.tb-btn svg{width:16px;height:16px;pointer-events:none}
+.tb-sep{width:1px;height:28px;background:var(--border);margin:0 4px;}
+.tb-color{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:.1s;flex-shrink:0;}
+.tb-color.active{border-color:var(--text);transform:scale(1.15);}
+.tb-size{display:flex;align-items:center;gap:6px;padding:0 6px;}
+.tb-size label{font-size:11px;color:var(--text3)}
+.tb-size input[type=range]{width:70px;accent-color:var(--accent);}
+.tb-size span{font-size:11px;color:var(--text2);min-width:20px}
+.tb-label{font-size:10px;font-weight:700;color:var(--text3);padding:0 4px;letter-spacing:.5px;text-transform:uppercase;}
+#board-canvas{display:block;cursor:crosshair;touch-action:none;}
+.board-actions{display:flex;align-items:center;gap:6px;margin-left:auto;}
+.board-action-btn{padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:#fff;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:.15s;}
+.board-action-btn:hover{background:var(--bg2)}
+.board-action-btn.danger{color:var(--red);border-color:rgba(239,68,68,.2);}
+.board-action-btn.danger:hover{background:rgba(239,68,68,.05)}
 
 /* Sidebar */
-.room-sidebar{
-  width:260px;background:var(--card);
-  border-left:1px solid var(--border);
-  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;
-}
-.sidebar-head{
-  padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;
-  font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--text3);
-  text-transform:uppercase;
-}
+.room-sidebar{width:260px;background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
 .sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
-.stab{
-  flex:1;padding:11px 0;font-size:12px;font-weight:600;
-  text-align:center;cursor:pointer;color:var(--text3);
-  border-bottom:2px solid transparent;transition:.15s;
-}
+.stab{flex:1;padding:11px 0;font-size:12px;font-weight:600;text-align:center;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:.15s;}
 .stab:hover{color:var(--text2)}
-.stab.active{color:var(--accent2);border-color:var(--accent)}
-
+.stab.active{color:var(--accent);border-color:var(--accent)}
 .stab-panel{flex:1;overflow-y:auto;display:none;flex-direction:column}
 .stab-panel.active{display:flex}
-
-/* Chat */
 .chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0}
 .chat-empty{padding:32px 20px;text-align:center;color:var(--text3);font-size:13px}
 .chat-empty-icon{font-size:32px;margin-bottom:8px}
-
 .msg-wrap{display:flex;flex-direction:column;gap:2px}
 .msg-wrap.mine{align-items:flex-end}
 .msg-wrap.theirs{align-items:flex-start}
 .msg-sender{font-size:10px;color:var(--text3);padding:0 4px}
-
-.msg{
-  max-width:88%;padding:9px 13px;
-  font-size:13px;line-height:1.5;word-break:break-word;
-  border-radius:12px;
-}
+.msg{max-width:88%;padding:9px 13px;font-size:13px;line-height:1.5;word-break:break-word;border-radius:12px;}
 .msg.mine{background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff;border-bottom-right-radius:4px}
 .msg.theirs{background:#f0f4ff;color:var(--text);border-bottom-left-radius:4px;border:1px solid var(--border)}
 .msg-time{font-size:10px;opacity:.55;margin-top:3px;text-align:right}
-
-.chat-input-row{
-  display:flex;gap:8px;padding:10px;
-  border-top:1px solid var(--border);flex-shrink:0;background:#ffffff;
-}
-.chat-inp{
-  flex:1;background:#f8faff;border:1px solid var(--border2);
-  border-radius:10px;padding:9px 13px;font-size:13px;
-  color:var(--text);outline:none;font-family:inherit;resize:none;max-height:80px;
-  transition:border-color .15s;
-}
+.chat-input-row{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);flex-shrink:0;background:#fff;}
+.chat-inp{flex:1;background:#f8faff;border:1px solid var(--border2);border-radius:10px;padding:9px 13px;font-size:13px;color:var(--text);outline:none;font-family:inherit;resize:none;max-height:80px;transition:border-color .15s;}
 .chat-inp:focus{border-color:var(--accent)}
 .chat-inp::placeholder{color:var(--text3)}
-.chat-send{
-  width:38px;height:38px;border-radius:10px;
-  background:var(--accent);color:#fff;border:none;
-  cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  transition:.15s;align-self:flex-end;
-}
+.chat-send{width:38px;height:38px;border-radius:10px;background:var(--accent);color:#fff;border:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;align-self:flex-end;}
 .chat-send:hover{background:var(--accent2)}
 .chat-send svg{width:15px;height:15px}
-
-/* Participants */
 .part-list{padding:10px;display:flex;flex-direction:column;gap:4px}
-.part-item{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 12px;border-radius:10px;
-  background:var(--card2);border:1px solid transparent;
-  transition:.15s;
-}
+.part-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--card2);border:1px solid transparent;transition:.15s;}
 .part-item:hover{border-color:var(--border2)}
-.part-av{
-  width:34px;height:34px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-weight:800;font-size:13px;color:#fff;flex-shrink:0;
-}
+.part-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0;}
 .part-info{flex:1;min-width:0}
 .part-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .part-role-txt{font-size:11px;color:var(--text3);margin-top:1px}
-.part-badge{
-  font-size:9px;font-weight:800;letter-spacing:.5px;
-  padding:3px 7px;border-radius:6px;
-  background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.2);
-  color:#fcd34d;flex-shrink:0;
-}
+.part-badge{font-size:9px;font-weight:800;letter-spacing:.5px;padding:3px 7px;border-radius:6px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#d97706;flex-shrink:0;}
 .part-self{font-size:10px;color:var(--text3)}
 
 /* Controls */
-.room-controls{
-  display:flex;align-items:center;justify-content:center;gap:20px;
-  padding:14px 20px;
-  background:rgba(255,255,255,.97);border-top:1px solid var(--border);
-  flex-shrink:0;backdrop-filter:blur(8px);
-}
-.ctrl-col{display:flex;flex-direction:column;align-items:center;gap:6px}
-.ctrl-btn{
-  width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:.15s;flex-shrink:0;position:relative;
-}
+.room-controls{display:flex;align-items:center;justify-content:center;gap:20px;padding:12px 20px;background:rgba(255,255,255,.97);border-top:1px solid var(--border);flex-shrink:0;backdrop-filter:blur(8px);}
+.ctrl-col{display:flex;flex-direction:column;align-items:center;gap:5px}
+.ctrl-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0;}
 .ctrl-btn svg{width:20px;height:20px;pointer-events:none}
 .ctrl-btn.on{background:#f0f4ff;color:var(--text);border:1.5px solid var(--border2)}
-.ctrl-btn.on:hover{background:var(--border2)}
-.ctrl-btn.off{background:rgba(239,68,68,.12);color:#f87171;border:1.5px solid rgba(239,68,68,.2)}
-.ctrl-btn.off:hover{background:rgba(239,68,68,.2)}
-.ctrl-btn.screen-on{background:rgba(79,110,247,.15);color:var(--accent2);border:1.5px solid rgba(79,110,247,.25)}
-.ctrl-btn.end{background:var(--red);color:#fff;border:1.5px solid transparent}
+.ctrl-btn.on:hover{background:var(--border)}
+.ctrl-btn.off{background:rgba(239,68,68,.1);color:#ef4444;border:1.5px solid rgba(239,68,68,.2)}
+.ctrl-btn.off:hover{background:rgba(239,68,68,.18)}
+.ctrl-btn.screen-on{background:rgba(79,110,247,.15);color:var(--accent);border:1.5px solid rgba(79,110,247,.25)}
+.ctrl-btn.end{background:var(--red);color:#fff;border:none}
 .ctrl-btn.end:hover{background:#dc2626}
 .ctrl-lbl{font-size:10px;color:var(--text3);white-space:nowrap}
 
+/* Cam permission overlay */
+#cam-perm-overlay{display:none;position:absolute;inset:0;background:rgba(0,0,0,.7);z-index:50;align-items:center;justify-content:center;border-radius:10px;}
+#cam-perm-overlay.show{display:flex;}
+.cam-perm-box{background:#fff;border-radius:16px;padding:28px 32px;text-align:center;max-width:320px;}
+.cam-perm-box h3{font-size:16px;font-weight:700;margin-bottom:8px}
+.cam-perm-box p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.cam-perm-btn{padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
+
 /* Toast */
-.toast{
-  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(8px);
-  background:#1a2035;color:#fff;
-  padding:11px 20px;border-radius:10px;font-size:13px;
-  z-index:99999;box-shadow:var(--shadow);
-  border:1px solid rgba(0,0,0,.08);
-  display:none;max-width:90vw;text-align:center;
-  pointer-events:none;opacity:0;
-  transition:opacity .2s,transform .2s;
-}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(8px);background:#1a2035;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;z-index:99999;box-shadow:var(--shadow);display:none;max-width:90vw;text-align:center;pointer-events:none;opacity:0;transition:opacity .2s,transform .2s;}
 .toast.show{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* Mobile */
+/* Cam request toast */
+.cam-request-toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 20px;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,.12);z-index:99998;display:flex;align-items:center;gap:12px;min-width:280px;}
+.cam-request-toast button{padding:6px 14px;border-radius:7px;border:none;font-size:12px;font-weight:600;cursor:pointer;}
+.cam-request-toast .allow-btn{background:var(--accent);color:#fff;}
+.cam-request-toast .deny-btn{background:var(--bg2);color:var(--text2);}
+
 @media(max-width:720px){
   .room-sidebar{display:none}
-  .ctrl-btn{width:48px;height:48px}
-  .room-controls{gap:14px;padding:10px}
-  .room-header{padding:10px 14px}
-  .hdr-btn span{display:none}
-  .room-timer{font-size:12px;padding:4px 10px}
+  .ctrl-btn{width:46px;height:46px}
+  .room-controls{gap:12px;padding:10px}
+  .board-toolbar{gap:2px}
+  .tb-size input[type=range]{width:50px}
 }
 </style>
 </head>
 <body>
 
-<!-- ═══════════ LOGIN PAGE ═══════════ -->
+<!-- LOGIN PAGE -->
 <div id="login-page">
   <div class="login-wrap">
     <div class="login-logo-area">
@@ -458,13 +244,7 @@ body{
       <div class="login-card-sub">Telegram botdan olgan havolangizni pastga kiriting</div>
       <div class="input-group">
         <span class="input-icon">🔗</span>
-        <input
-          id="link-input"
-          type="text"
-          placeholder="https://study-zeta-neon.vercel.app/?s=..."
-          autocomplete="off" autocorrect="off" spellcheck="false"
-          onkeydown="if(event.key==='Enter')doEnter()"
-        />
+        <input id="link-input" type="text" placeholder="https://study-zeta-neon.vercel.app/?s=..." autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doEnter()"/>
       </div>
       <div id="login-err" class="login-err"></div>
       <button class="login-btn" onclick="doEnter()">
@@ -480,13 +260,13 @@ body{
   </div>
 </div>
 
-<!-- ═══════════ LOADING ═══════════ -->
+<!-- LOADING -->
 <div id="loading">
   <div class="loader-ring"></div>
   <div class="loading-text">Dars xonasi yuklanmoqda...</div>
 </div>
 
-<!-- ═══════════ ERROR ═══════════ -->
+<!-- ERROR -->
 <div id="error-page">
   <div class="error-icon" id="err-icon">🔒</div>
   <div class="error-title" id="err-title">Kirish mumkin emas</div>
@@ -494,15 +274,15 @@ body{
   <button class="error-btn" onclick="location.reload()">← Qaytish</button>
 </div>
 
-<!-- ═══════════ WAITING ═══════════ -->
+<!-- WAITING -->
 <div id="waiting">
   <div class="waiting-av" id="waiting-av">?</div>
   <div class="waiting-title" id="waiting-title">Dars boshlanishini kutmoqdasiz</div>
-  <div class="waiting-sub" id="waiting-sub">Ustoz darsni boshlaguncha biroz kuting. Avtomatik ulanasiz.</div>
+  <div class="waiting-sub" id="waiting-sub">Ustoz darsni boshlaguncha biroz kuting.</div>
   <div class="waiting-dots"><div class="wdot"></div><div class="wdot"></div><div class="wdot"></div></div>
 </div>
 
-<!-- ═══════════ ROOM ═══════════ -->
+<!-- ROOM -->
 <div id="room">
 
   <!-- Header -->
@@ -520,6 +300,10 @@ body{
 
     <div class="header-center">
       <div class="room-timer" id="room-timer" style="display:none">00:00</div>
+      <div class="view-tabs">
+        <button class="view-tab active" id="tab-video-btn" onclick="switchView('video')">📹 Video</button>
+        <button class="view-tab" id="tab-board-btn" onclick="switchView('board')">🖊️ Doska</button>
+      </div>
     </div>
 
     <div class="header-right">
@@ -533,9 +317,91 @@ body{
   <!-- Body -->
   <div class="room-body">
 
-    <!-- Video -->
-    <div class="video-area">
+    <!-- Video view -->
+    <div class="video-area" id="video-view">
       <div class="video-grid g1" id="video-grid"></div>
+    </div>
+
+    <!-- Whiteboard view -->
+    <div id="board-area">
+      <!-- Toolbar -->
+      <div class="board-toolbar">
+        <span class="tb-label">Asbob</span>
+        <div class="tb-group">
+          <button class="tb-btn active" id="tool-pen" onclick="setTool('pen')" title="Qalem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+          <button class="tb-btn" id="tool-eraser" onclick="setTool('eraser')" title="O'chirg'ich">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H7L3 16l10-10 7 7-4.5 4.5"/><path d="M6.0 11.0 L13 18"/></svg>
+          </button>
+          <button class="tb-btn" id="tool-line" onclick="setTool('line')" title="Chiziq">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/></svg>
+          </button>
+          <button class="tb-btn" id="tool-rect" onclick="setTool('rect')" title="To'rtburchak">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          </button>
+          <button class="tb-btn" id="tool-circle" onclick="setTool('circle')" title="Doira">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+          </button>
+          <button class="tb-btn" id="tool-arrow" onclick="setTool('arrow')" title="O'q">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
+          </button>
+          <button class="tb-btn" id="tool-text" onclick="setTool('text')" title="Matn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+          </button>
+          <button class="tb-btn" id="tool-select" onclick="setTool('select')" title="Tanlash">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-7 1-3 6z"/></svg>
+          </button>
+        </div>
+
+        <div class="tb-sep"></div>
+        <span class="tb-label">Rang</span>
+        <div class="tb-group" id="color-group" style="gap:5px;padding:4px 6px;">
+          <div class="tb-color active" style="background:#1a1a1a" data-color="#1a1a1a" onclick="setColor(this)" title="Qora"></div>
+          <div class="tb-color" style="background:#ef4444" data-color="#ef4444" onclick="setColor(this)" title="Qizil"></div>
+          <div class="tb-color" style="background:#f59e0b" data-color="#f59e0b" onclick="setColor(this)" title="Sariq"></div>
+          <div class="tb-color" style="background:#10b981" data-color="#10b981" onclick="setColor(this)" title="Yashil"></div>
+          <div class="tb-color" style="background:#4f6ef7" data-color="#4f6ef7" onclick="setColor(this)" title="Ko'k"></div>
+          <div class="tb-color" style="background:#8b5cf6" data-color="#8b5cf6" onclick="setColor(this)" title="Binafsha"></div>
+          <div class="tb-color" style="background:#ec4899" data-color="#ec4899" onclick="setColor(this)" title="Pushti"></div>
+          <div class="tb-color" style="background:#ffffff;border:2px solid #dde3f0" data-color="#ffffff" onclick="setColor(this)" title="Oq"></div>
+          <input type="color" id="custom-color" value="#1a1a1a" oninput="setCustomColor(this.value)" title="Rang tanlash" style="width:26px;height:26px;border-radius:50%;border:2px solid var(--border);cursor:pointer;padding:0;overflow:hidden;">
+        </div>
+
+        <div class="tb-sep"></div>
+        <span class="tb-label">O'lcham</span>
+        <div class="tb-size">
+          <input type="range" id="brush-size" min="1" max="40" value="3" oninput="setBrushSize(this.value)">
+          <span id="brush-size-val">3</span>
+        </div>
+
+        <div class="tb-sep"></div>
+        <span class="tb-label">Fon</span>
+        <div class="tb-group" style="gap:5px;padding:4px 6px;">
+          <div class="tb-color active" id="bg-white" style="background:#ffffff;border:2px solid #dde3f0" onclick="setBg('#ffffff')" title="Oq"></div>
+          <div class="tb-color" id="bg-black" style="background:#0f1117" onclick="setBg('#0f1117')" title="Qora"></div>
+          <div class="tb-color" id="bg-cream" style="background:#fefce8" onclick="setBg('#fefce8')" title="Sarg'ish"></div>
+          <div class="tb-color" id="bg-blue" style="background:#eff6ff" onclick="setBg('#eff6ff')" title="Ko'kish"></div>
+        </div>
+
+        <div class="tb-sep"></div>
+        <div class="tb-group">
+          <button class="tb-btn" onclick="undoBoard()" title="Ortga (Ctrl+Z)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+          </button>
+          <button class="tb-btn" onclick="redoBoard()" title="Oldinga (Ctrl+Y)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+          </button>
+        </div>
+
+        <div class="board-actions">
+          <button class="board-action-btn" onclick="downloadBoard()">⬇ Saqlash</button>
+          <button class="board-action-btn danger" onclick="clearBoard()">🗑 Tozalash</button>
+        </div>
+      </div>
+      <canvas id="board-canvas"></canvas>
+      <!-- Text input overlay -->
+      <textarea id="board-text-input" style="display:none;position:absolute;border:2px dashed var(--accent);border-radius:4px;background:transparent;font-size:16px;color:#1a1a1a;outline:none;resize:none;padding:4px;min-width:100px;min-height:30px;z-index:10;font-family:inherit;" onkeydown="handleTextInput(event)"></textarea>
     </div>
 
     <!-- Sidebar -->
@@ -544,27 +410,17 @@ body{
         <div class="stab active" onclick="switchTab('participants')">👥 Ishtirokchilar</div>
         <div class="stab" onclick="switchTab('chat')">💬 Chat</div>
       </div>
-
       <div class="stab-panel active" id="tab-participants">
         <div class="part-list" id="part-list">
           <div class="chat-empty"><div class="chat-empty-icon">👥</div>Yuklanmoqda...</div>
         </div>
       </div>
-
       <div class="stab-panel" id="tab-chat">
         <div class="chat-msgs" id="chat-msgs">
-          <div class="chat-empty">
-            <div class="chat-empty-icon">💬</div>
-            Hali xabar yo'q
-          </div>
+          <div class="chat-empty"><div class="chat-empty-icon">💬</div>Hali xabar yo'q</div>
         </div>
         <div class="chat-input-row">
-          <textarea
-            class="chat-inp" id="chat-inp"
-            placeholder="Xabar yozing..." rows="1" maxlength="500"
-            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
-            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"
-          ></textarea>
+          <textarea class="chat-inp" id="chat-inp" placeholder="Xabar yozing..." rows="1" maxlength="500" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
           <button class="chat-send" onclick="sendChat()">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
           </button>
@@ -602,7 +458,6 @@ body{
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -616,6 +471,293 @@ let camOn = true, micOn = true, screenSharing = false, screenStream = null;
 let peers = {}, participantsList = [];
 let chatMessages = [];
 let timerInterval = null, startTime = null, syncInterval = null;
+
+// ══════════════════════════════════════════════════════════════
+// VIEW SWITCH (Video / Board)
+// ══════════════════════════════════════════════════════════════
+function switchView(view) {
+  const vv = document.getElementById('video-view');
+  const ba = document.getElementById('board-area');
+  const tvb = document.getElementById('tab-video-btn');
+  const tbb = document.getElementById('tab-board-btn');
+  if (view === 'board') {
+    vv.style.display = 'none';
+    ba.classList.add('active');
+    tvb.classList.remove('active');
+    tbb.classList.add('active');
+    resizeCanvas();
+  } else {
+    vv.style.display = '';
+    ba.classList.remove('active');
+    tvb.classList.add('active');
+    tbb.classList.remove('active');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// WHITEBOARD
+// ══════════════════════════════════════════════════════════════
+let tool = 'pen';
+let brushColor = '#1a1a1a';
+let brushSize = 3;
+let drawing = false;
+let startX = 0, startY = 0;
+let snapshot = null;
+let history = [];
+let redoStack = [];
+let boardBg = '#ffffff';
+
+const canvas = document.getElementById('board-canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const area = document.getElementById('board-area');
+  const toolbar = area.querySelector('.board-toolbar');
+  const w = area.clientWidth;
+  const h = area.clientHeight - toolbar.offsetHeight;
+  // Save content
+  const tmp = document.createElement('canvas');
+  tmp.width = canvas.width; tmp.height = canvas.height;
+  tmp.getContext('2d').drawImage(canvas, 0, 0);
+  canvas.width = w;
+  canvas.height = h;
+  ctx.fillStyle = boardBg;
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(tmp, 0, 0);
+}
+
+function saveHistory() {
+  history.push(canvas.toDataURL());
+  if (history.length > 50) history.shift();
+  redoStack = [];
+}
+
+function undoBoard() {
+  if (!history.length) return;
+  redoStack.push(canvas.toDataURL());
+  const img = new Image();
+  img.onload = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0); };
+  img.src = history.pop();
+}
+
+function redoBoard() {
+  if (!redoStack.length) return;
+  history.push(canvas.toDataURL());
+  const img = new Image();
+  img.onload = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0); };
+  img.src = redoStack.pop();
+}
+
+function clearBoard() {
+  saveHistory();
+  ctx.fillStyle = boardBg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function downloadBoard() {
+  const a = document.createElement('a');
+  a.download = 'doska-' + Date.now() + '.png';
+  a.href = canvas.toDataURL();
+  a.click();
+}
+
+function setTool(t) {
+  tool = t;
+  document.querySelectorAll('.tb-btn[id^="tool-"]').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('tool-' + t);
+  if (btn) btn.classList.add('active');
+  canvas.style.cursor = t === 'eraser' ? 'cell' : t === 'text' ? 'text' : t === 'select' ? 'default' : 'crosshair';
+}
+
+function setColor(el) {
+  brushColor = el.dataset.color;
+  document.querySelectorAll('.tb-color').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('custom-color').value = brushColor;
+}
+
+function setCustomColor(val) {
+  brushColor = val;
+  document.querySelectorAll('.tb-color').forEach(c => c.classList.remove('active'));
+}
+
+function setBrushSize(v) {
+  brushSize = parseInt(v);
+  document.getElementById('brush-size-val').textContent = v;
+}
+
+function setBg(color) {
+  boardBg = color;
+  document.querySelectorAll('#bg-white,#bg-black,#bg-cream,#bg-blue').forEach(el => el.classList.remove('active'));
+  const map = {'#ffffff':'bg-white','#0f1117':'bg-black','#fefce8':'bg-cream','#eff6ff':'bg-blue'};
+  if (map[color]) document.getElementById(map[color]).classList.add('active');
+  saveHistory();
+  // redraw background preserving strokes
+  const tmp = document.createElement('canvas');
+  tmp.width = canvas.width; tmp.height = canvas.height;
+  tmp.getContext('2d').drawImage(canvas, 0, 0);
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(tmp, 0, 0);
+}
+
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  if (e.touches) {
+    return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+  }
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+function drawShape(x, y) {
+  ctx.putImageData(snapshot, 0, 0);
+  ctx.strokeStyle = brushColor;
+  ctx.lineWidth = brushSize;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  if (tool === 'line') {
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  } else if (tool === 'rect') {
+    ctx.strokeRect(startX, startY, x - startX, y - startY);
+  } else if (tool === 'circle') {
+    const rx = Math.abs(x - startX) / 2;
+    const ry = Math.abs(y - startY) / 2;
+    const cx = startX + (x - startX) / 2;
+    const cy = startY + (y - startY) / 2;
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (tool === 'arrow') {
+    const dx = x - startX, dy = y - startY;
+    const angle = Math.atan2(dy, dx);
+    const len = 14 + brushSize * 1.5;
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - len * Math.cos(angle - 0.4), y - len * Math.sin(angle - 0.4));
+    ctx.lineTo(x - len * Math.cos(angle + 0.4), y - len * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fillStyle = brushColor;
+    ctx.fill();
+  }
+}
+
+// Text tool
+let textActive = false;
+function placeTextInput(x, y) {
+  const ti = document.getElementById('board-text-input');
+  const area = document.getElementById('board-area');
+  const tb = area.querySelector('.board-toolbar');
+  ti.style.display = 'block';
+  ti.style.left = x + 'px';
+  ti.style.top = (y + tb.offsetHeight) + 'px';
+  ti.style.fontSize = Math.max(14, brushSize * 4) + 'px';
+  ti.style.color = brushColor;
+  ti.value = '';
+  ti.focus();
+  textActive = true;
+}
+function commitText() {
+  const ti = document.getElementById('board-text-input');
+  if (!ti.value.trim()) { ti.style.display = 'none'; textActive = false; return; }
+  const area = document.getElementById('board-area');
+  const tb = area.querySelector('.board-toolbar');
+  const x = parseInt(ti.style.left);
+  const y = parseInt(ti.style.top) - tb.offsetHeight;
+  saveHistory();
+  ctx.fillStyle = brushColor;
+  ctx.font = `${Math.max(14, brushSize * 4)}px -apple-system, sans-serif`;
+  const lines = ti.value.split('\n');
+  const lh = Math.max(14, brushSize * 4) * 1.3;
+  lines.forEach((line, i) => ctx.fillText(line, x, y + lh * (i + 1)));
+  ti.style.display = 'none';
+  ti.value = '';
+  textActive = false;
+}
+function handleTextInput(e) {
+  if (e.key === 'Escape') { document.getElementById('board-text-input').style.display = 'none'; textActive = false; }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitText(); }
+}
+
+// Mouse / touch events
+canvas.addEventListener('mousedown', e => {
+  if (tool === 'text') { placeTextInput(...Object.values(getPos(e))); return; }
+  if (textActive) commitText();
+  saveHistory();
+  drawing = true;
+  const {x, y} = getPos(e);
+  startX = x; startY = y;
+  snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  if (tool === 'pen' || tool === 'eraser') {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (!drawing) return;
+  const {x, y} = getPos(e);
+  if (tool === 'pen') {
+    ctx.strokeStyle = brushColor;
+    ctx.lineWidth = brushSize;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  } else if (tool === 'eraser') {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineWidth = brushSize * 3;
+    ctx.lineCap = 'round';
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+  } else {
+    drawShape(x, y);
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  if (!drawing) return;
+  drawing = false;
+  if (tool !== 'pen' && tool !== 'eraser') {
+    drawShape(...Object.values(getPos(e)));
+  }
+});
+canvas.addEventListener('mouseleave', () => { drawing = false; });
+
+// Touch support
+canvas.addEventListener('touchstart', e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY})); }, {passive:false});
+canvas.addEventListener('touchmove',  e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousemove',  {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY})); }, {passive:false});
+canvas.addEventListener('touchend',   e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup',   {})); }, {passive:false});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoBoard(); }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redoBoard(); }
+  if (e.key === 'p') setTool('pen');
+  if (e.key === 'e') setTool('eraser');
+  if (e.key === 'l') setTool('line');
+  if (e.key === 'r') setTool('rect');
+  if (e.key === 'c') setTool('circle');
+  if (e.key === 't') setTool('text');
+  if (e.key === 'a') setTool('arrow');
+});
+
+window.addEventListener('resize', () => {
+  if (document.getElementById('board-area').classList.contains('active')) resizeCanvas();
+});
+
+// Init canvas on first open
+function initCanvas() {
+  resizeCanvas();
+  ctx.fillStyle = boardBg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
 
 // ══════════════════════════════════════════════════════════════
 // LOGIN
@@ -639,29 +781,20 @@ async function doEnter() {
   const errEl = document.getElementById('login-err');
   const btn   = document.querySelector('.login-btn');
   errEl.textContent = '';
-
   const { token, role } = extractToken(input);
   if (!token) {
     errEl.innerHTML = "❌ Havola noto'g'ri. Botdan kelgan to'liq havolani kiriting.";
     document.getElementById('link-input').focus();
     return;
   }
-
   btn.innerHTML = '<div class="loader-ring" style="width:18px;height:18px;border-width:2px"></div> Tekshirilmoqda...';
   btn.disabled = true;
-
   try {
     const r = await fetch('/api/room?action=info', { headers: { 'X-Room-Token': token } });
     const d = await r.json();
-
     btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Darsga kirish';
     btn.disabled = false;
-
-    if (!d.ok) {
-      errEl.innerHTML = '❌ ' + esc(d.msg || "Havola noto'g'ri yoki muddati o'tgan");
-      return;
-    }
-
+    if (!d.ok) { errEl.innerHTML = '❌ ' + esc(d.msg || "Havola noto'g'ri yoki muddati o'tgan"); return; }
     roomToken = token;
     myRole    = role || d.user.role || 'student';
     document.getElementById('login-page').style.display = 'none';
@@ -690,9 +823,7 @@ async function init() {
     setTimeout(() => document.getElementById('link-input').focus(), 150);
     return;
   }
-
   window.history.replaceState({}, '', window.location.pathname);
-
   try {
     const r = await fetch('/api/room?action=info', { headers: { 'X-Room-Token': roomToken } });
     const d = await r.json();
@@ -709,7 +840,6 @@ async function enterRoom(d) {
   myName     = d.user.name + (myRole === 'teacher' ? ' (Ustoz)' : '');
   roomId     = d.room.id;
   peerRoomId = d.room.peer_room_id;
-
   document.getElementById('room-title-text').textContent = roomInfo.title;
   if (myRole === 'teacher') {
     document.getElementById('screen-ctrl').style.display = '';
@@ -719,23 +849,130 @@ async function enterRoom(d) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// MEDIA
+// MEDIA — FIXED CAMERA
 // ══════════════════════════════════════════════════════════════
 async function getMedia() {
+  // Try video + audio first
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 48000 }
+    });
+    camOn = true;
+    micOn = true;
   } catch(e1) {
+    console.warn('Video+audio failed:', e1.name, e1.message);
+    // Try audio only
     try {
       localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
       camOn = false;
+      micOn = true;
+      showToast('⚠️ Kamera ruxsat berilmagan — faqat mikrofon');
     } catch(e2) {
+      console.warn('Audio only failed:', e2.name);
+      // No permissions at all
       localStream = new MediaStream();
-      camOn = false; micOn = false;
-      showToast('⚠️ Kamera/mikrofon topilmadi');
+      camOn = false;
+      micOn = false;
+      showToast('⚠️ Kamera va mikrofon topilmadi yoki ruxsat berilmagan');
     }
   }
   updateBtnState();
   startPeer();
+}
+
+// Request camera if it was denied and user clicks button
+async function requestCamAccess() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    // Add video track to existing localStream
+    stream.getVideoTracks().forEach(t => {
+      localStream.addTrack(t);
+      // Replace track in all peer connections
+      Object.values(peers).forEach(p => {
+        const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+        if (sender) sender.replaceTrack(t);
+        else if (p.call?.peerConnection) {
+          p.call.peerConnection.addTrack(t, localStream);
+        }
+      });
+    });
+    camOn = true;
+    updateBtnState();
+    rebuildGrid();
+    showToast('✅ Kamera yoqildi');
+  } catch(e) {
+    showToast('❌ Kamera ruxsati berilmadi: ' + e.message);
+  }
+}
+
+async function toggleCam() {
+  if (!camOn && localStream.getVideoTracks().length === 0) {
+    // No video track exists — need to request permission
+    await requestCamAccess();
+    return;
+  }
+  camOn = !camOn;
+  localStream.getVideoTracks().forEach(t => { t.enabled = camOn; });
+  // Update peers
+  Object.values(peers).forEach(p => {
+    const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+    if (sender && localStream.getVideoTracks()[0]) {
+      sender.track.enabled = camOn;
+    }
+  });
+  updateBtnState();
+  rebuildGrid();
+  showToast(camOn ? '📹 Kamera yoqildi' : '📷 Kamera o\'chirildi');
+}
+
+function toggleMic() {
+  micOn = !micOn;
+  localStream.getAudioTracks().forEach(t => { t.enabled = micOn; });
+  updateBtnState();
+  showToast(micOn ? '🎤 Mikrofon yoqildi' : '🔇 Mikrofon o\'chirildi');
+}
+
+async function toggleScreen() {
+  if (screenSharing) { stopScreen(); return; }
+  try {
+    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    const track = screenStream.getVideoTracks()[0];
+    Object.values(peers).forEach(p => {
+      const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+      if (sender) sender.replaceTrack(track);
+    });
+    const myTile = document.getElementById('tile-' + myPeerId?.replace(/[^a-z0-9]/gi,'_'));
+    if (myTile) { const v = myTile.querySelector('video'); v.srcObject = new MediaStream([track]); v.play().catch(()=>{}); }
+    track.onended = stopScreen;
+    screenSharing = true;
+    document.getElementById('btn-screen').className = 'ctrl-btn screen-on';
+    showToast('📺 Ekran ulashish boshlandi');
+  } catch { showToast('Ekran ulashish bekor qilindi'); }
+}
+
+function stopScreen() {
+  screenSharing = false;
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+  if (localStream) {
+    const camTrack = localStream.getVideoTracks()[0];
+    if (camTrack) {
+      Object.values(peers).forEach(p => {
+        const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+        if (sender) sender.replaceTrack(camTrack);
+      });
+      const myTile = document.getElementById('tile-' + myPeerId?.replace(/[^a-z0-9]/gi,'_'));
+      if (myTile) { const v = myTile.querySelector('video'); v.srcObject = localStream; v.play().catch(()=>{}); }
+    }
+  }
+  const sb = document.getElementById('btn-screen');
+  if (sb) sb.className = 'ctrl-btn on';
+  showToast("Ekran ulashish to'xtatildi");
+}
+
+function updateBtnState() {
+  document.getElementById('btn-cam').className = 'ctrl-btn ' + (camOn ? 'on' : 'off');
+  document.getElementById('btn-mic').className = 'ctrl-btn ' + (micOn ? 'on' : 'off');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -748,27 +985,19 @@ const ICE_SERVERS = [
   { urls: 'stun:stun3.l.google.com:19302' },
   { urls: 'stun:stun4.l.google.com:19302' },
   { urls: 'stun:openrelay.metered.ca:80' },
-  // Free TURN relay — works behind NAT/firewalls
-  { urls: 'turn:openrelay.metered.ca:80',    username: 'openrelayproject', credential: 'openrelayproject' },
-  { urls: 'turn:openrelay.metered.ca:443',   username: 'openrelayproject', credential: 'openrelayproject' },
-  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:80',  username:'openrelayproject', credential:'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
 ];
 
 let peerRetries = 0;
 
 function startPeer() {
-  const peerId = (myRole === 'teacher' ? 'tr-' : 'st-') +
-                  peerRoomId + '-' + Math.random().toString(36).slice(2,8);
+  const peerId = (myRole === 'teacher' ? 'tr-' : 'st-') + peerRoomId + '-' + Math.random().toString(36).slice(2,8);
   myPeer = new Peer(peerId, {
     debug: 1,
-    config: {
-      iceServers: ICE_SERVERS,
-      iceTransportPolicy: 'all',
-      bundlePolicy: 'max-bundle',
-      rtcpMuxPolicy: 'require',
-    }
+    config: { iceServers: ICE_SERVERS, iceTransportPolicy: 'all', bundlePolicy: 'max-bundle' }
   });
-
   myPeer.on('open', id => {
     myPeerId = id;
     peerRetries = 0;
@@ -777,40 +1006,27 @@ function startPeer() {
     syncInterval = setInterval(syncParticipants, 4000);
     startTimer();
   });
-  myPeer.on('call', call => {
-    call.answer(localStream || new MediaStream());
-    handleCall(call);
-  });
+  myPeer.on('call', call => { call.answer(localStream || new MediaStream()); handleCall(call); });
   myPeer.on('error', e => {
-    console.warn('PeerJS error:', e.type, e);
-    if (e.type === 'unavailable-id') {
-      setTimeout(startPeer, 800);
-    } else if (e.type === 'network' || e.type === 'server-error' || e.type === 'socket-error') {
+    console.warn('PeerJS error:', e.type);
+    if (e.type === 'unavailable-id') { setTimeout(startPeer, 800); }
+    else if (['network','server-error','socket-error','socket-closed'].includes(e.type)) {
       peerRetries++;
       setTimeout(startPeer, Math.min(1000 * peerRetries, 8000));
     }
   });
   myPeer.on('disconnected', () => {
-    console.warn('PeerJS disconnected, reconnecting...');
-    setTimeout(() => {
-      if (myPeer && !myPeer.destroyed) myPeer.reconnect();
-    }, 1500);
-  });
-  myPeer.on('close', () => {
-    console.warn('PeerJS connection closed');
+    setTimeout(() => { if (myPeer && !myPeer.destroyed) myPeer.reconnect(); }, 1500);
   });
 }
 
 function handleCall(call) {
   const pid = call.peer;
-  if (peers[pid]?.call) {
-    peers[pid].call.close();
-  }
+  if (peers[pid]?.call) peers[pid].call.close();
   peers[pid] = { call, stream: null, name: peers[pid]?.name || '...', role: peers[pid]?.role || '?' };
   call.on('stream', s => {
     peers[pid].stream = s;
     rebuildGrid();
-    // ensure video plays after track loads
     setTimeout(() => {
       const el = document.querySelector('#tile-' + pid.replace(/[^a-z0-9]/gi,'_') + ' video');
       if (el && el.paused) el.play().catch(()=>{});
@@ -822,12 +1038,10 @@ function handleCall(call) {
 
 async function connectToPeer(peerId) {
   if (!myPeer || !myPeerId || peerId === myPeerId) return;
-  if (peers[peerId]?.call) return; // already connected
+  if (peers[peerId]?.call) return;
   peers[peerId] = { call: null, stream: null, name: peers[peerId]?.name || '...', role: peers[peerId]?.role || '?' };
   try {
-    const call = myPeer.call(peerId, localStream || new MediaStream(), {
-      sdpTransform: (sdp) => sdp // pass-through
-    });
+    const call = myPeer.call(peerId, localStream || new MediaStream());
     if (!call) { delete peers[peerId]; return; }
     peers[peerId].call = call;
     call.on('stream', s => {
@@ -875,21 +1089,11 @@ function handleParticipants(list) {
   participantsList = list;
   list.forEach(p => {
     if (p.peer_id === myPeerId) return;
-    // Connect if not yet connected or call was lost
-    if (!peers[p.peer_id] || !peers[p.peer_id].call) {
-      connectToPeer(p.peer_id);
-    }
-    if (peers[p.peer_id]) {
-      peers[p.peer_id].name = p.name;
-      peers[p.peer_id].role = p.role;
-    }
+    if (!peers[p.peer_id] || !peers[p.peer_id].call) connectToPeer(p.peer_id);
+    if (peers[p.peer_id]) { peers[p.peer_id].name = p.name; peers[p.peer_id].role = p.role; }
   });
-  // Remove peers no longer in list
   Object.keys(peers).forEach(pid => {
-    if (!list.find(p => p.peer_id === pid)) {
-      peers[pid]?.call?.close();
-      delete peers[pid];
-    }
+    if (!list.find(p => p.peer_id === pid)) { peers[pid]?.call?.close(); delete peers[pid]; }
   });
   updateParticipants();
   rebuildGrid();
@@ -903,12 +1107,10 @@ function rebuildGrid() {
   const total = 1 + Object.keys(peers).length;
   grid.className = 'video-grid g' + Math.min(total, 9);
   grid.innerHTML = '';
-
   grid.appendChild(makeTile(myPeerId, myName, myRole, localStream, true, camOn, micOn));
   Object.entries(peers).forEach(([pid, p]) => {
     const info = participantsList.find(x => x.peer_id === pid) || {};
-    grid.appendChild(makeTile(pid, info.name || p.name || 'Ishtirokchi',
-      info.role || p.role || 'student', p.stream, false, true, true));
+    grid.appendChild(makeTile(pid, info.name||p.name||'Ishtirokchi', info.role||p.role||'student', p.stream, false, true, true));
   });
 }
 
@@ -919,96 +1121,39 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
   if (!hasVideo) cls += ' no-cam';
   if (isSelf)  cls += ' self-tile';
   if (role === 'teacher') cls += ' teacher-tile';
-  if (!stream) cls += ' no-stream';
   tile.className = cls;
   tile.id = 'tile-' + pid.replace(/[^a-z0-9]/gi, '_');
 
   const video = document.createElement('video');
   video.autoplay = true;
-  video.playsinline = true;
-  video.setAttribute('playsinline', '');
-  video.setAttribute('webkit-playsinline', '');
+  video.playsInline = true;
+  video.setAttribute('playsinline','');
+  video.setAttribute('webkit-playsinline','');
   if (isSelf) video.muted = true;
   if (stream) {
     video.srcObject = stream;
-    video.play().catch(() => {});
+    video.play().catch(()=>{});
   }
-  // retry play on loadedmetadata in case autoplay blocked
-  video.addEventListener('loadedmetadata', () => {
-    video.play().catch(() => {});
-  });
+  video.addEventListener('loadedmetadata', () => video.play().catch(()=>{}));
   tile.appendChild(video);
 
   const av = document.createElement('div');
   av.className = 'vtile-av';
-  av.style.background = role === 'teacher'
-    ? 'linear-gradient(135deg,#4f46e5,#7c3aed)'
-    : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
-  av.textContent = (name || 'U').charAt(0).toUpperCase();
+  av.style.background = role === 'teacher' ? 'linear-gradient(135deg,#4f46e5,#7c3aed)' : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
+  av.textContent = (name||'U').charAt(0).toUpperCase();
   tile.appendChild(av);
 
   const label = document.createElement('div');
   label.className = 'vtile-label';
-  if (!hasMic) label.innerHTML += '<span class="muted-icon">🔇</span>';
-  label.appendChild(document.createTextNode(
-    (isSelf ? 'Siz' : name) + (role === 'teacher' ? ' 👨‍🏫' : '')
-  ));
+  if (!hasMic) label.innerHTML += '<span style="color:#f87171;font-size:10px">🔇</span>';
+  label.appendChild(document.createTextNode((isSelf?'Siz':name)+(role==='teacher'?' 👨‍🏫':'')));
   tile.appendChild(label);
   return tile;
 }
 
 // ══════════════════════════════════════════════════════════════
-// CONTROLS
+// CONTROLS / LEAVE
 // ══════════════════════════════════════════════════════════════
-function toggleCam() {
-  camOn = !camOn;
-  if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
-  updateBtnState(); rebuildGrid();
-}
-function toggleMic() {
-  micOn = !micOn;
-  if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = micOn);
-  updateBtnState();
-}
-async function toggleScreen() {
-  if (screenSharing) { stopScreen(); return; }
-  try {
-    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-    const track = screenStream.getVideoTracks()[0];
-    Object.values(peers).forEach(p => {
-      const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
-      if (sender) sender.replaceTrack(track);
-    });
-    const myTile = document.getElementById('tile-' + myPeerId?.replace(/[^a-z0-9]/gi,'_'));
-    if (myTile) myTile.querySelector('video').srcObject = new MediaStream([track]);
-    track.onended = stopScreen;
-    screenSharing = true;
-    document.getElementById('btn-screen').className = 'ctrl-btn screen-on';
-    showToast('📺 Ekran ulashish boshlandi');
-  } catch { showToast('Ekran ulashish bekor qilindi'); }
-}
-function stopScreen() {
-  screenSharing = false;
-  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
-  if (localStream) {
-    const camTrack = localStream.getVideoTracks()[0];
-    if (camTrack) {
-      Object.values(peers).forEach(p => {
-        const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
-        if (sender) sender.replaceTrack(camTrack);
-      });
-      const myTile = document.getElementById('tile-' + myPeerId?.replace(/[^a-z0-9]/gi,'_'));
-      if (myTile) myTile.querySelector('video').srcObject = localStream;
-    }
-  }
-  const sb = document.getElementById('btn-screen');
-  if (sb) sb.className = 'ctrl-btn on';
-  showToast("Ekran ulashish to'xtatildi");
-}
-function updateBtnState() {
-  document.getElementById('btn-cam').className = 'ctrl-btn ' + (camOn ? 'on' : 'off');
-  document.getElementById('btn-mic').className = 'ctrl-btn ' + (micOn ? 'on' : 'off');
-}
 async function leaveRoom() {
   if (localStream)  { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
   if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
@@ -1018,11 +1163,9 @@ async function leaveRoom() {
   if (syncInterval)  { clearInterval(syncInterval); syncInterval = null; }
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   if (roomToken && myPeerId) {
-    navigator.sendBeacon('/api/room?action=leave',
-      new Blob([JSON.stringify({ peer_id: myPeerId })], { type: 'application/json' }));
+    navigator.sendBeacon('/api/room?action=leave', new Blob([JSON.stringify({peer_id:myPeerId})],{type:'application/json'}));
   }
-  showError('👋', myRole === 'teacher' ? 'Dars yakunlandi' : 'Darsdan chiqdingiz',
-    myRole === 'teacher' ? 'Dars muvaffaqiyatli o\'tkazildi.' : "Qaytish uchun havoladan foydalaning.");
+  showError('👋', myRole==='teacher'?'Dars yakunlandi':'Darsdan chiqdingiz', myRole==='teacher'?'Dars muvaffaqiyatli o\'tkazildi.':"Qaytish uchun havoladan foydalaning.");
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1038,10 +1181,7 @@ function sendChat() {
 }
 function renderChat() {
   const box = document.getElementById('chat-msgs');
-  if (!chatMessages.length) {
-    box.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">💬</div>Hali xabar yo\'q</div>';
-    return;
-  }
+  if (!chatMessages.length) { box.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">💬</div>Hali xabar yo\'q</div>'; return; }
   box.innerHTML = '';
   chatMessages.forEach(m => {
     const wrap = document.createElement('div');
@@ -1059,25 +1199,13 @@ function renderChat() {
 // ══════════════════════════════════════════════════════════════
 function updateParticipants() {
   const list = document.getElementById('part-list');
-  const all = [
-    { peer_id: myPeerId, name: myName, role: myRole, self: true },
-    ...participantsList.filter(p => p.peer_id !== myPeerId)
-  ];
+  const all = [{ peer_id:myPeerId, name:myName, role:myRole, self:true }, ...participantsList.filter(p=>p.peer_id!==myPeerId)];
   list.innerHTML = '';
   all.forEach(p => {
     const div = document.createElement('div');
     div.className = 'part-item';
-    const bg = p.role === 'teacher'
-      ? 'linear-gradient(135deg,#4f46e5,#7c3aed)'
-      : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
-    div.innerHTML = `
-      <div class="part-av" style="background:${bg}">${(p.name||'U').charAt(0).toUpperCase()}</div>
-      <div class="part-info">
-        <div class="part-name">${esc(p.name||'Foydalanuvchi')} ${p.self?'<span class="part-self">(Siz)</span>':''}</div>
-        <div class="part-role-txt">${p.role==='teacher'?'👨‍🏫 Ustoz':"🎓 O'quvchi"}</div>
-      </div>
-      ${p.role==='teacher'?'<div class="part-badge">USTOZ</div>':''}
-    `;
+    const bg = p.role==='teacher' ? 'linear-gradient(135deg,#4f46e5,#7c3aed)' : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
+    div.innerHTML = `<div class="part-av" style="background:${bg}">${(p.name||'U').charAt(0).toUpperCase()}</div><div class="part-info"><div class="part-name">${esc(p.name||'Foydalanuvchi')} ${p.self?'<span class="part-self">(Siz)</span>':''}</div><div class="part-role-txt">${p.role==='teacher'?'👨‍🏫 Ustoz':"🎓 O'quvchi"}</div></div>${p.role==='teacher'?'<div class="part-badge">USTOZ</div>':''}`;
     list.appendChild(div);
   });
   document.getElementById('room-sub').textContent = `${all.length} ishtirokchi`;
@@ -1091,6 +1219,8 @@ function showRoom() {
   document.getElementById('room').style.display = 'flex';
   document.getElementById('live-chip').style.display = '';
   document.getElementById('room-timer').style.display = '';
+  // Init board canvas
+  setTimeout(initCanvas, 100);
 }
 function showError(icon, title, sub) {
   ['loading','waiting','room'].forEach(id => document.getElementById(id).style.display = 'none');
@@ -1108,18 +1238,16 @@ function showToast(msg, dur = 3500) {
   _toastTimer = setTimeout(() => t.classList.remove('show'), dur);
 }
 function switchTab(name) {
-  document.querySelectorAll('.stab').forEach((el,i) =>
-    el.classList.toggle('active', ['participants','chat'][i] === name));
-  document.querySelectorAll('.stab-panel').forEach(el =>
-    el.classList.toggle('active', el.id === 'tab-' + name));
+  document.querySelectorAll('.stab').forEach((el,i) => el.classList.toggle('active',['participants','chat'][i]===name));
+  document.querySelectorAll('.stab-panel').forEach(el => el.classList.toggle('active', el.id==='tab-'+name));
 }
 function startTimer() {
   startTime = Date.now();
   timerInterval = setInterval(() => {
     const s = Math.floor((Date.now()-startTime)/1000);
     const m = String(Math.floor(s/60)).padStart(2,'0');
-    const sec = String(s%60).padStart(2,'0');
-    document.getElementById('room-timer').textContent = `${m}:${sec}`;
+    const sc = String(s%60).padStart(2,'0');
+    document.getElementById('room-timer').textContent = `${m}:${sc}`;
   }, 1000);
 }
 async function copyStudentLink() {
@@ -1130,14 +1258,11 @@ function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ══════════════════════════════════════════════════════════════
-// START
-// ══════════════════════════════════════════════════════════════
 window.addEventListener('beforeunload', () => {
   if (roomToken && myPeerId)
-    navigator.sendBeacon('/api/room?action=leave',
-      new Blob([JSON.stringify({peer_id:myPeerId})],{type:'application/json'}));
+    navigator.sendBeacon('/api/room?action=leave', new Blob([JSON.stringify({peer_id:myPeerId})],{type:'application/json'}));
 });
+
 init();
 </script>
 </body>
