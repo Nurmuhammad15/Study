@@ -1,3005 +1,753 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uz">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Teacher Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>Study — Onlayn Dars</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #f5f6fa; --card: #fff; --border: #e8eaef;
-    --text: #1a1d2e; --text-2: #6b7280; --text-3: #9ca3af;
-    --accent: #3b5bdb; --accent-hover: #2f4ac0; --accent-soft: #eef2ff;
-    --green: #12b76a; --red: #ef4444;
-    --shadow: 0 1px 3px rgba(0,0,0,.07); --radius: 10px;
-  }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+:root {
+  --bg:#0f1117; --card:#1a1d27; --border:#2a2d3e;
+  --text:#e8eaf0; --text2:#9499b0; --text3:#5c6080;
+  --accent:#4f46e5; --accent2:#6366f1;
+  --green:#10b981; --red:#ef4444; --yellow:#f59e0b;
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
 
-  /* TOPBAR */
-  .topbar {
-    background: var(--card); border-bottom: 1px solid var(--border);
-    padding: 0 24px; height: 58px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .topbar-left { display: flex; align-items: center; gap: 10px; }
-  .logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; }
-  .logo-text { font-weight: 700; font-size: 15px; }
-  .topbar-right { display: flex; align-items: center; gap: 12px; }
-  .search-wrap { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; width: 220px; }
-  .search-wrap input { border: none; background: transparent; font-family: inherit; font-size: 13px; color: var(--text); outline: none; width: 100%; }
-  .search-wrap input::placeholder { color: var(--text-3); }
-  .notif-btn { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-2); position: relative; }
-  .notif-dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; position: absolute; top: 7px; right: 7px; border: 2px solid #fff; }
-  .user-chip { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 6px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; background: var(--card); }
-  .av-teacher { width: 28px; height: 28px; border-radius: 50%; background: #4f46e5; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fff; }
-  .user-name { font-size: 13px; font-weight: 600; }
-  .user-role { font-size: 11px; color: var(--text-3); }
+/* ── LOADING ── */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999}
+.loader{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;color:var(--text2)}
 
-  /* CONTENT */
-  .content { flex: 1; overflow-y: auto; padding: 28px; }
-  .welcome-title { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
-  .welcome-sub { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
-  .top-action { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+/* ── ERROR PAGE ── */
+#error-page{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center}
+.error-icon{font-size:56px}
+.error-title{font-size:20px;font-weight:700}
+.error-sub{font-size:14px;color:var(--text2);max-width:380px;line-height:1.6}
+.error-btn{margin-top:8px;padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
 
-  /* BTN */
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border: none; outline: none; transition: all .15s; }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: var(--accent-hover); }
-  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-2); }
-  .btn-outline:hover { background: var(--bg); }
+/* ── CALL ROOM ── */
+#room{display:none;flex-direction:column;height:100vh;height:100dvh}
+.room-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0}
+.room-title{display:flex;align-items:center;gap:10px}
+.room-title-text{font-size:15px;font-weight:700}
+.room-title-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.room-timer{font-size:13px;color:var(--text2);font-variant-numeric:tabular-nums}
+.header-right{display:flex;align-items:center;gap:10px}
 
-  /* GRID */
-  .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+/* ── VIDEO GRID ── */
+.room-body{flex:1;display:flex;min-height:0;gap:0}
+.video-area{flex:1;background:#000;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.video-grid{width:100%;height:100%;display:grid;gap:3px;padding:3px}
+.video-grid.g1{grid-template-columns:1fr}
+.video-grid.g2{grid-template-columns:1fr 1fr}
+.video-grid.g3,.video-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.video-grid.g5,.video-grid.g6{grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr}
+.video-grid.g7,.video-grid.g8,.video-grid.g9{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
 
-  /* SECTION CARD */
-  .section-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
-  .section-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
-  .section-count { background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+.vtile{position:relative;background:#111;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.vtile video{width:100%;height:100%;object-fit:cover;display:block}
+.vtile.no-cam video{display:none}
+.vtile-av{width:clamp(44px,15%,88px);aspect-ratio:1;border-radius:50%;background:#2b5278;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:clamp(18px,5%,34px)}
+.vtile-label{position:absolute;bottom:8px;left:8px;right:8px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.5);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:#fff;width:fit-content;max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vtile-label .mic-off{color:var(--red);flex-shrink:0}
+.vtile.self-tile{outline:2px solid var(--accent)}
+.vtile.teacher-tile{outline:2px solid var(--yellow)}
+.vtile.waiting{background:#0a0e1a}
+.vtile.waiting .vtile-av{opacity:.4}
 
-  /* EMPTY STATE */
-  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; gap: 14px; min-height: 180px; }
-  .empty-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; color: var(--accent); }
-  .empty-text { font-size: 13px; color: var(--text-3); text-align: center; }
+/* ── SIDEBAR ── */
+.room-sidebar{width:240px;background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.stab{flex:1;padding:12px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:.15s}
+.stab.active{color:var(--accent);border-color:var(--accent)}
+.stab-panel{flex:1;overflow-y:auto;display:none;flex-direction:column}
+.stab-panel.active{display:flex}
 
-  /* STUDENT ITEM */
-  .student-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--border); transition: background .12s; }
-  .student-item:last-child { border-bottom: none; }
-  .student-item:hover { background: #f9fafb; }
-  .student-left { display: flex; align-items: center; gap: 10px; }
-  .av { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; flex-shrink: 0; }
-  .student-name { font-size: 14px; font-weight: 500; }
-  .student-meta { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+/* Chat */
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.msg{max-width:88%;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.5;word-break:break-word}
+.msg.mine{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:3px}
+.msg.theirs{align-self:flex-start;background:#252836;color:var(--text);border-bottom-left-radius:3px}
+.msg-time{font-size:10px;opacity:.6;margin-top:3px;text-align:right}
+.chat-input-row{display:flex;gap:6px;padding:10px;border-top:1px solid var(--border);flex-shrink:0}
+.chat-inp{flex:1;background:#252836;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text);outline:none;font-family:inherit;resize:none;max-height:80px}
+.chat-inp:focus{border-color:var(--accent)}
+.chat-send{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;flex-shrink:0}
+.chat-send:hover{background:var(--accent2)}
 
-  /* MSG ITEM */
-  .msg-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
-  .msg-item:last-child { border-bottom: none; }
-  .msg-item:hover { background: #f9fafb; }
-  .msg-body { flex: 1; min-width: 0; }
-  .msg-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
-  .msg-name { font-size: 13px; font-weight: 600; }
-  .msg-time { font-size: 11px; color: var(--text-3); }
-  .msg-preview { font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .unread-badge { min-width: 18px; height: 18px; background: var(--accent); color: #fff; border-radius: 9px; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 5px; flex-shrink: 0; }
+/* Participants */
+.part-list{padding:8px;display:flex;flex-direction:column;gap:4px}
+.part-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:#252836}
+.part-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0}
+.part-name{font-size:12px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.part-role{font-size:10px;color:var(--text2)}
+.part-badge{font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(245,158,11,.15);color:var(--yellow);font-weight:700}
 
-  /* MODAL */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity .2s; }
-  .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal { background: var(--card); border-radius: 14px; padding: 28px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,.15); transform: translateY(10px); transition: transform .2s; }
-  .modal-overlay.open .modal { transform: translateY(0); }
-  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-  .modal p { font-size: 14px; color: var(--text-2); margin-bottom: 20px; }
-  .field-label { font-size: 12px; font-weight: 500; color: var(--text-2); margin-bottom: 5px; }
-  .field-row { margin-bottom: 14px; }
-  .field-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 13px; color: var(--text); outline: none; transition: border-color .15s; }
-  .field-input:focus { border-color: var(--accent); }
-  .select-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 13px; color: var(--text); outline: none; appearance: none; cursor: pointer; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+/* ── CONTROLS ── */
+.room-controls{display:flex;align-items:center;justify-content:center;gap:16px;padding:16px;background:var(--card);border-top:1px solid var(--border);flex-shrink:0}
+.ctrl-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#252836;color:#fff;transition:.15s;flex-shrink:0}
+.ctrl-btn:hover{background:#2f3447}
+.ctrl-btn.on{background:var(--accent)}
+.ctrl-btn.off{background:#374151}
+.ctrl-btn.end{background:var(--red)}
+.ctrl-btn.end:hover{background:#dc2626}
+.ctrl-lbl{font-size:10px;color:var(--text2);text-align:center}
+.ctrl-col{display:flex;flex-direction:column;align-items:center;gap:6px}
 
-  /* CHOICE CARDS */
-  .choice-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all .15s; }
-  .choice-card:hover { border-color: var(--accent); background: var(--accent-soft); }
-  .choice-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .choice-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-  .choice-sub { font-size: 12px; color: var(--text-2); }
+/* ── WAITING SCREEN ── */
+#waiting{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px}
+.waiting-av{width:80px;height:80px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#fff;margin-bottom:8px}
+.waiting-title{font-size:20px;font-weight:700}
+.waiting-sub{font-size:14px;color:var(--text2);line-height:1.6;max-width:340px}
+.waiting-loader{display:flex;gap:6px;margin-top:4px}
+.wdot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:wbounce .8s ease-in-out infinite}
+.wdot:nth-child(2){animation-delay:.15s}
+.wdot:nth-child(3){animation-delay:.3s}
+@keyframes wbounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
 
-  /* NOTIF PANEL */
-  .notif-panel {
-    position: absolute; top: 50px; right: 0;
-    width: 340px; background: var(--card);
-    border: 1px solid var(--border); border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.12);
-    z-index: 500; overflow: hidden;
-    opacity: 0; pointer-events: none;
-    transform: translateY(6px); transition: all .18s;
-  }
-  .notif-panel.open { opacity: 1; pointer-events: all; transform: translateY(0); }
-  .notif-panel-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .notif-panel-title { font-size: 14px; font-weight: 700; }
-  .notif-read-all { font-size: 12px; color: var(--accent); cursor: pointer; font-weight: 600; border: none; background: none; font-family: inherit; }
-  .notif-read-all:hover { text-decoration: underline; }
-  .notif-list { max-height: 320px; overflow-y: auto; }
-  .notif-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); transition: background .12s; }
-  .notif-item:last-child { border-bottom: none; }
-  .notif-item:hover { background: var(--bg); }
-  .notif-item.unread { background: var(--accent-soft); }
-  .notif-item.unread:hover { background: #e0e9ff; }
-  .notif-icon-wrap { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .notif-content { flex: 1; min-width: 0; }
-  .notif-text { font-size: 13px; color: var(--text); line-height: 1.4; }
-  .notif-text b { font-weight: 600; }
-  .notif-time-label { font-size: 11px; color: var(--text-3); margin-top: 3px; }
-  .notif-unread-dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
-  .notif-empty { padding: 28px 16px; text-align: center; font-size: 13px; color: var(--text-3); }
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e2538;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.4);display:none;max-width:90vw;text-align:center;pointer-events:none}
+.toast.show{display:block}
 
-  /* Messages footer btn */
-  .section-footer { padding: 10px 20px; border-top: 1px solid var(--border); }
-  .btn-read-all { width: 100%; justify-content: center; font-size: 13px; }
+/* ── COPY LINK ── */
+.copy-link-btn{background:rgba(79,70,229,.15);border:1px solid rgba(79,70,229,.3);color:var(--accent);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.copy-link-btn:hover{background:rgba(79,70,229,.25)}
+.copy-link-btn.copied{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.3);color:var(--green)}
 
-  /* LOGIN PAGE */
-  .login-page { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-  .login-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 36px; width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,.1); }
-  .login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
-  .login-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-  .login-sub { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
-  .login-error { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--red); margin-bottom: 14px; display: none; }
-
-  /* HISTORY */
-  .history-item { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--border); transition: background .12s; }
-  .history-item:last-child { border-bottom: none; }
-  .history-item:hover { background: #f9fafb; }
-  .history-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0; }
-  .history-info { flex: 1; }
-  .history-name { font-size: 14px; font-weight: 600; }
-  .history-meta { font-size: 12px; color: var(--text-3); margin-top: 2px; }
-  .history-duration { font-size: 12px; font-weight: 600; color: var(--green); background: var(--green-soft); padding: 3px 8px; border-radius: 6px; }
-  --green-soft: #ecfdf3;
-
-  /* PASSWORD TOGGLE */
-  .pass-wrap { position: relative; display:flex; align-items:center; }
-  .pass-wrap .field-input { padding-right: 42px; width:100%; }
-  .eye-btn {
-    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
-    cursor: pointer; font-size: 16px; user-select: none; opacity: .5; transition: opacity .15s;
-    width: 32px; height: 32px; display:flex; align-items:center; justify-content:center;
-    border-radius: 6px; z-index: 2;
-  }
-  .eye-btn:hover { opacity: 1; background: var(--bg-2, rgba(0,0,0,.04)); }
-
-  /* TOGGLE */
-  .toggle { width: 40px; height: 22px; background: var(--accent); border-radius: 11px; position: relative; cursor: pointer; transition: background .2s; }
-  .toggle::after { content: ''; width: 16px; height: 16px; background: #fff; border-radius: 50%; position: absolute; top: 3px; right: 3px; transition: right .2s; }
-  .toggle.off { background: var(--border); }
-  .toggle.off::after { right: auto; left: 3px; }
-
-  /* ROLE TABS */
-  .role-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
-  .role-tab { flex: 1; padding: 9px; border-radius: 8px; border: 1.5px solid var(--border); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-2); transition: all .15s; text-align: center; }
-  .role-tab.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-  .auth-switch { text-align: center; font-size: 13px; color: var(--text-2); margin-top: 14px; }
-  .auth-switch span { color: var(--accent); cursor: pointer; font-weight: 600; }
-  .auth-switch span:hover { text-decoration: underline; }
-
-  /* ── MOBILE RESPONSIVE ─────────────────────────────────── */
-  @media (max-width: 600px) {
-    .login-card { width: 92vw; padding: 24px 18px; border-radius: 14px; }
-    .login-title { font-size: 19px; }
-    .topbar { padding: 0 12px; gap: 8px; }
-    .search-wrap { display: none; }
-    .topbar-right { gap: 6px; }
-    .sidebar { width: 200px; }
-    .main-area { padding: 16px 12px; }
-    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .stat-card { padding: 14px; }
-    .card { padding: 0; }
-    .card-header { padding: 14px 16px; }
-    .student-item { padding: 10px 14px; }
-    .section-count { display: none; }
-    .modal-box { width: 95vw; padding: 20px 16px; }
-    .nav-item span { display: none; }
-    .nav-item { justify-content: center; padding: 10px; }
-    .sidebar { width: 56px; }
-    .logo-text { display: none; }
-    .user-chip .user-name { display: none; }
-    .field-input { font-size: 16px; } /* iOS zoom prevention */
-    .history-item { flex-wrap: wrap; gap: 8px; }
-    .history-item .btn-sm { font-size:11px !important; padding:5px 8px !important }
-    .history-duration { margin-left: auto; }
-  }
-  /* ── LIVE STREAM ───────────────────────────────────────── */
-  .live-badge { display:inline-flex;align-items:center;gap:5px;background:#fee2e2;color:#dc2626;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px }
-  .live-dot { width:7px;height:7px;border-radius:50%;background:#dc2626;animation:pulse 1.2s infinite }
-  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
-  .live-card { background:var(--card);border:2px solid #fca5a5;border-radius:var(--radius);overflow:hidden;box-shadow:0 4px 24px rgba(220,38,38,.12) }
-  .live-video-wrap { position:relative;background:#000;aspect-ratio:16/9;width:100% }
-  .live-video-wrap video { width:100%;height:100%;object-fit:cover;display:block }
-  .live-overlay { position:absolute;top:10px;left:10px }
-  .live-controls { display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--card) }
-  .live-info { font-size:13px;font-weight:600 }
-  .live-sub { font-size:12px;color:var(--text-3);margin-top:2px }
-  #teacher-video-preview { width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;object-fit:cover }
-  .assign-student-item { display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border) }
-  .assign-student-item:last-child { border-bottom:none }
-  /* ── CALL MODAL (Telegram-style) ──────────────────────────── */
-  .call-overlay {
-    position: fixed; inset: 0; background: #17212b; z-index: 9999;
-    display: none; flex-direction: column; color: #fff;
-  }
-  .call-overlay.open { display: flex; }
-  .call-topbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 20px; background: #0e1621; flex-shrink: 0; gap: 14px;
-  }
-  .call-topbar-title { font-size: 14px; font-weight: 600; display:flex; align-items:center; gap:8px }
-  .call-topbar-info { font-size: 14px; font-weight: 600; display:flex; align-items:center; gap:8px; flex:1 }
-  .call-rec-dot { width:8px;height:8px;border-radius:50%;background:#e53e3e;animation:pulse 1.2s infinite }
-  .call-timer { font-size: 13px; color: #8b9aab; font-weight: 500 }
-
-  /* Settings button + dropdown */
-  .call-settings-btn {
-    width:36px;height:36px;border-radius:50%;border:none;background:transparent;color:#8b9aab;
-    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;
-  }
-  .call-settings-btn:hover { background:#1f2c38; color:#fff }
-  .call-settings-menu {
-    display:none; position:absolute; top:46px; left:0; min-width:260px;
-    background:#232e3c; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.5);
-    padding:6px; z-index:10000; flex-direction:column;
-  }
-  .call-settings-menu.open { display:flex }
-  .call-menu-item {
-    display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:7px;
-    font-size:13px; font-weight:500; color:#fff; cursor:pointer; white-space:nowrap; transition:.1s;
-  }
-  .call-menu-item:hover { background:#2f3d4f }
-  .call-menu-item.danger { color:#f55 }
-  .call-menu-item.danger:hover { background:rgba(245,85,85,.12) }
-  .call-menu-item svg:first-child { flex-shrink:0; color:#8b9aab }
-  .call-menu-item.danger svg { color:#f55 }
-  .call-menu-arrow { margin-left:auto; color:#5b6b7c; flex-shrink:0 }
-  .call-menu-sep { height:1px; background:#2f3d4f; margin:5px 8px }
-  .call-record-active { color:#e53e3e !important }
-  .call-body { flex: 1; display: flex; overflow: hidden; min-height: 0 }
-  .call-video-area {
-    flex: 1; background: #000; position: relative; min-width: 0; overflow: hidden;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .call-video-grid {
-    width: 100%; height: 100%; display: grid; gap: 4px; padding: 4px;
-    grid-template-columns: 1fr; grid-auto-rows: 1fr;
-  }
-  .call-video-grid.tiles-2 { grid-template-columns: 1fr 1fr; }
-  .call-video-grid.tiles-3,
-  .call-video-grid.tiles-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
-  .call-video-grid.tiles-5,
-  .call-video-grid.tiles-6 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
-  .call-video-grid.tiles-7,
-  .call-video-grid.tiles-8,
-  .call-video-grid.tiles-9 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
-
-  .call-tile {
-    position: relative; background: #1a242e; border-radius: 8px; overflow: hidden;
-    display:flex; align-items:center; justify-content:center; min-height: 0;
-  }
-  .call-tile video { width:100%; height:100%; object-fit: cover; display:block }
-  .call-tile.cam-off video { display:none }
-  .call-tile .tile-avatar {
-    width: 25%; aspect-ratio: 1; max-width: 90px; min-width: 44px; border-radius: 50%;
-    background: #2b5278; display:flex; align-items:center; justify-content:center;
-    font-weight:700; color:#fff; font-size: 28px;
-  }
-  .call-tile .tile-label {
-    position: absolute; bottom: 8px; left: 10px; font-size: 12px; font-weight: 600;
-    color: #fff; background: rgba(0,0,0,.45); padding: 3px 9px; border-radius: 6px;
-    display:flex; align-items:center; gap:5px; max-width: 90%;
-    white-space: nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .call-tile .tile-mic-off { color:#f55; flex-shrink:0 }
-  .call-tile.self-tile { outline: 2px solid #3a8ee6; }
-
-  .call-sidebar {
-    width: 260px; background: #0e1621; border-left: 1px solid #1f2c38;
-    display:flex; flex-direction:column; flex-shrink:0; overflow-y:auto;
-  }
-  .call-sidebar-header { padding:14px 16px; font-size:13px; color:#8b9aab; font-weight:600; border-bottom:1px solid #1f2c38 }
-  .call-participant {
-    display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid #1a242e;
-  }
-  .call-participant .av { width:38px;height:38px;border-radius:50%;background:#2b5278;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0 }
-  .call-participant-info { flex:1; min-width:0 }
-  .call-participant-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-  .call-participant-sub { font-size:11px; color:#5b6b7c; margin-top:1px }
-
-  .call-link-box { padding: 14px 16px; border-top: 1px solid #1f2c38; margin-top: auto }
-  .call-link-label { font-size:11px; color:#8b9aab; margin-bottom:8px; font-weight:600 }
-  .call-link-row { display:flex; gap:6px }
-  .call-link-input {
-    flex:1; background:#1a242e; border:1px solid #2f3d4f; border-radius:7px;
-    color:#cdd6e0; font-size:11px; padding:8px 10px; outline:none; min-width:0;
-  }
-  .call-link-copy {
-    background:#3a8ee6; color:#fff; border:none; border-radius:7px; padding:8px 12px;
-    font-size:12px; font-weight:600; cursor:pointer; flex-shrink:0;
-  }
-  .call-link-copy:hover { background:#2f7bcc }
-  .call-link-copy.copied { background:#10b981 }
-
-  .call-controls {
-    display:flex; align-items:center; justify-content:center; gap:18px;
-    padding: 18px; background:#0e1621; flex-shrink:0;
-  }
-  .call-btn {
-    width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;
-    background:#2b3a4a; color:#fff; transition:.15s; flex-direction:column; gap:4px;
-  }
-  .call-btn:hover { background:#374b5e }
-  .call-btn.active { background:#3a8ee6 }
-  .call-btn.muted  { background:#3a8ee6 }
-  .call-btn.end    { background:#e53e3e }
-  .call-btn.end:hover { background:#c53030 }
-  .call-btn.off    { background:#e5534b }
-  .call-btn-label { font-size:10px; margin-top:2px; color:#8b9aab; text-align:center }
-  .call-btn-col { display:flex; flex-direction:column; align-items:center; gap:6px }
-
-  @media (max-width: 700px) {
-    .call-sidebar { display:none }
-    .call-controls { gap:12px; padding:14px }
-    .call-btn { width:46px;height:46px }
-    .call-settings-menu { min-width:220px; left:-6px }
-    .call-topbar-info { font-size:13px }
-    .call-tile .tile-label { font-size:10px; padding:2px 7px }
-    .call-tile .tile-avatar { font-size:20px }
-  }
-  .call-minimize-btn {
-    width:36px;height:36px;border-radius:50%;border:none;background:transparent;color:#8b9aab;
-    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;flex-shrink:0;
-  }
-  .call-minimize-btn:hover { background:#1f2c38; color:#fff }
-
-  /* Floating banner when call is minimized */
-  .live-floating-banner {
-    position: fixed; bottom: 18px; right: 18px; z-index: 9998;
-    background: #0e1621; color:#fff; border-radius: 12px; padding: 12px 16px;
-    display: none; align-items: center; gap: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.35);
-    cursor: pointer; max-width: 280px;
-  }
-  .live-floating-banner.show { display:flex }
-  .live-floating-banner .live-rec-dot { width:8px;height:8px;border-radius:50%;background:#e53e3e;animation:pulse 1.2s infinite;flex-shrink:0 }
-  .live-floating-banner .lf-text { font-size:12px; font-weight:600; flex:1; min-width:0 }
-  .live-floating-banner .lf-time { font-size:11px; color:#8b9aab }
-  .live-floating-banner .lf-return {
-    background:#3a8ee6; border:none; color:#fff; font-size:11px; font-weight:700;
-    padding:6px 10px; border-radius:7px; cursor:pointer; flex-shrink:0;
-  }
-  @media (max-width:600px) { .live-floating-banner { left:12px; right:12px; max-width:none } }
-  /* ── CHAT UI ──────────────────────────────────────────────── */
-  .chat-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;display:none;align-items:center;justify-content:center }
-  .chat-modal-overlay.open { display:flex }
-  .chat-box { background:var(--card);border-radius:16px;width:min(500px,95vw);height:min(600px,85vh);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.18) }
-  .chat-header { display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0 }
-  .chat-header-av { width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:15px;flex-shrink:0 }
-  .chat-header-info { flex:1;min-width:0 }
-  .chat-header-name { font-size:14px;font-weight:700 }
-  .chat-header-sub { font-size:11px;color:var(--text-3) }
-  .chat-close-btn { background:none;border:none;color:var(--text-3);cursor:pointer;padding:4px;border-radius:6px }
-  .chat-close-btn:hover { background:var(--bg-2);color:var(--text) }
-  .chat-messages { flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0 }
-  .chat-messages::-webkit-scrollbar { width:4px }
-  .chat-messages::-webkit-scrollbar-thumb { background:var(--border);border-radius:4px }
-  .msg-bubble { max-width:75%;padding:9px 14px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word }
-  .msg-bubble.mine { align-self:flex-end;background:#4f46e5;color:#fff;border-bottom-right-radius:4px }
-  .msg-bubble.theirs { align-self:flex-start;background:var(--bg-2);color:var(--text);border-bottom-left-radius:4px }
-  .msg-bubble.mine .msg-time-label { color:rgba(255,255,255,.6);font-size:10px;margin-top:4px;text-align:right }
-  .msg-bubble.theirs .msg-time-label { color:var(--text-3);font-size:10px;margin-top:4px }
-  .msg-typing { font-size:12px;color:var(--text-3);padding:4px 0 }
-  .chat-input-row { display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0 }
-  .chat-input { flex:1;border:1px solid var(--border);border-radius:10px;padding:9px 14px;font-size:13px;font-family:inherit;outline:none;background:var(--bg);color:var(--text);resize:none }
-  .chat-input:focus { border-color:var(--accent) }
-  .chat-send-btn { background:#4f46e5;color:#fff;border:none;border-radius:10px;padding:0 18px;cursor:pointer;font-size:14px;flex-shrink:0 }
-  .chat-send-btn:hover { background:#4338ca }
-  .chat-send-btn:disabled { opacity:.5;cursor:not-allowed }
-  .chat-list-item { display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;cursor:pointer;transition:.12s }
-  .chat-list-item:hover { background:var(--bg-2) }
-  .chat-list-item.active { background:#eef2ff }
-  .chat-unread-dot { min-width:18px;height:18px;border-radius:9px;background:#4f46e5;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px }
-  .chat-empty-state { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-3);gap:8px;font-size:13px }
-
-  /* ── CONFIRM MODAL ─────────────────────────────────────────── */
-  .confirm-overlay { position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:none;align-items:center;justify-content:center }
-  .confirm-overlay.open { display:flex }
-  .confirm-box { background:var(--card);border-radius:14px;padding:28px 24px;width:min(380px,90vw);box-shadow:0 8px 40px rgba(0,0,0,.2) }
-  .confirm-icon { font-size:36px;text-align:center;margin-bottom:12px }
-  .confirm-title { font-size:16px;font-weight:700;text-align:center;margin-bottom:8px }
-  .confirm-sub { font-size:13px;color:var(--text-2);text-align:center;margin-bottom:20px;line-height:1.5 }
-  .confirm-btns { display:flex;gap:10px }
-  .confirm-btns button { flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:600;cursor:pointer }
-  .confirm-cancel { background:var(--bg-2);color:var(--text) }
-  .confirm-danger { background:#dc2626;color:#fff }
-  .confirm-danger:hover { background:#b91c1c }
-
-  /* ── SECURITY — hide sensitive info ───────────────────────── */
-  input[type=password] { font-family: monospace }
+/* ── MOBILE ── */
+@media(max-width:700px){
+  .room-sidebar{display:none}
+  .ctrl-btn{width:46px;height:46px}
+  .room-controls{gap:12px;padding:12px}
+  .vtile-label{font-size:11px}
+}
 </style>
 </head>
 <body>
 
-<!-- TELEGRAM-STYLE CALL OVERLAY -->
-<div id="call-overlay" class="call-overlay">
-  <div class="call-topbar">
-    <button class="call-minimize-btn" onclick="minimizeCallOverlay()" title="Kichraytirish — dars fon rejimida davom etadi">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-    <div class="call-topbar-title" style="position:relative">
-      <button class="call-settings-btn" id="call-settings-btn" onclick="toggleCallSettings(event)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </button>
-
-      <!-- DROPDOWN MENU -->
-      <div class="call-settings-menu" id="call-settings-menu">
-        <div class="call-menu-item" onclick="alert('Tez orada qo\'shiladi')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Ko'rsatish nomi...
-        </div>
-        <div class="call-menu-item" onclick="renameLiveTitle()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Translatsiya nomi
-        </div>
-        <div class="call-menu-item" id="call-record-item" onclick="toggleRecording()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/></svg>
-          <span id="call-record-label">Yozishni boshlash</span>
-        </div>
-        <div class="call-menu-item" onclick="shareScreen()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Ekranni translatsiya qilish
-        </div>
-        <div class="call-menu-sep"></div>
-        <div class="call-menu-item" onclick="openDeviceSubmenu('camera', event)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-          Kamera
-          <svg class="call-menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-        <div class="call-menu-item" onclick="openDeviceSubmenu('mic', event)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
-          Mikrofon
-          <svg class="call-menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-        <div class="call-menu-item" onclick="openDeviceSubmenu('speaker', event)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-          Karnay va quloqchin
-          <svg class="call-menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-        <div class="call-menu-item" onclick="toggleNoiseSuppression(event)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" id="noise-check-icon"><polyline points="20 6 9 17 4 12"/></svg>
-          Shovqinni bostirish
-        </div>
-        <div class="call-menu-sep"></div>
-        <div class="call-menu-item danger" onclick="endCall()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-          Translatsiyani yakunlash
-        </div>
-      </div>
-    </div>
-
-    <div class="call-topbar-info">
-      <span class="call-rec-dot"></span>
-      <span id="call-title-text">Jonli dars</span>
-    </div>
-    <div class="call-timer" id="call-timer">00:00</div>
-  </div>
-  <div class="call-body">
-    <div class="call-video-area">
-      <div class="call-video-grid" id="call-video-grid">
-        <!-- video tiles dynamically inserted here -->
-      </div>
-    </div>
-    <div class="call-sidebar" id="call-sidebar">
-      <div class="call-sidebar-header" id="call-sidebar-header">Ishtirokchilar</div>
-      <div id="call-participant-list"></div>
-      <div class="call-link-box" id="call-link-box" style="display:none">
-        <div class="call-link-label">Dars havolasi</div>
-        <div class="call-link-row">
-          <input type="text" id="call-link-input" readonly class="call-link-input">
-          <button class="call-link-copy" onclick="copyCallLink()">Nusxa</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="call-controls">
-    <div class="call-btn-col">
-      <button class="call-btn active" id="call-cam-btn" onclick="toggleCallCam()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-      </button>
-      <span class="call-btn-label">Video</span>
-    </div>
-    <div class="call-btn-col">
-      <button class="call-btn active" id="call-mic-btn" onclick="toggleCallMic()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
-      </button>
-      <span class="call-btn-label">Mikrofon</span>
-    </div>
-    <div class="call-btn-col">
-      <button class="call-btn end" onclick="endCall()">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22" style="transform:rotate(135deg)"><path d="M21 15.46l-5.27-.61a2 2 0 0 0-1.69.55l-2.2 2.2a15.05 15.05 0 0 1-6.59-6.59l2.2-2.21a2 2 0 0 0 .55-1.69L7.4 1.18a2 2 0 0 0-2.21-1.13l-4.13.9A2 2 0 0 0 0 2.96C0 13.13 8.87 22 19.04 22a2 2 0 0 0 1.96-1.06l.9-4.13a2 2 0 0 0-1.13-2.21z"/></svg>
-      </button>
-      <span class="call-btn-label">Yakunlash</span>
-    </div>
-  </div>
+<!-- Loading -->
+<div id="loading">
+  <div class="loader"></div>
+  <div class="loading-text">Dars xonasi yuklanmoqda...</div>
 </div>
 
-<!-- FLOATING BANNER (call minimized) -->
-<div class="live-floating-banner" id="live-floating-banner" onclick="restoreCallOverlay()">
-  <span class="live-rec-dot"></span>
-  <div class="lf-text">
-    <div id="lf-title">Jonli dars</div>
-    <div class="lf-time" id="lf-timer">00:00</div>
-  </div>
-  <button class="lf-return" onclick="event.stopPropagation(); restoreCallOverlay()">Qaytish</button>
+<!-- Error -->
+<div id="error-page">
+  <div class="error-icon" id="err-icon">🔒</div>
+  <div class="error-title" id="err-title">Kirish mumkin emas</div>
+  <div class="error-sub" id="err-sub">Havola noto'g'ri yoki muddati o'tgan. Ustozingizdan yangi havola so'rang.</div>
 </div>
 
-<!-- CHAT MODAL -->
-<div class="chat-modal-overlay" id="chat-modal">
-  <div class="chat-box">
-    <div class="chat-header">
-      <div class="chat-header-av" id="chat-header-av">A</div>
-      <div class="chat-header-info">
-        <div class="chat-header-name" id="chat-header-name">O'quvchi</div>
-        <div class="chat-header-sub" id="chat-header-sub">Online</div>
-      </div>
-      <button class="chat-close-btn" onclick="closeChat()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="chat-messages" id="chat-messages">
-      <div class="chat-empty-state" id="chat-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        <span>Hali xabar yo'q.<br>Birinchi bo'lib yozing!</span>
-      </div>
-    </div>
-    <div class="chat-input-row">
-      <textarea class="chat-input" id="chat-input" placeholder="Xabar yozing..." rows="1" maxlength="2000"
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg()}"
-        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
-      <button class="chat-send-btn" id="chat-send-btn" onclick="sendChatMsg()">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-      </button>
-    </div>
-  </div>
+<!-- Waiting (student - teacher hasn't started yet) -->
+<div id="waiting">
+  <div class="waiting-av" id="waiting-av">?</div>
+  <div class="waiting-title" id="waiting-title">Dars kutilmoqda</div>
+  <div class="waiting-sub" id="waiting-sub">Ustoz darsni boshlaguncha kuting...</div>
+  <div class="waiting-loader"><div class="wdot"></div><div class="wdot"></div><div class="wdot"></div></div>
 </div>
 
-<!-- CONFIRM DELETE MODAL -->
-<div class="confirm-overlay" id="confirm-modal">
-  <div class="confirm-box">
-    <div class="confirm-icon">⚠️</div>
-    <div class="confirm-title" id="confirm-title">Ishonchingiz komilmi?</div>
-    <div class="confirm-sub" id="confirm-sub">Bu amalni qaytarib bo'lmaydi.</div>
-    <div class="confirm-btns">
-      <button class="confirm-cancel" onclick="closeConfirm()">Bekor qilish</button>
-      <button class="confirm-danger" id="confirm-ok-btn" onclick="executeConfirm()">O'chirish</button>
-    </div>
-  </div>
-</div>
-
-<!-- LOGIN / REGISTER PAGE -->
-<div class="login-page" id="login-page">
-  <div class="login-card">
-    <div class="login-logo">
-      <div class="logo-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-      </div>
-      <span class="logo-text">Teacher Dashboard</span>
-    </div>
-
-    <!-- LOGIN FORM -->
-    <div id="form-login">
-      <div class="login-title">Xush kelibsiz! 👋</div>
-      <div class="login-sub">Hisobingizga kiring</div>
-      <div class="login-error" id="login-error">Login yoki parol noto'g'ri!</div>
-      <div class="field-row">
-        <div class="field-label">Login</div>
-        <input class="field-input" id="login-username" placeholder="loginni kiriting" onkeydown="if(event.key==='Enter')doLogin()">
-      </div>
-      <div class="field-row">
-        <div class="field-label">Parol</div>
-        <div class="pass-wrap">
-          <input class="field-input" id="login-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
-          <span class="eye-btn" onclick="togglePass('login-password',this)">👁</span>
-        </div>
-      </div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px;padding:11px" onclick="doLogin()">Kirish</button>
-      <div class="auth-switch">Hisob yo'qmi? <span onclick="showRegister()">Ro'yxatdan o'tish</span></div>
-    </div>
-
-    <!-- REGISTER FORM -->
-    <div id="form-register" style="display:none">
-      <div class="login-title">Ro'yxatdan o'tish</div>
-      <div class="login-sub">Rolni tanlang va ma'lumotlarni kiriting</div>
-      <div class="login-error" id="reg-error"></div>
-
-      <!-- ROLE TABS -->
-      <div class="role-tabs">
-        <button class="role-tab active" id="tab-student" onclick="selectRole('student')">
-          🎓 O'quvchi
-        </button>
-        <button class="role-tab" id="tab-teacher" onclick="selectRole('teacher')">
-          👨‍🏫 Ustoz
-        </button>
-      </div>
-
-      <div class="field-row">
-        <div class="field-label">Ism</div>
-        <input class="field-input" id="reg-name" placeholder="Ismni kiriting">
-      </div>
-      <div class="field-row">
-        <div class="field-label">Telefon</div>
-        <input class="field-input" id="reg-phone" placeholder="+998 90 000 00 00">
-      </div>
-      <div class="field-row">
-        <div class="field-label">Email</div>
-        <input class="field-input" id="reg-email" type="email" placeholder="example@gmail.com">
-      </div>
-      <div class="field-row">
-        <div class="field-label">Login</div>
-        <input class="field-input" id="reg-login" placeholder="login kiriting">
-      </div>
-      <div class="field-row">
-        <div class="field-label">Parol</div>
-        <div class="pass-wrap">
-          <input class="field-input" id="reg-pass" type="password" placeholder="••••••••">
-          <span class="eye-btn" onclick="togglePass('reg-pass',this)">👁</span>
-        </div>
-      </div>
-
-      <!-- SECRET CODE (only for teacher) -->
-      <div id="teacher-code-row" class="field-row" style="display:none">
-        <div class="field-label">Telegram kalit</div>
-        <div class="pass-wrap">
-          <input class="field-input" id="reg-secret" type="password" placeholder="USTOZ-XXXXXX-XXXXX">
-          <span class="eye-btn" onclick="togglePass('reg-secret',this)">👁</span>
-        </div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:5px;line-height:1.5">
-          📩 Telegram botga <b>/getkey</b> yozing → bir martalik kalit olasiz
-        </div>
-      </div>
-
-      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px;padding:11px" onclick="doRegister()">Ro'yxatdan o'tish</button>
-      <div class="auth-switch">Hisobingiz bormi? <span onclick="showLogin()">Kirish</span></div>
-    </div>
-  </div>
-</div>
-
-<!-- DASHBOARD -->
-<div id="dashboard" style="display:none;flex-direction:column;height:100vh">
-
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="topbar-left">
-    <div class="logo-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-    </div>
-    <span class="logo-text">Teacher Dashboard</span>
-  </div>
-  <div class="topbar-right">
-    <div class="search-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="color:var(--text-3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="O'quvchilarni qidirish...">
-    </div>
-    <button class="btn btn-outline btn-sm" onclick="showPage('students-page')" style="font-size:12px;gap:5px">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      O'quvchilar
-    </button>
-    <button class="btn btn-outline btn-sm" onclick="showPage('history')" style="font-size:12px;gap:5px">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-      Darslar tarixi
-    </button>
-    <div class="notif-btn" id="notif-btn" onclick="toggleNotif(event)" style="position:relative">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      <div class="notif-dot" id="notif-dot"></div>
-      <div id="notif-badge" style="display:none;position:absolute;top:-5px;right:-5px;background:#dc2626;color:#fff;border-radius:10px;font-size:10px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;border:2px solid var(--bg)"></div>
-      <!-- NOTIFICATION PANEL -->
-      <div class="notif-panel" id="notif-panel" onclick="event.stopPropagation()">
-        <div class="notif-panel-header">
-          <span class="notif-panel-title">Bildirishnomalar</span>
-          <button class="notif-read-all" onclick="markAllNotifsRead()">Barchasini o'qish</button>
-        </div>
-        <div class="notif-list" id="notif-list">
-          <div class="notif-item unread">
-            <div class="notif-icon-wrap" style="background:#eef2ff">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#3b5bdb" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </div>
-            <div class="notif-content">
-              <div class="notif-text">O'tgan dars bugun soat <b>09:00</b> — SAT Math</div>
-              <div class="notif-time-label">Bugun, 09:00</div>
-            </div>
-            <div class="notif-unread-dot"></div>
-          </div>
-          <div class="notif-item unread">
-            <div class="notif-icon-wrap" style="background:#ecfdf3">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#12b76a" stroke-width="2" width="16" height="16"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            </div>
-            <div class="notif-content">
-              <div class="notif-text">Yangi o'quvchi muvaffaqiyatli qo'shildi</div>
-              <div class="notif-time-label">Hozirgina</div>
-            </div>
-            <div class="notif-unread-dot"></div>
-          </div>
-          <div class="notif-item">
-            <div class="notif-icon-wrap" style="background:#fff7ed">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </div>
-            <div class="notif-content">
-              <div class="notif-text">O'quvchidan yangi xabar</div>
-              <div class="notif-time-label">30 daqiqa oldin</div>
-            </div>
-          </div>
-          <div class="notif-item">
-            <div class="notif-icon-wrap" style="background:#eef2ff">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#3b5bdb" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </div>
-            <div class="notif-content">
-              <div class="notif-text">Keyingi dars soat <b>11:00</b> — SAT Reading</div>
-              <div class="notif-time-label">Bugun, 11:00</div>
-            </div>
-          </div>
-          <div class="notif-item">
-            <div class="notif-icon-wrap" style="background:#fef2f2">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </div>
-            <div class="notif-content">
-              <div class="notif-text">Kechagi dars soat <b>15:00</b> da tugadi — SAT Writing</div>
-              <div class="notif-time-label">Kecha, 15:00</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="user-chip" onclick="openProfile()" style="cursor:pointer">
-      <div class="av-teacher">И</div>
+<!-- Main room -->
+<div id="room">
+  <div class="room-header">
+    <div class="room-title">
+      <div class="live-dot" id="live-dot" style="display:none"></div>
       <div>
-        <div class="user-name">Islomhon</div>
-        <div class="user-role">O'qituvchi</div>
+        <div class="room-title-text" id="room-title-text">Dars xonasi</div>
+        <div class="room-title-sub" id="room-sub">Yuklanmoqda...</div>
       </div>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="color:var(--text-3);margin-left:2px"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="room-timer" id="room-timer" style="display:none">00:00</div>
+    <div class="header-right">
+      <button class="copy-link-btn" id="copy-link-btn" style="display:none" onclick="copyStudentLink()">🔗 Ulashish</button>
     </div>
   </div>
-</div>
 
-<!-- PAGE: HOME -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
-
-<div id="page-home" class="content">
-  <div class="welcome-title">Xush kelibsiz, Islomhon! 👋</div>
-  <div class="welcome-sub">Bugun nima bo'layotganini ko'ring.</div>
-
-  <div class="top-action" style="display:flex;gap:10px;flex-wrap:wrap">
-    <button class="btn btn-primary" onclick="openCreateLesson()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Dars yaratish
-    </button>
-    <button class="btn" id="live-start-btn" onclick="startLive()" style="background:#dc2626;color:#fff;border:none;display:flex;align-items:center;gap:7px">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><circle cx="12" cy="12" r="6"/></svg>
-      Jonli dars boshlash
-    </button>
-  </div>
-
-
-  <div class="home-grid">
-    <!-- STUDENTS -->
-    <div class="section-card">
-      <div class="section-card-header">
-        <span>O'quvchilar</span>
-        <span class="section-count" id="student-count">0</span>
+  <div class="room-body">
+    <div class="video-area">
+      <div class="video-grid g1" id="video-grid"></div>
+    </div>
+    <div class="room-sidebar">
+      <div class="sidebar-tabs">
+        <div class="stab active" onclick="switchTab('participants')">👥 Ishtirokchilar</div>
+        <div class="stab" onclick="switchTab('chat')">💬 Chat</div>
       </div>
-      <div id="student-list">
-        <div class="empty-state" id="student-empty">
-          <div class="empty-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
-          <div class="empty-text">Hozircha o'quvchi yo'q.<br>Birinchi o'quvchini qo'shing!</div>
-          <button class="btn btn-primary" onclick="openAddStudent()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            O'quvchi qo'shish
+      <div class="stab-panel active" id="tab-participants">
+        <div class="part-list" id="part-list"></div>
+      </div>
+      <div class="stab-panel" id="tab-chat">
+        <div class="chat-msgs" id="chat-msgs">
+          <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Hali xabar yo'q</div>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="chat-inp" id="chat-inp" placeholder="Xabar..." rows="1" maxlength="500"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+          <button class="chat-send" onclick="sendChat()">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
           </button>
         </div>
       </div>
-      <div id="student-add-btn-wrap" style="display:none; padding:12px 20px; border-top:1px solid var(--border);">
-        <button class="btn btn-outline" style="width:100%;justify-content:center" onclick="openAddStudent()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          O'quvchi qo'shish
-        </button>
-      </div>
-    </div>
-
-    <!-- MESSAGES -->
-    <div class="section-card">
-      <div class="section-card-header">
-        <span>Xabarlar</span>
-        <span class="section-count" id="msg-count">0 ta yangi</span>
-      </div>
-      <div id="msg-list">
-        <div class="empty-state" id="msg-empty">
-          <div class="empty-icon" style="background:#f0fdf4;color:#12b76a">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          </div>
-          <div class="empty-text">Hozircha xabar yo'q.<br>O'quvchi qo'shing, muloqotni boshlang.</div>
-        </div>
-      </div>
-      <div class="section-footer" id="msg-footer" style="display:none">
-        <button class="btn btn-outline btn-read-all" onclick="readAllMessages()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          Barcha xabarlar o'qildi
-        </button>
-      </div>
     </div>
   </div>
-</div>
 
-<!-- PAGE: PROFILE -->
-<div id="page-profile" class="content" style="display:none">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;cursor:pointer;width:fit-content" onclick="showPage('home')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color:var(--text-2)"><polyline points="15 18 9 12 15 6"/></svg>
-    <span style="font-size:14px;color:var(--text-2)">Orqaga</span>
-  </div>
-
-  <div style="max-width:520px">
-    <!-- AVATAR -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:20px">
-      <div style="width:72px;height:72px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;flex-shrink:0">И</div>
-      <div>
-        <div style="font-size:20px;font-weight:700">Islomhon</div>
-        <div style="font-size:13px;color:var(--text-3);margin-top:3px">O'qituvchi</div>
-        <div style="font-size:12px;color:var(--green);margin-top:4px;display:flex;align-items:center;gap:4px">
-          <div style="width:6px;height:6px;border-radius:50%;background:var(--green)"></div>
-          Faol
-        </div>
-      </div>
-    </div>
-
-    <!-- INFO -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--shadow)">
-      <div style="font-size:15px;font-weight:700;margin-bottom:16px">Shaxsiy ma'lumotlar</div>
-      <div class="field-row">
-        <div class="field-label">Ism</div>
-        <input class="field-input" id="profile-name" value="Islomhon">
-      </div>
-      <div class="field-row">
-        <div class="field-label">Email</div>
-        <input class="field-input" id="profile-email" value="islomhon@example.com">
-      </div>
-      <div class="field-row" style="margin-bottom:0">
-        <div class="field-label">Telefon raqami</div>
-        <input class="field-input" id="profile-phone" value="+998 90 123 45 67">
-      </div>
-    </div>
-
-    <!-- SECURITY -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--shadow)">
-      <div style="font-size:15px;font-weight:700;margin-bottom:16px">Xavfsizlik</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openChangePassword()">
-        <div>
-          <div style="font-size:14px;font-weight:500">Parolni o'zgartirish</div>
-          <div style="font-size:12px;color:var(--text-3);margin-top:2px">Oxirgi marta 30 kun oldin o'zgartirildi</div>
-        </div>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:var(--text-3)"><polyline points="9 18 15 12 9 6"/></svg>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;cursor:pointer" onclick="openTwoFactor()">
-        <div>
-          <div style="font-size:14px;font-weight:500">Ikki bosqichli autentifikatsiya</div>
-          <div style="font-size:12px;color:var(--text-3);margin-top:2px">Hisobingizni himoya qiling</div>
-        </div>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:var(--text-3)"><polyline points="9 18 15 12 9 6"/></svg>
-      </div>
-    </div>
-
-    <!-- SAVE & LOGOUT -->
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="alert('Saqlandi!')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
-        Saqlash
+  <div class="room-controls">
+    <div class="ctrl-col">
+      <button class="ctrl-btn on" id="btn-cam" onclick="toggleCam()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
       </button>
-      <button class="btn btn-outline" style="color:var(--red);border-color:#fecaca" onclick="doLogout()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Chiqish
+      <span class="ctrl-lbl">Video</span>
+    </div>
+    <div class="ctrl-col">
+      <button class="ctrl-btn on" id="btn-mic" onclick="toggleMic()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
       </button>
+      <span class="ctrl-lbl">Mikrofon</span>
     </div>
-  </div>
-</div>
-
-<!-- PAGE: HISTORY -->
-<div id="page-history" class="content" style="display:none">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;cursor:pointer;width:fit-content" onclick="showPage('home')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color:var(--text-2)"><polyline points="15 18 9 12 15 6"/></svg>
-    <span style="font-size:14px;color:var(--text-2)">Orqaga</span>
-  </div>
-  <div style="font-size:22px;font-weight:700;margin-bottom:4px">Darslar tarixi</div>
-  <div style="font-size:13px;color:var(--text-2);margin-bottom:20px">O'tgan barcha video darslar</div>
-  <div class="section-card">
-    <div class="section-card-header">
-      <span>Video darslar</span>
-      <span class="section-count" id="history-count">0 ta dars</span>
-    </div>
-    <div id="history-list">
-      <div class="empty-state" id="history-empty">
-        <div class="empty-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-        </div>
-        <div class="empty-text">Hozircha o'tgan darslar yo'q.<br>Dars boshlanganidan keyin bu yerda ko'rinadi.</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-</div><!-- END DASHBOARD -->
-
-<!-- PROFILE MODAL -->
-<div class="modal-overlay" id="modal-profile">
-  <div class="modal" style="width:440px">
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
-      <div style="width:64px;height:64px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;flex-shrink:0">И</div>
-      <div>
-        <div style="font-size:18px;font-weight:700">Islomhon</div>
-        <div style="font-size:13px;color:var(--text-3);margin-top:2px">O'qituvchi</div>
-      </div>
-    </div>
-    <div class="field-row">
-      <div class="field-label">Ism</div>
-      <input class="field-input" value="Islomhon">
-    </div>
-    <div class="field-row">
-      <div class="field-label">Email</div>
-      <input class="field-input" value="islomhon@example.com">
-    </div>
-    <div class="field-row">
-      <div class="field-label">Telefon raqami</div>
-      <input class="field-input" value="+998 90 123 45 67">
-    </div>
-    <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
-      <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text-2)">Xavfsizlik</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="alert('Parolni o\'zgartirish')">
-        <span style="font-size:14px">Parolni o'zgartirish</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="color:var(--text-3)"><polyline points="9 18 15 12 9 6"/></svg>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;cursor:pointer" onclick="alert('Tizimdan chiqish')">
-        <span style="font-size:14px;color:var(--red)">Tizimdan chiqish</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="color:var(--red)"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      </div>
-    </div>
-    <div class="modal-btns" style="margin-top:16px">
-      <button class="btn btn-outline" onclick="closeAll()">Yopish</button>
-      <button class="btn btn-primary" onclick="closeAll()">Saqlash</button>
-    </div>
-  </div>
-</div>
-
-<!-- CHANGE PASSWORD MODAL -->
-<div class="modal-overlay" id="modal-password">
-  <div class="modal">
-    <h2>Parolni o'zgartirish</h2>
-    <p>Yangi parolingizni kiriting</p>
-    <div class="field-row">
-      <div class="field-label">Joriy parol</div>
-      <div class="pass-wrap"><input class="field-input" id="pass-current" type="password" placeholder="••••••••"><span class="eye-btn" onclick="togglePass('pass-current',this)">👁</span></div>
-    </div>
-    <div class="field-row">
-      <div class="field-label">Yangi parol</div>
-      <div class="pass-wrap"><input class="field-input" id="pass-new" type="password" placeholder="••••••••"><span class="eye-btn" onclick="togglePass('pass-new',this)">👁</span></div>
-    </div>
-    <div class="field-row">
-      <div class="field-label">Yangi parolni tasdiqlang</div>
-      <div class="pass-wrap"><input class="field-input" id="pass-confirm" type="password" placeholder="••••••••"><span class="eye-btn" onclick="togglePass('pass-confirm',this)">👁</span></div>
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-outline" onclick="closeAll()">Bekor qilish</button>
-      <button class="btn btn-primary" onclick="closeAll()">Saqlash</button>
-    </div>
-  </div>
-</div>
-
-<!-- TWO FACTOR MODAL -->
-<div class="modal-overlay" id="modal-twofactor">
-  <div class="modal">
-    <h2>Ikki bosqichli autentifikatsiya</h2>
-    <p>Hisobingizni qo'shimcha himoya qiling</p>
-    <div style="background:var(--accent-soft);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
-      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="20" height="20" style="flex-shrink:0;margin-top:1px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      <div style="font-size:13px;color:var(--accent);line-height:1.5">SMS orqali tasdiqlash kodi yuboriladi. Har safar tizimga kirganda telefon raqamingizga kod keladi.</div>
-    </div>
-    <div class="field-row">
-      <div class="field-label">Telefon raqami</div>
-      <input class="field-input" value="+998 90 123 45 67">
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--border)">
-      <span style="font-size:14px;font-weight:500">Faollashtirish</span>
-      <div class="toggle" id="twofa-toggle" onclick="this.classList.toggle('off')"></div>
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-outline" onclick="closeAll()">Bekor qilish</button>
-      <button class="btn btn-primary" onclick="closeAll()">Saqlash</button>
-    </div>
-  </div>
-</div>
-
-<!-- ADD STUDENT MODAL -->
-<div class="modal-overlay" id="modal-student">
-  <div class="modal">
-    <h2>O'quvchi qo'shish</h2>
-    <p>Ro'yxatdan o'tgan o'quvchining loginini kiriting</p>
-    <div class="field-row" style="margin-bottom:0">
-      <div class="field-label">O'quvchi login</div>
-      <input class="field-input" id="input-find-login" placeholder="o'quvchi login">
-    </div>
-    <div id="find-student-result" style="margin-top:10px;font-size:13px"></div>
-    <div class="modal-btns" style="margin-top:16px">
-      <button class="btn btn-outline" onclick="closeStudentModal()">Bekor qilish</button>
-      <button class="btn btn-primary" onclick="findAndAddStudent()">Qo'shish</button>
-    </div>
-  </div>
-</div>
-
-<!-- LESSON CHOICE MODAL -->
-<div class="modal-overlay" id="modal-lesson-choice">
-  <div class="modal">
-    <h2>Dars yaratish</h2>
-    <p>Darsni qanday boshlashni tanlang</p>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-      <div class="choice-card" onclick="openLessonForm()">
-        <div class="choice-icon" style="background:#eef2ff;color:#3b5bdb">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </div>
-        <div style="flex:1">
-          <div class="choice-title">Dars yaratish сейчас</div>
-          <div class="choice-sub">Aniq sana va vaqtga dars belgilang</div>
-        </div>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:#9ca3af;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
-      </div>
-      <div class="choice-card" onclick="openStartNow()">
-        <div class="choice-icon" style="background:#ecfdf3;color:#12b76a">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-        </div>
-        <div style="flex:1">
-          <div class="choice-title">Darsni boshlash</div>
-          <div class="choice-sub">O'quvchi bilan video darsni hoziroq boshlash</div>
-        </div>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:#9ca3af;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
-      </div>
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-outline" onclick="closeAll()">Bekor qilish</button>
-    </div>
-  </div>
-</div>
-
-<!-- CREATE LESSON FORM MODAL -->
-<div class="modal-overlay" id="modal-lesson">
-  <div class="modal">
-    <h2>Dars yaratish</h2>
-    <p>Yangi dars ma'lumotlarini to'ldiring</p>
-    <div class="form-row">
-      <div class="field-row">
-        <div class="field-label">Sana</div>
-        <input class="field-input" type="date" id="lesson-date">
-      </div>
-      <div class="field-row">
-        <div class="field-label">Vaqt</div>
-        <input class="field-input" type="time" id="lesson-time">
-      </div>
-    </div>
-    <div class="field-row">
-      <div class="field-label">Dars mavzusi</div>
-      <input class="field-input" id="lesson-topic" placeholder="Dars mavzusini kiriting">
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-outline" onclick="closeAll()">Bekor qilish</button>
-      <button class="btn btn-primary" onclick="closeAll()">Dars yaratish</button>
-    </div>
-  </div>
-</div>
-
-<!-- START NOW MODAL -->
-<div class="modal-overlay" id="modal-start-now">
-  <div class="modal">
-    <h2>Darsni boshlash</h2>
-    <p>Darhol dars boshlash uchun o'quvchini tanlang</p>
-    <div class="field-row">
-      <div class="field-label">Ученик</div>
-      <select class="select-input" id="start-student-select"></select>
-    </div>
-    <div class="field-row">
-      <div class="field-label">Dars mavzusi</div>
-      <input class="field-input" id="start-topic" placeholder="Dars mavzusini kiriting">
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-outline" onclick="closeAll()">Bekor qilish</button>
-      <button class="btn btn-primary" style="background:#12b76a" onclick="startLesson()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Hozir boshlash
+    <div class="ctrl-col" id="screen-ctrl" style="display:none">
+      <button class="ctrl-btn off" id="btn-screen" onclick="toggleScreen()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       </button>
+      <span class="ctrl-lbl">Ekran</span>
+    </div>
+    <div class="ctrl-col">
+      <button class="ctrl-btn end" onclick="leaveRoom()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" style="transform:rotate(135deg)"><path d="M21 15.46l-5.27-.61a2 2 0 0 0-1.69.55l-2.2 2.2a15 15 0 0 1-6.59-6.59l2.2-2.2a2 2 0 0 0 .55-1.69L7.4 1.18A2 2 0 0 0 5.21.06L1.08.96A2 2 0 0 0 0 2.96C0 13.13 8.87 22 19.04 22a2 2 0 0 0 1.96-1.06l.9-4.13a2 2 0 0 0-1.1-2.21z"/></svg>
+      </button>
+      <span class="ctrl-lbl">Chiqish</span>
     </div>
   </div>
 </div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
 <script>
-  const COLORS = ['#4f46e5','#0ea5e9','#f59e0b','#10b981','#8b5cf6','#ec4899','#ef4444','#14b8a6'];
-  let students = [];
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+let roomToken     = null;   // URL dan olingan token
+let myRole        = null;   // 'teacher' | 'student'
+let myName        = null;
+let roomId        = null;
+let peerRoomId    = null;
+let roomInfo      = null;
+let studentUrl    = null;   // Ustoz o'quvchilarga ulashadi
 
-  function getColor(i) { return COLORS[i % COLORS.length]; }
-  function getInitial(name) { return name.trim().charAt(0).toUpperCase(); }
-  function getNow() {
-    const d = new Date();
-    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+let localStream   = null;
+let myPeer        = null;
+let myPeerId      = null;
+let camOn         = true;
+let micOn         = true;
+let screenSharing = false;
+let screenStream  = null;
+
+let peers         = {};     // peerId -> { call, stream, name, role }
+let participantsList = [];
+
+// Chat (xotirada saqlanadi)
+let chatMessages  = [];
+
+// Timer
+let timerInterval = null;
+let startTime     = null;
+
+// Polling — ishtirokchilar ro'yxati (faqat signaling uchun, 6s)
+let syncInterval  = null;
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+async function init() {
+  // URL dan token olish
+  const params = new URLSearchParams(window.location.search);
+  const tToken = params.get('t'); // teacher
+  const sToken = params.get('s'); // student
+
+  roomToken = tToken || sToken || null;
+  myRole    = tToken ? 'teacher' : 'student';
+
+  if (!roomToken) {
+    showError('🔒', 'Havola topilmadi', 'Dars xonasiga kirish uchun ustozingizdan havola so\'rang.');
+    return;
   }
 
-  async function findAndAddStudent() {
-    const loginEl = document.getElementById('input-find-login');
-    const resultEl = document.getElementById('find-student-result');
-    const login = loginEl.value.trim();
-    resultEl.innerHTML = '';
+  // URL ni tozalash (token brauzer tarixida qolmasligi uchun)
+  window.history.replaceState({}, '', window.location.pathname);
 
-    if (!login) { loginEl.focus(); return; }
-    if (!currentTeacher) return;
+  // Server dan xona ma'lumotlarini olish
+  try {
+    const r = await fetch('/api/room?action=info', {
+      headers: { 'X-Room-Token': roomToken }
+    });
+    const d = await r.json();
+    if (!d.ok) { showError('🚫', 'Kirish rad etildi', d.msg); return; }
+    roomInfo   = d.room;
+    myName     = d.user.name + (myRole === 'teacher' ? ' (Ustoz)' : '');
+    roomId     = d.room.id;
+    peerRoomId = d.room.peer_room_id;
 
-    resultEl.innerHTML = '<span style="color:var(--text-3)">⏳ Qidirilmoqda...</span>';
+    document.getElementById('room-title-text').textContent = roomInfo.title;
 
+    if (myRole === 'teacher') {
+      document.getElementById('screen-ctrl').style.display = '';
+      document.getElementById('copy-link-btn').style.display = '';
+    }
+  } catch(e) {
+    showError('⚠️', 'Ulanish xatosi', 'Server bilan ulanib bo\'lmadi. Qayta urinib ko\'ring.');
+    return;
+  }
+
+  // Media olish
+  await getMedia();
+}
+
+async function getMedia() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  } catch(e1) {
     try {
-      const r = await fetch('/api/students', { headers: authHeaders() });
-      const all = await r.json();
-      const found = all.find(s => s.login === login);
-
-      if (!found) {
-        resultEl.innerHTML = '<span style="color:#dc2626">❌ Bu o\'quvchi ro\'yxatdan o\'tmagan!</span>';
-        return;
-      }
-
-      // Biriktirish — faqat currentTeacher.login ishlatiladi (body da ham yuborilmaydi)
-      const ar = await fetch('/api/assign_student', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ teacher_login: currentTeacher.login, student_login: login })
-      });
-      const ad = await ar.json();
-
-      if (ad.ok) {
-        resultEl.innerHTML = `<span style="color:#059669">✅ ${escapeHtml(found.name)} qo'shildi!</span>`;
-        loginEl.value = '';
-        setTimeout(() => {
-          closeStudentModal();
-          loadAssignedStudents();
-          renderStudents();
-          updateSelects();
-          loadChatList();
-        }, 800);
-      } else {
-        resultEl.innerHTML = `<span style="color:#dc2626">❌ ${escapeHtml(ad.msg || 'Xato yuz berdi')}</span>`;
-      }
-    } catch(e) {
-      resultEl.innerHTML = '<span style="color:#dc2626">❌ Server bilan ulanishda xato</span>';
+      localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+      camOn = false;
+    } catch(e2) {
+      localStream = new MediaStream();
+      camOn = false; micOn = false;
+      showToast('⚠️ Kamera/mikrofon topilmadi');
     }
   }
+  updateBtnState();
+  startPeer();
+}
 
-  async function renderStudents() {
-    const list = document.getElementById('student-list');
-    const addBtn = document.getElementById('student-add-btn-wrap');
-    const count = document.getElementById('student-count');
+// ══════════════════════════════════════════════════════════════
+// PEER CONNECTION (PeerJS)
+// ══════════════════════════════════════════════════════════════
+function startPeer() {
+  const peerId = (myRole === 'teacher' ? 'tr-' : 'st-') +
+                  peerRoomId + '-' + Math.random().toString(36).slice(2,8);
 
-    if (!currentTeacher) {
-      students = [];
-    } else {
-      try {
-        const r = await fetch('/api/assign_student?teacher_login=' + currentTeacher.login);
-        const assigned = await r.json();
-        students = assigned.map((s, i) => ({
-          ...s, color: getColor(i)
-        }));
-      } catch(e) { students = []; }
-    }
-
-    count.textContent = students.length;
-
-    // Clear only student rows, keep empty-state in DOM
-    list.querySelectorAll('.student-item').forEach(el => el.remove());
-
-    if (students.length === 0) {
-      document.getElementById('student-empty').style.display = 'flex';
-      addBtn.style.display = 'none';
-      return;
-    }
-
-    document.getElementById('student-empty').style.display = 'none';
-    addBtn.style.display = 'block';
-
-    students.forEach(s => {
-      const item = document.createElement('div');
-      item.className = 'student-item';
-      item.innerHTML = `
-        <div class="student-left" style="cursor:pointer" onclick="openChatWith('${escapeHtml(s.login)}','${escapeHtml(s.name)}','${s.color}')">
-          <div class="av" style="background:${s.color}">${getInitial(s.name)}</div>
-          <div>
-            <div class="student-name">${escapeHtml(s.name)}</div>
-            <div class="student-meta">${escapeHtml(s.phone || 'Raqam kiritilmagan')}</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <button onclick="openChatWith('${escapeHtml(s.login)}','${escapeHtml(s.name)}','${s.color}')"
-            style="background:#eef2ff;color:#4f46e5;border:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Chat
-          </button>
-          <button onclick="confirmRemoveStudent('${escapeHtml(s.login)}','${escapeHtml(s.name)}')"
-            style="background:#fee2e2;color:#dc2626;border:none;padding:6px 10px;border-radius:7px;font-size:12px;cursor:pointer" title="O'chirish">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-          </button>
-        </div>
-      `;
-      list.insertBefore(item, document.getElementById('student-empty'));
-    });
-  }
-
-  function renderMessages(student) {
-    const msgList = document.getElementById('msg-list');
-    const msgCount = document.getElementById('msg-count');
-
-    document.getElementById('msg-empty').style.display = 'none';
-    document.getElementById('msg-footer').style.display = 'block';
-
-    const item = document.createElement('div');
-    item.className = 'msg-item';
-    item.innerHTML = `
-      <div class="av" style="background:${student.color};width:34px;height:34px;font-size:13px;flex-shrink:0">${getInitial(student.name)}</div>
-      <div class="msg-body">
-        <div class="msg-top">
-          <span class="msg-name">${student.name}</span>
-          <span class="msg-time">${getNow()}</span>
-        </div>
-        <div class="msg-preview">Yangi o'quvchi sifatida qo'shildi</div>
-      </div>
-      <div class="unread-badge">1</div>
-    `;
-    msgList.insertBefore(item, document.getElementById('msg-empty'));
-
-    const total = msgList.querySelectorAll('.unread-badge').length;
-    msgCount.textContent = total + ' ta yangi';
-  }
-
-  function updateSelects() {
-    const opts = ['<option value="">O\'quvchini tanlang</option>',
-      ...students.map(s => `<option value="${s.login}">${s.name}</option>`)
-    ].join('');
-    const startSel = document.getElementById('start-student-select');
-    if (startSel) startSel.innerHTML = opts;
-  }
-
-  function closeModal(id) {
-    document.getElementById(id).classList.remove('open');
-  }
-
-  function closeAll() {
-    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
-  }
-
-  function togglePass(id, btn) {
-    const input = document.getElementById(id);
-    if (input.type === 'password') { input.type = 'text'; btn.style.opacity = '1'; }
-    else { input.type = 'password'; btn.style.opacity = '.5'; }
-  }
-
-  function openChangePassword() {
-    closeAll();
-    document.getElementById('modal-password').classList.add('open');
-  }
-
-  function openTwoFactor() {
-    closeAll();
-    document.getElementById('modal-twofactor').classList.add('open');
-  }
-
-  // ─── AUTH — To'liq DB orqali (Neon PostgreSQL) ───────────
-  let currentRole = 'student';
-  let currentTeacher = null;
-
-  // ── Yordam funksiyalari ──
-  function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
-  function hideErr(el) { el.style.display = 'none'; }
-
-  function setBtn(btn, loading, text) {
-    btn.disabled = loading;
-    btn.textContent = loading ? '⏳ Kutilmoqda...' : text;
-  }
-
-  function clearRegForm() {
-    ['reg-name','reg-phone','reg-email','reg-login','reg-pass','reg-secret'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-  }
-
-  // ── Forma almashtirish ──
-  function showLogin() {
-    document.getElementById('form-login').style.display = '';
-    document.getElementById('form-register').style.display = 'none';
-    hideErr(document.getElementById('login-error'));
-  }
-
-  function showRegister() {
-    document.getElementById('form-login').style.display = 'none';
-    document.getElementById('form-register').style.display = '';
-    hideErr(document.getElementById('reg-error'));
-    selectRole('student');
-  }
-
-  function selectRole(role) {
-    currentRole = role;
-    document.getElementById('tab-student').classList.toggle('active', role === 'student');
-    document.getElementById('tab-teacher').classList.toggle('active', role === 'teacher');
-    document.getElementById('teacher-code-row').style.display = role === 'teacher' ? '' : 'none';
-  }
-
-  // ── Login — DB orqali ──
-  async function doLogin() {
-    const u   = document.getElementById('login-username').value.trim();
-    const p   = document.getElementById('login-password').value;
-    const err = document.getElementById('login-error');
-    hideErr(err);
-
-    if (!u || !p) { showErr(err, 'Login va parolni kiriting!'); return; }
-
-    const btn = document.querySelector('#form-login .btn-primary');
-    const origText = btn ? btn.textContent : 'Kirish';
-    if (btn) setBtn(btn, true, '');
-
-    try {
-      const r = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login: u, pass: p })
-      });
-      const d = await r.json();
-      if (d.ok) {
-        doLoginAs(d.role, d.user);
-      } else {
-        showErr(err, d.msg || 'Login yoki parol noto\'g\'ri!');
-        document.getElementById('login-password').value = '';
-      }
-    } catch(e) {
-      showErr(err, '❌ Server bilan ulanishda xato!');
-    } finally {
-      if (btn) setBtn(btn, false, origText);
-    }
-  }
-
-  // ── Ro'yxatdan o'tish — DB orqali ──
-  async function doRegister() {
-    const name  = document.getElementById('reg-name').value.trim();
-    const phone = document.getElementById('reg-phone').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-    const login = document.getElementById('reg-login').value.trim();
-    const pass  = document.getElementById('reg-pass').value.trim();
-    const err   = document.getElementById('reg-error');
-    hideErr(err);
-
-    if (!name || !login || !pass) { showErr(err, 'Ism, login va parol majburiy!'); return; }
-    if (pass.length < 4) { showErr(err, 'Parol kamida 4 ta belgidan iborat bo\'lsin!'); return; }
-
-    const btn = document.querySelector('#form-register .btn-primary');
-    const origText = btn ? btn.textContent : 'Ro\'yxatdan o\'tish';
-    if (btn) setBtn(btn, true, '');
-
-    try {
-      if (currentRole === 'teacher') {
-        // 1. Kalit tekshiruvi
-        const secret = document.getElementById('reg-secret').value.trim();
-        if (!secret) { showErr(err, 'Ustoz kalitini kiriting!'); if(btn) setBtn(btn,false,origText); return; }
-
-        const kr = await fetch(`/api/checkkey?key=${encodeURIComponent(secret)}`, { cache: 'no-store' });
-        const kd = await kr.json();
-        if (!kd.ok) { showErr(err, '❌ Kalit noto\'g\'ri yoki allaqachon ishlatilgan!'); if(btn) setBtn(btn,false,origText); return; }
-
-        // 2. Teacher saqlash
-        const tr = await fetch('/api/save_teacher', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, phone, email, login, pass })
-        });
-        const td = await tr.json();
-        if (!td.ok) { showErr(err, td.msg || 'Xato yuz berdi!'); if(btn) setBtn(btn,false,origText); return; }
-
-        clearRegForm();
-        doLoginAs('teacher', td.teacher);
-
-      } else {
-        // Student saqlash
-        const sr = await fetch('/api/register_student', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, phone, email, login, pass })
-        });
-        const sd = await sr.json();
-        if (!sd.ok) { showErr(err, sd.msg || 'Xato yuz berdi!'); if(btn) setBtn(btn,false,origText); return; }
-
-        clearRegForm();
-        doLoginAs('student', { ...sd.student, color: getColor(0) });
-      }
-    } catch(e) {
-      showErr(err, '❌ Server bilan ulanishda xato!');
-    } finally {
-      if (btn) setBtn(btn, false, origText);
-    }
-  }
-
-  // ── Profilni to'ldirish ──
-  function fillTeacherProfile(user) {
-    const name    = user.name  || '';
-    const phone   = user.phone || '';
-    const email   = user.email || '';
-    const initial = name.trim().charAt(0).toUpperCase() || 'U';
-
-    const chip = document.querySelector('.user-chip .user-name');
-    if (chip) chip.textContent = name;
-    const av = document.querySelector('.av-teacher');
-    if (av) av.textContent = initial;
-
-    const wt = document.querySelector('#page-home .welcome-title');
-    if (wt) wt.textContent = `Xush kelibsiz, ${name}! 👋`;
-
-    const pavEl = document.querySelector('#page-profile [style*="border-radius:50%"]');
-    if (pavEl) pavEl.textContent = initial;
-    const pnEl = document.querySelector('#page-profile [style*="font-size:20px"]');
-    if (pnEl) pnEl.textContent = name;
-
-    const pName  = document.getElementById('profile-name');
-    const pPhone = document.getElementById('profile-phone');
-    const pEmail = document.getElementById('profile-email');
-    if (pName)  pName.value  = name;
-    if (pPhone) pPhone.value = phone;
-    if (pEmail) pEmail.value = email;
-  }
-
-  // ── Dashboard ochish ──
-  function doLoginAs(role, user) {
-    document.getElementById('login-page').style.display = 'none';
-    if (role === 'teacher') {
-      currentTeacher = user;
-      fillTeacherProfile(user);
-      document.getElementById('dashboard').style.display = 'flex';
-      document.getElementById('student-dashboard').style.display = 'none';
-      renderStudents();
-      updateSelects();
-      setTimeout(() => { loadChatList(); updateUnreadBadge(); requestNotifPermission(); startBgPoll(); }, 400);
-    } else {
-      document.getElementById('dashboard').style.display = 'none';
-      showStudentDashboard(user);
-      setTimeout(() => {
-        if (typeof tryJoinPendingRoom === 'function') tryJoinPendingRoom();
-        loadStudentChatList();
-        requestNotifPermission();
-        startBgPoll();
-      }, 300);
-    }
-  }
-
-  // ── Student dashboard ──
-  function showStudentDashboard(student) {
-    const sd = document.getElementById('student-dashboard');
-    sd.style.display = 'flex';
-    const color = student.color || getColor(0);
-    document.getElementById('sd-name').textContent = student.name;
-    document.getElementById('sd-avatar').textContent = getInitial(student.name);
-    document.getElementById('sd-avatar').style.background = color;
-    document.getElementById('sd-name2').textContent = student.name;
-    document.getElementById('sd-fullname').textContent = student.name;
-    document.getElementById('sd-avatar2').textContent = getInitial(student.name);
-    document.getElementById('sd-avatar2').style.background = color;
-    document.getElementById('sd-phone-show').textContent = student.phone || '—';
-    document.getElementById('sd-login-show').textContent = student.login;
-
-    currentStudent = student;
-    checkLiveStream();
-    liveCheckInterval = setInterval(checkLiveStream, 8000);
-  }
-
-  // ── O'QUVCHI: JONLI DARSGA ULANISH ────────────────────────
-  // ── Chiqish ──
-  function doLogout() {
-    leaveCall(true);
-    if (bgPollInterval)   { clearInterval(bgPollInterval);   bgPollInterval = null; }
-    if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
-    currentChatId = null; currentChatStudentLogin = null;
-    lastUnreadCount = 0; lastMessageCount = 0;
-    currentTeacher = null;
-    currentStudent = null;
-    document.getElementById('dashboard').style.display = 'none';
-    document.getElementById('student-dashboard').style.display = 'none';
-    document.getElementById('login-page').style.display = 'flex';
-    document.getElementById('login-username').value = '';
-    document.getElementById('login-password').value = '';
-    showPage('home');
-    closeAll();
-  }
-
-  // HISTORY
-  let lessonHistory = [];
-
-  function addToHistory(studentName, color, initial, topic, durationOverride) {
-    const now = new Date();
-    const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    const dateStr = now.toLocaleDateString('uz-UZ', { day:'numeric', month:'long' });
-    const duration = durationOverride || (Math.floor(Math.random() * 30 + 10) + ' daqiqa');
-    lessonHistory.unshift({ studentName, color, initial, topic, timeStr, dateStr, duration });
-    renderHistory();
-  }
-
-  function rewatchLesson(idx) {
-    const lesson = lessonHistory[idx];
-    if (!lesson) return;
-    if (lesson.recordingUrl) {
-      window.open(lesson.recordingUrl, '_blank');
-    } else {
-      alert("⚠️ Bu dars uchun video yozuvi mavjud emas.\n\nDarsni yozib olish uchun jonli dars davomida ⚙️ sozlamalar menyusidan \"Yozishni boshlash\" tugmasini bosing.");
-    }
-  }
-
-  function renderHistory() {
-    const list = document.getElementById('history-list');
-    const empty = document.getElementById('history-empty');
-    const count = document.getElementById('history-count');
-    count.textContent = lessonHistory.length + ' ta dars';
-    list.querySelectorAll('.history-item').forEach(e => e.remove());
-    if (lessonHistory.length === 0) { empty.style.display = 'flex'; return; }
-    empty.style.display = 'none';
-    lessonHistory.forEach((h, idx) => {
-      const item = document.createElement('div');
-      item.className = 'history-item';
-      item.innerHTML = `
-        <div class="history-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-        </div>
-        <div class="av" style="background:${h.color};width:34px;height:34px;font-size:13px">${h.initial}</div>
-        <div class="history-info">
-          <div class="history-name">${h.studentName}</div>
-          <div class="history-meta">${h.dateStr} · ${h.timeStr} · ${h.topic || 'Mavzu kiritilmagan'}</div>
-        </div>
-        <span class="history-duration">${h.duration}</span>
-        <button class="btn btn-outline btn-sm" style="font-size:12px;gap:5px;margin-left:10px" onclick="rewatchLesson(${idx})">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Qayta ko'rish
-        </button>
-      `;
-      list.insertBefore(item, empty);
-    });
-  }
-
-  function showPage(name) {
-    ['home','profile','history','students-page'].forEach(p => {
-      const el = document.getElementById('page-' + p);
-      if (el) el.style.display = name === p ? '' : 'none';
-    });
-    if (name === 'students-page') loadAssignedStudents();
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // JONLI DARS — FULL MESH P2P (PeerJS) + Grid layout
-  // ══════════════════════════════════════════════════════════
-  let localStream      = null;   // o'z kamera/mikrofon streami
-  let myPeer           = null;   // o'zimning PeerJS obyektim
-  let myPeerId         = null;   // o'zimning peer ID
-  let liveRoomId       = null;   // joriy xona ID (ustoz yaratadi)
-  let liveTitle        = '';
-  let callMode         = null;   // 'teacher' | 'student'
-  let camOn = true, micOn = true;
-  let peerConnections  = {};     // peerId -> { call, stream }
-  let participantsList = [];     // [{peer_id, name, role}]
-  let participantsPollInterval = null;
-  let heartbeatInterval = null;
-  let userLeftLive     = false;  // foydalanuvchi qo'lda chiqdi — qayta avtoulanmaslik uchun
-
-  // ── Call timer ──
-  let callTimerInterval = null;
-  let callStartTime = null;
-
-  function startCallTimer() {
-    callStartTime = Date.now();
-    callTimerInterval = setInterval(() => {
-      const sec = Math.floor((Date.now() - callStartTime) / 1000);
-      const m = Math.floor(sec / 60).toString().padStart(2,'0');
-      const s = (sec % 60).toString().padStart(2,'0');
-      const timeStr = `${m}:${s}`;
-      const callTimer = document.getElementById('call-timer');
-      if (callTimer) callTimer.textContent = timeStr;
-      const lfTimer = document.getElementById('lf-timer');
-      if (lfTimer) lfTimer.textContent = timeStr;
-    }, 1000);
-  }
-  function stopCallTimer() {
-    if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
-    document.getElementById('call-timer').textContent = '00:00';
-  }
-  function getCallDuration() {
-    if (!callStartTime) return '0 daqiqa';
-    const min = Math.max(1, Math.round((Date.now() - callStartTime) / 60000));
-    return min + ' daqiqa';
-  }
-
-  // ── Kamera / Mikrofon yoqish-o'chirish (hammaga tegishli) ──
-  function toggleCallCam() {
-    camOn = !camOn;
-    const btn = document.getElementById('call-cam-btn');
-    btn.classList.toggle('active', camOn);
-    btn.classList.toggle('off', !camOn);
-    if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
-    updateMyTile();
-  }
-  function toggleCallMic() {
-    micOn = !micOn;
-    const btn = document.getElementById('call-mic-btn');
-    btn.classList.toggle('active', micOn);
-    btn.classList.toggle('off', !micOn);
-    if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = micOn);
-    updateMyTile();
-  }
-
-  // ── SETTINGS DROPDOWN MENU ──────────────────────────────────
-  let isRecording = false;
-  let noiseSuppression = true;
-  let screenStream = null;
-
-  function toggleCallSettings(e) {
-    e.stopPropagation();
-    document.getElementById('call-settings-menu').classList.toggle('open');
-  }
-  document.addEventListener('click', (e) => {
-    const menu = document.getElementById('call-settings-menu');
-    const btn  = document.getElementById('call-settings-btn');
-    if (menu && menu.classList.contains('open') && !menu.contains(e.target) && e.target !== btn) {
-      menu.classList.remove('open');
+  myPeer = new Peer(peerId, {
+    debug: 0,
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
     }
   });
-  function renameLiveTitle() {
-    const newTitle = prompt('Translatsiya nomi:', liveTitle || 'Jonli dars');
-    if (newTitle) {
-      liveTitle = newTitle;
-      document.getElementById('call-title-text').textContent = '🔴 ' + liveTitle;
-      document.getElementById('lf-title').textContent = '🔴 ' + liveTitle;
+
+  myPeer.on('open', id => {
+    myPeerId = id;
+    showRoom();
+    joinRoomServer();
+    // Signaling: 6 soniyada bir ishtirokchilar ro'yxatini sinxronlash
+    syncInterval = setInterval(syncParticipants, 6000);
+    startTimer();
+  });
+
+  // Kelayotgan ulanishlarni qabul qilish
+  myPeer.on('call', call => {
+    call.answer(localStream || new MediaStream());
+    handleCall(call);
+  });
+
+  myPeer.on('error', e => {
+    console.warn('Peer error:', e.type, e.message);
+    if (e.type === 'unavailable-id') {
+      // ID band — boshqa ID bilan urinish
+      setTimeout(startPeer, 500);
     }
-    document.getElementById('call-settings-menu').classList.remove('open');
+  });
+
+  myPeer.on('disconnected', () => {
+    setTimeout(() => myPeer.reconnect(), 2000);
+  });
+}
+
+function handleCall(call) {
+  const pid = call.peer;
+  if (peers[pid]) return; // Allaqachon ulangan
+  peers[pid] = { call, stream: null, name: '...', role: '?' };
+
+  call.on('stream', stream => {
+    peers[pid].stream = stream;
+    rebuildGrid();
+  });
+  call.on('close',  () => { delete peers[pid]; rebuildGrid(); updateParticipants(); });
+  call.on('error',  () => { delete peers[pid]; rebuildGrid(); });
+}
+
+async function connectToPeer(peerId) {
+  if (!myPeer || !myPeerId || peers[peerId] || peerId === myPeerId) return;
+  peers[peerId] = { call: null, stream: null, name: '...', role: '?' };
+
+  try {
+    const call = myPeer.call(peerId, localStream || new MediaStream());
+    peers[peerId].call = call;
+    call.on('stream', stream => {
+      peers[peerId].stream = stream;
+      rebuildGrid();
+    });
+    call.on('close',  () => { delete peers[peerId]; rebuildGrid(); });
+    call.on('error',  () => { delete peers[peerId]; rebuildGrid(); });
+  } catch(e) {
+    delete peers[peerId];
   }
-  function toggleRecording() {
-    isRecording = !isRecording;
-    const label = document.getElementById('call-record-label');
-    const item  = document.getElementById('call-record-item');
-    if (isRecording) { label.textContent = "Yozishni to'xtatish"; item.classList.add('call-record-active'); }
-    else { label.textContent = 'Yozishni boshlash'; item.classList.remove('call-record-active'); }
-    document.getElementById('call-settings-menu').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════════════════
+// SERVER SIGNALING (faqat yangi ishtirokchilarni topish uchun)
+// ══════════════════════════════════════════════════════════════
+async function joinRoomServer() {
+  try {
+    const r = await fetch('/api/room?action=join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
+      body: JSON.stringify({ peer_id: myPeerId, name: myName })
+    });
+    const d = await r.json();
+    if (!d.ok) { showToast('⚠️ ' + (d.msg || 'Server xatosi')); return; }
+    handleParticipants(d.participants || []);
+  } catch(e) { console.error('joinRoom xato:', e); }
+}
+
+async function syncParticipants() {
+  if (!roomToken || !myPeerId) return;
+  try {
+    // Heartbeat + yangi ishtirokchilarni olish
+    const r = await fetch('/api/room?action=join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
+      body: JSON.stringify({ peer_id: myPeerId, name: myName })
+    });
+    const d = await r.json();
+    if (!d.ok) return;
+    handleParticipants(d.participants || []);
+  } catch(e) {}
+}
+
+function handleParticipants(list) {
+  participantsList = list;
+  // Yangi ishtirokchilarga ulanish
+  list.forEach(p => {
+    if (p.peer_id !== myPeerId && !peers[p.peer_id]) {
+      connectToPeer(p.peer_id);
+    }
+    // Nom va role yangilash
+    if (peers[p.peer_id]) {
+      peers[p.peer_id].name = p.name;
+      peers[p.peer_id].role = p.role;
+    }
+  });
+  updateParticipants();
+  rebuildGrid();
+}
+
+// ══════════════════════════════════════════════════════════════
+// VIDEO GRID
+// ══════════════════════════════════════════════════════════════
+function rebuildGrid() {
+  const grid = document.getElementById('video-grid');
+  const total = 1 + Object.keys(peers).length;
+  grid.className = 'video-grid g' + Math.min(total, 9);
+  grid.innerHTML = '';
+
+  // O'zim
+  grid.appendChild(makeTile(myPeerId, myName, myRole, localStream, true, camOn, micOn));
+
+  // Boshqalar
+  Object.entries(peers).forEach(([pid, p]) => {
+    const info = participantsList.find(x => x.peer_id === pid) || {};
+    const name = info.name || p.name || 'Ishtirokchi';
+    const role = info.role || p.role || 'student';
+    grid.appendChild(makeTile(pid, name, role, p.stream, false, true, true));
+  });
+}
+
+function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
+  const tile = document.createElement('div');
+  let cls = 'vtile';
+  if (!hasCam || !stream || stream.getVideoTracks().every(t => !t.enabled)) cls += ' no-cam';
+  if (isSelf) cls += ' self-tile';
+  if (role === 'teacher') cls += ' teacher-tile';
+  if (!stream) cls += ' waiting';
+  tile.className = cls;
+  tile.id = 'tile-' + pid.replace(/[^a-z0-9]/gi, '_');
+
+  const video = document.createElement('video');
+  video.autoplay = true; video.playsinline = true;
+  if (isSelf) video.muted = true;
+  if (stream) video.srcObject = stream;
+  tile.appendChild(video);
+
+  const av = document.createElement('div');
+  av.className = 'vtile-av';
+  av.textContent = (name || 'U').charAt(0).toUpperCase();
+  av.style.background = role === 'teacher' ? '#4f46e5' : '#0ea5e9';
+  tile.appendChild(av);
+
+  const label = document.createElement('div');
+  label.className = 'vtile-label';
+  if (!hasMic) {
+    const mic = document.createElement('svg');
+    mic.innerHTML = '<svg class="mic-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>';
+    mic.style.color = 'var(--red)';
+    label.appendChild(mic);
   }
-  async function shareScreen() {
-    document.getElementById('call-settings-menu').classList.remove('open');
-    try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-      const screenTrack = screenStream.getVideoTracks()[0];
-      replaceOutgoingVideoTrack(screenTrack);
-      const myTile = document.querySelector('#call-tile-' + cssEscape(myPeerId) + ' video');
-      if (myTile) myTile.srcObject = new MediaStream([screenTrack, ...(localStream ? localStream.getAudioTracks() : [])]);
-      screenTrack.onended = () => {
-        if (localStream) {
-          const camTrack = localStream.getVideoTracks()[0];
-          if (camTrack) {
-            replaceOutgoingVideoTrack(camTrack);
-            const myTile2 = document.querySelector('#call-tile-' + cssEscape(myPeerId) + ' video');
-            if (myTile2) myTile2.srcObject = localStream;
-          }
-        }
-      };
-    } catch(e) { console.log('Ekran ulashish bekor qilindi'); }
+  label.appendChild(document.createTextNode((isSelf ? 'Siz' : name) + (role === 'teacher' ? ' 👨‍🏫' : '')));
+  tile.appendChild(label);
+
+  return tile;
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONTROLS
+// ══════════════════════════════════════════════════════════════
+function toggleCam() {
+  camOn = !camOn;
+  if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
+  updateBtnState();
+  rebuildGrid();
+}
+
+function toggleMic() {
+  micOn = !micOn;
+  if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+  updateBtnState();
+}
+
+async function toggleScreen() {
+  if (screenSharing) {
+    stopScreen();
+    return;
   }
-  function replaceOutgoingVideoTrack(track) {
-    Object.values(peerConnections).forEach(pc => {
-      if (!pc.call || !pc.call.peerConnection) return;
-      const sender = pc.call.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+  try {
+    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    const track = screenStream.getVideoTracks()[0];
+    // Barcha ulanishlarda video trekni almashtirish
+    Object.values(peers).forEach(p => {
+      if (!p.call?.peerConnection) return;
+      const sender = p.call.peerConnection.getSenders().find(s => s.track?.kind === 'video');
       if (sender) sender.replaceTrack(track);
     });
-  }
-  function openDeviceSubmenu(type, e) {
-    e.stopPropagation();
-    const labels = { camera: 'Kamera', mic: 'Mikrofon', speaker: 'Karnay va quloqchin' };
-    alert(`${labels[type]} sozlamalari — qurilma tanlash tez orada qo'shiladi`);
-  }
-  function toggleNoiseSuppression(e) {
-    e.stopPropagation();
-    noiseSuppression = !noiseSuppression;
-    const icon = document.getElementById('noise-check-icon');
-    icon.style.opacity = noiseSuppression ? '1' : '0.25';
-  }
+    // O'z tile ni yangilash
+    const myTile = document.getElementById('tile-' + myPeerId?.replace(/[^a-z0-9]/gi,'_'));
+    if (myTile) myTile.querySelector('video').srcObject = new MediaStream([track, ...(localStream?.getAudioTracks()||[])]);
 
-  // ── Helper: CSS uchun ID escape ──
-  function cssEscape(s) {
-    return String(s).replace(/[^a-zA-Z0-9_-]/g, '_');
-  }
+    track.onended = stopScreen;
+    screenSharing = true;
+    document.getElementById('btn-screen').classList.replace('off','on');
+    showToast('📺 Ekran ulashish boshlandi');
+  } catch(e) { showToast('Ekran ulashish bekor qilindi'); }
+}
 
-  // ── USTOZ: Jonli dars boshlash ────────────────────────────
-  async function startLive() {
-    liveTitle = prompt('Dars mavzusi:', 'Jonli dars') || 'Jonli dars';
-    callMode = 'teacher';
-    userLeftLive = false;
-
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .catch(() => navigator.mediaDevices.getUserMedia({ video: false, audio: true }));
-    } catch(e) {
-      alert('Kamera/mikrofonga ruxsat bering: ' + e.message);
-      return;
-    }
-
-    liveRoomId = 'study-' + (currentTeacher?.login || 'ustoz') + '-' + Date.now();
-    myPeerId = liveRoomId;
-
-    await fetch('/api/live', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        teacher_login: currentTeacher?.login,
-        teacher_name: currentTeacher?.name,
-        room_id: liveRoomId,
-        title: liveTitle
-      })
-    });
-
-    openCallOverlay('teacher');
-    initPeerAndJoin(myPeerId, currentTeacher?.name || 'Ustoz', 'teacher');
-  }
-
-  // ── PeerJS — ulanish va mesh boshlash ─────────────────────
-  function initPeerAndJoin(peerId, myName, role) {
-    myPeer = new Peer(peerId, { debug: 0 });
-
-    myPeer.on('open', async (id) => {
-      // PeerJS tasdiqlagan haqiqiy ID ni ishlatamiz
-      myPeerId = id;
-      // O'z kamera tile'ni yangilaymiz (ID o'zgargan bo'lishi mumkin)
-      rebuildVideoGrid();
-      renderParticipantSidebar();
-      // Serverga join so'rovini yuboramiz
-      await joinRoom();
-      heartbeatInterval = setInterval(joinRoom, 2000);
-      // joinRoom allaqachon participants ro'yxatini qaytaradi, alohida poll shart emas
-    });
-
-    // Kelayotgan qo'ng'iroqlarga javob berish
-    myPeer.on('call', call => {
-      const remotePeerId = call.peer;
-      call.answer(localStream || new MediaStream());
-      registerCall(remotePeerId, call);
-    });
-
-    myPeer.on('error', err => {
-      console.warn('Peer error:', err);
-    });
-  }
-
-  let teacherMissingCount = 0;
-
-  async function joinRoom() {
-    if (!liveRoomId || userLeftLive) return;
-    try {
-      const r = await fetch('/api/live', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'join',
-          room_id: liveRoomId,
-          peer_id: myPeerId,
-          name: (callMode === 'teacher' ? currentTeacher?.name : currentStudent?.name) || 'Foydalanuvchi',
-          role: callMode
-        })
+function stopScreen() {
+  screenSharing = false;
+  if (screenStream) { screenStream.getTracks().forEach(t=>t.stop()); screenStream = null; }
+  if (localStream) {
+    const camTrack = localStream.getVideoTracks()[0];
+    if (camTrack) {
+      Object.values(peers).forEach(p => {
+        const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+        if (sender) sender.replaceTrack(camTrack);
       });
-      const d = await r.json();
-      if (d.ok) {
-        participantsList = d.participants || [];
-        connectToAllParticipants();
-        renderParticipantSidebar();
-        rebuildVideoGrid();
-
-        // Agar ustoz darsni tugatgan bo'lsa (o'quvchi uchun)
-        // Faqat 5 marta ketma-ket ustoz yo'q bo'lsagina chiqamiz (10 sekund)
-        if (callMode === 'student' && !participantsList.find(p => p.role === 'teacher')) {
-          teacherMissingCount++;
-          if (teacherMissingCount >= 5) {
-            if (currentLiveTeacherLogin) {
-              const lr = await fetch('/api/live?teacher_login=' + encodeURIComponent(currentLiveTeacherLogin));
-              const sessions = await lr.json();
-              if (!sessions.length || sessions[0].room_id !== liveRoomId) {
-                leaveCall(false); return;
-              }
-            }
-            teacherMissingCount = 0;
-          }
-        } else {
-          teacherMissingCount = 0;
-        }
-      }
-    } catch(e) { console.error('joinRoom xato:', e); }
-  }
-
-  async function refreshParticipants() {
-    if (!liveRoomId || userLeftLive) return;
-    try {
-      const r = await fetch('/api/live?room_id=' + encodeURIComponent(liveRoomId));
-      const list = await r.json();
-      participantsList = list || [];
-      connectToAllParticipants();
-      renderParticipantSidebar();
-      rebuildVideoGrid();
-
-      // Agar ustoz darsni tugatgan bo'lsa (o'quvchi uchun)
-      if (callMode === 'student') {
-        if (currentLiveTeacherLogin) {
-          const lr = await fetch('/api/live?teacher_login=' + encodeURIComponent(currentLiveTeacherLogin));
-          const sessions = await lr.json();
-          if (!sessions.length || sessions[0].room_id !== liveRoomId) {
-            leaveCall(false);
-            return;
-          }
-        } else {
-          // Login noma'lum bo'lsa — ishtirokchilar ro'yxati orqali tekshirish
-          if (!participantsList.find(p => p.role === 'teacher')) {
-            leaveCall(false);
-            return;
-          }
-        }
-      }
-    } catch(e) { console.error(e); }
-  }
-
-  // Har bir yangi ishtirokchiga (o'zimdan boshqa) ulanish
-  function connectToAllParticipants() {
-    if (!myPeer || !myPeer.id) return;
-    participantsList.forEach(p => {
-      if (p.peer_id === myPeerId) return;
-      if (peerConnections[p.peer_id]) return; // allaqachon ulangan
-      try {
-        const call = myPeer.call(p.peer_id, localStream || new MediaStream());
-        registerCall(p.peer_id, call);
-      } catch(e) { console.warn('call xato', e); }
-    });
-  }
-
-  function registerCall(peerId, call) {
-    if (peerConnections[peerId] && peerConnections[peerId].call) return;
-    peerConnections[peerId] = peerConnections[peerId] || {};
-    peerConnections[peerId].call = call;
-
-    call.on('stream', remoteStream => {
-      peerConnections[peerId].stream = remoteStream;
-      rebuildVideoGrid();
-    });
-    call.on('close', () => {
-      delete peerConnections[peerId];
-      rebuildVideoGrid();
-      renderParticipantSidebar();
-    });
-    call.on('error', () => {
-      delete peerConnections[peerId];
-      rebuildVideoGrid();
-    });
-  }
-
-  // ── Video Grid qurish ──────────────────────────────────────
-  function ensureMyTile() {
-    rebuildVideoGrid();
-  }
-
-  function rebuildVideoGrid() {
-    const grid = document.getElementById('call-video-grid');
-    if (!grid) return;
-
-    // O'zim + boshqa ishtirokchilar (faqat hozir streamga ega bo'lganlar yoki ro'yxatdagilar)
-    const others = participantsList.filter(p => p.peer_id !== myPeerId);
-    const total = 1 + others.length;
-    grid.className = 'call-video-grid tiles-' + Math.min(total, 9);
-
-    grid.innerHTML = '';
-
-    // O'z tile
-    const myName = (callMode === 'teacher' ? currentTeacher?.name : currentStudent?.name) || 'Siz';
-    grid.appendChild(buildTile(myPeerId, myName, true, localStream, camOn, micOn, callMode === 'teacher'));
-
-    // Boshqalar
-    others.forEach(p => {
-      const conn = peerConnections[p.peer_id];
-      const stream = conn ? conn.stream : null;
-      grid.appendChild(buildTile(p.peer_id, p.name || "O'quvchi", false, stream, true, true, p.role === 'teacher'));
-    });
-  }
-
-  function buildTile(peerId, name, isSelf, stream, camEnabled, micEnabled, isTeacherTile) {
-    const tile = document.createElement('div');
-    tile.className = 'call-tile' + (isSelf ? ' self-tile' : '') + (!camEnabled || !stream ? ' cam-off' : '');
-    tile.id = 'call-tile-' + cssEscape(peerId);
-
-    const video = document.createElement('video');
-    video.autoplay = true; video.playsinline = true;
-    if (isSelf) video.muted = true;
-    tile.appendChild(video);
-
-    const avatar = document.createElement('div');
-    avatar.className = 'tile-avatar';
-    avatar.textContent = getInitial(name || 'U');
-    avatar.style.display = (camEnabled && stream) ? 'none' : 'flex';
-    tile.appendChild(avatar);
-
-    // srcObject DOM'ga qo'shilgandan keyin o'rnatilishi kerak
-    if (stream) {
-      video.srcObject = stream;
-      video.play().catch(() => {});
-    }
-
-    const label = document.createElement('div');
-    label.className = 'tile-label';
-    label.innerHTML = (!micEnabled ? '<svg class="tile-mic-off" viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M16 7a4 4 0 1 0-8 0v4a4 4 0 0 0 8 0V7z"/><path d="M3 3l18 18" stroke="currentColor" stroke-width="2"/></svg>' : '')
-      + (isTeacherTile ? '👨‍🏫 ' : '') + (name || 'Foydalanuvchi') + (isSelf ? ' (Siz)' : '');
-    tile.appendChild(label);
-
-    return tile;
-  }
-
-  // O'z kamera/mikrofon holatini grid'da yangilash
-  function updateMyTile() {
-    rebuildVideoGrid();
-  }
-
-  // ── Sidebar — ishtirokchilar ro'yxati + havola ────────────
-  function renderParticipantSidebar() {
-    const header = document.getElementById('call-sidebar-header');
-    const list   = document.getElementById('call-participant-list');
-    if (!header || !list) return;
-
-    // Agar server hali javob bermagan bo'lsa, o'zimizni qo'shib ko'rsatamiz
-    let displayList = participantsList.slice();
-    const alreadyInList = displayList.find(p => p.peer_id === myPeerId);
-    if (!alreadyInList && myPeerId) {
-      const myName = (callMode === 'teacher' ? currentTeacher?.name : currentStudent?.name) || 'Foydalanuvchi';
-      displayList.unshift({ peer_id: myPeerId, name: myName, role: callMode });
-    }
-
-    header.textContent = `Ishtirokchilar (${displayList.length})`;
-    list.innerHTML = '';
-    displayList.forEach(p => {
-      const isMe = p.peer_id === myPeerId;
-      const div = document.createElement('div');
-      div.className = 'call-participant';
-      div.innerHTML = `
-        <div class="av" style="background:${p.role === 'teacher' ? '#4f46e5' : '#0ea5e9'}">${getInitial(p.name || 'U')}</div>
-        <div class="call-participant-info">
-          <div class="call-participant-name">${p.name || 'Foydalanuvchi'}${isMe ? ' (Siz)' : ''}</div>
-          <div class="call-participant-sub">${p.role === 'teacher' ? 'Ustoz' : "O'quvchi"}</div>
-        </div>
-      `;
-      list.appendChild(div);
-    });
-
-    // Havola faqat ustozga ko'rinadi
-    const linkBox = document.getElementById('call-link-box');
-    if (linkBox) {
-      if (callMode === 'teacher' && liveRoomId) {
-        linkBox.style.display = '';
-        const linkInput = document.getElementById('call-link-input');
-        linkInput.value = window.location.origin + '/?join=' + encodeURIComponent(liveRoomId);
-      } else {
-        linkBox.style.display = 'none';
-      }
+      const myTile = document.getElementById('tile-' + myPeerId?.replace(/[^a-z0-9]/gi,'_'));
+      if (myTile) myTile.querySelector('video').srcObject = localStream;
     }
   }
+  document.getElementById('btn-screen')?.classList.replace('on','off');
+  showToast('Ekran ulashish to\'xtatildi');
+}
 
-  function copyCallLink() {
-    const input = document.getElementById('call-link-input');
-    input.select();
-    const btn = document.querySelector('.call-link-copy');
-    try {
-      navigator.clipboard.writeText(input.value).then(() => {
-        btn.textContent = '✅ Nusxalandi';
-        btn.classList.add('copied');
-        setTimeout(() => { btn.textContent = 'Nusxa'; btn.classList.remove('copied'); }, 1800);
-      });
-    } catch(e) {
-      document.execCommand('copy');
-    }
-  }
+function updateBtnState() {
+  const cb = document.getElementById('btn-cam');
+  const mb = document.getElementById('btn-mic');
+  cb.className = 'ctrl-btn ' + (camOn ? 'on' : 'off');
+  mb.className = 'ctrl-btn ' + (micOn ? 'on' : 'off');
+}
 
-  // ── Call overlay ochish / yopish ──────────────────────────
-  function openCallOverlay(mode) {
-    callMode = mode;
-    camOn = true; micOn = true;
-    document.getElementById('call-cam-btn').classList.add('active');
-    document.getElementById('call-cam-btn').classList.remove('off');
-    document.getElementById('call-mic-btn').classList.add('active');
-    document.getElementById('call-mic-btn').classList.remove('off');
+async function leaveRoom() {
+  // Stop tracks
+  if (localStream) { localStream.getTracks().forEach(t=>t.stop()); localStream = null; }
+  if (screenStream) { screenStream.getTracks().forEach(t=>t.stop()); screenStream = null; }
+  Object.values(peers).forEach(p => p.call?.close());
+  peers = {};
+  if (myPeer) { myPeer.destroy(); myPeer = null; }
+  if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 
-    document.getElementById('call-title-text').textContent = '🔴 ' + liveTitle;
-    document.getElementById('lf-title').textContent = '🔴 ' + liveTitle;
-    document.getElementById('call-overlay').classList.add('open');
-    document.getElementById('live-floating-banner').classList.remove('show');
-    rebuildVideoGrid();
-    renderParticipantSidebar();
-    startCallTimer();
-  }
-
-  function closeCallOverlay() {
-    document.getElementById('call-overlay').classList.remove('open');
-    document.getElementById('call-video-grid').innerHTML = '';
-    document.getElementById('call-settings-menu').classList.remove('open');
-    document.getElementById('live-floating-banner').classList.remove('show');
-    stopCallTimer();
-  }
-
-  // ── Kichraytirish — dars fon rejimida davom etadi ─────────
-  function minimizeCallOverlay() {
-    document.getElementById('call-overlay').classList.remove('open');
-    document.getElementById('call-settings-menu').classList.remove('open');
-    document.getElementById('live-floating-banner').classList.add('show');
-    // Taymer va ulanishlar davom etadi (to'xtatilmaydi)
-
-    // O'quvchi dashboard'da "Darsga qaytish" ko'rsatish
-    if (callMode === 'student') {
-      document.getElementById('sd-no-live-icon').textContent = '🔴';
-      document.getElementById('sd-no-live-title').textContent = 'Jonli dars davom etmoqda';
-      document.getElementById('sd-no-live-sub').textContent = liveTitle;
-      document.getElementById('sd-return-live-btn').style.display = '';
-    }
-  }
-
-  function restoreCallOverlay() {
-    document.getElementById('live-floating-banner').classList.remove('show');
-    document.getElementById('call-overlay').classList.add('open');
-    rebuildVideoGrid();
-    renderParticipantSidebar();
-
-    if (callMode === 'student') {
-      document.getElementById('sd-no-live-icon') && (document.getElementById('sd-no-live-icon').textContent = '📺');
-      document.getElementById('sd-no-live-title') && (document.getElementById('sd-no-live-title').textContent = "Hozircha jonli dars yo'q");
-      document.getElementById('sd-no-live-sub') && (document.getElementById('sd-no-live-sub').textContent = 'Ustoz dars boshlaganda bu yerda avtomatik ko\'rinadi');
-      document.getElementById('sd-return-live-btn') && (document.getElementById('sd-return-live-btn').style.display = 'none');
-    }
-  }
-
-  // Dars tugagandan keyin "Darsga kirish" tugmasi orqali qayta ulanish
-  async function reconnectToLive() {
-    if (!currentLiveTeacherLogin) return;
-    try {
-      const r = await fetch('/api/live?teacher_login=' + encodeURIComponent(currentLiveTeacherLogin));
-      const sessions = await r.json();
-      if (!sessions.length) {
-        alert("Dars tugagan yoki mavjud emas.");
-        return;
-      }
-      const session = sessions[0];
-      const tr = await fetch('/api/teachers');
-      const teachers = await tr.json();
-      const teacher = teachers.find(t => t.login === currentLiveTeacherLogin) || { login: currentLiveTeacherLogin, name: currentLiveTeacherName || 'Ustoz' };
-      connectToLive(session, teacher);
-    } catch(e) {
-      alert("Ulanishda xatolik: " + e.message);
-    }
-  }
-
-  // ── Sessiyani tark etish (umumiy) ─────────────────────────
-  function leaveCall(isLogout) {
-    userLeftLive = true;
-
-    if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
-    if (participantsPollInterval) { clearInterval(participantsPollInterval); participantsPollInterval = null; }
-    if (liveCheckInterval && isLogout) { clearInterval(liveCheckInterval); liveCheckInterval = null; }
-
-    Object.values(peerConnections).forEach(pc => { if (pc.call) pc.call.close(); });
-    peerConnections = {};
-
-    if (myPeer) { myPeer.destroy(); myPeer = null; }
-    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-
-    if (liveRoomId && myPeerId) {
-      fetch('/api/live', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'leave', room_id: liveRoomId, peer_id: myPeerId })
-      }).catch(()=>{});
-    }
-
-    closeCallOverlay();
-
-    if (callMode === 'student') {
-      // Ustoz streamini saqlash (agar mavjud bo'lsa)
-      let teacherLastStream = null;
-      const savedLiveRoomId = liveRoomId;
-      const savedTitle = liveTitle;
-      const savedTeacherName = currentLiveTeacherName || 'Ustoz';
-      Object.values(peerConnections).forEach(pc => {
-        if (pc.stream && pc.stream.getVideoTracks().length > 0) {
-          teacherLastStream = pc.stream;
-        }
-      });
-
-      document.getElementById('sd-live-section').style.display = 'none';
-      document.getElementById('sd-return-live-btn').style.display = 'none';
-
-      const noLive = document.getElementById('sd-no-live');
-      if (teacherLastStream && savedLiveRoomId) {
-        // Video preview ko'rsatish
-        noLive.style.padding = '0';
-        noLive.style.textAlign = 'left';
-        noLive.style.overflow = 'hidden';
-        noLive.style.cursor = 'pointer';
-        noLive.innerHTML = `
-          <div style="position:relative;border-radius:var(--radius);overflow:hidden;">
-            <video id="sd-last-stream-video" autoplay muted playsinline loop
-              style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#000;"></video>
-            <div style="position:absolute;inset:0;background:rgba(0,0,0,0.18);pointer-events:none;"></div>
-            <div style="position:absolute;top:10px;left:12px;background:rgba(220,38,38,0.92);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.5px;">🔴 JONLI</div>
-            <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 14px 10px;background:linear-gradient(transparent,rgba(0,0,0,0.7));">
-              <div style="color:#fff;font-size:13px;font-weight:700;margin-bottom:2px;">${savedTitle}</div>
-              <div style="color:rgba(255,255,255,0.8);font-size:11px;">👨‍🏫 ${savedTeacherName}</div>
-            </div>
-            <div id="sd-join-overlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;background:rgba(0,0,0,0.35);">
-              <button onclick="event.stopPropagation();reconnectToLive()" style="background:#3a8ee6;color:#fff;border:none;padding:11px 22px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
-                ▶ Darsga kirish
-              </button>
-            </div>
-          </div>
-        `;
-        noLive.style.display = '';
-        const vid = document.getElementById('sd-last-stream-video');
-        vid.srcObject = teacherLastStream;
-        vid.play().catch(()=>{});
-
-        // Hover — join tugmasini ko'rsatish
-        noLive.onmouseenter = () => { document.getElementById('sd-join-overlay').style.opacity = '1'; };
-        noLive.onmouseleave = () => { document.getElementById('sd-join-overlay').style.opacity = '0'; };
-        // Mobile: tap
-        noLive.onclick = () => {
-          const ov = document.getElementById('sd-join-overlay');
-          if (ov) ov.style.opacity = ov.style.opacity === '1' ? '0' : '1';
-        };
-      } else {
-        noLive.style.padding = '';
-        noLive.style.textAlign = 'center';
-        noLive.style.cursor = '';
-        noLive.onmouseenter = null;
-        noLive.onmouseleave = null;
-        noLive.onclick = null;
-        noLive.innerHTML = `
-          <div style="font-size:32px;margin-bottom:8px" id="sd-no-live-icon">📺</div>
-          <div style="font-size:14px;font-weight:600;margin-bottom:4px" id="sd-no-live-title">Hozircha jonli dars yo'q</div>
-          <div style="font-size:12px;color:var(--text-3)" id="sd-no-live-sub">Ustoz dars boshlaganda bu yerda avtomatik ko'rinadi</div>
-          <button id="sd-return-live-btn" onclick="restoreCallOverlay()" style="display:none;margin-top:14px;background:#3a8ee6;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">🔴 Darsga qaytish</button>
-        `;
-        noLive.style.display = '';
-      }
-      connectedRoomId = null;
-    }
-
-    liveRoomId = null;
-    myPeerId = null;
-    participantsList = [];
-    teacherMissingCount = 0;
-  }
-
-  // ── USTOZ: Yakunlash → Darslar tarixiga saqlash, DB tozalash ─
-  async function endCall() {
-    if (callMode === 'teacher') {
-      const duration = getCallDuration();
-      const otherCount = Math.max(0, participantsList.length - 1);
-      addToHistory(`${otherCount} ta o'quvchi`, '#dc2626', '🔴', liveTitle, duration);
-
-      await fetch('/api/live', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teacher_login: currentTeacher?.login, room_id: liveRoomId })
-      });
-
-      leaveCall(false);
-      showPage('history');
-    } else {
-      // O'quvchi "Yakunlash" bossa — shunchaki chiqadi, qayta ulanmaydi
-      leaveCall(false);
-    }
-  }
-
-  // Endi: Telegram-style call overlayni tashqi X (overlay tashqarisiga bosish) bilan yopish YO'Q —
-  // foydalanuvchi faqat "Yakunlash" tugmasi orqali chiqadi (fon rejimida davom etadi degani —
-  // overlay yopilsa ham ulanish davom etishi uchun closeCallOverlay() chaqirilganda leaveCall chaqirilmaydi)
-
-  // ── O'QUVCHI: O'Z USTOZINING JONLI DARSINI TEKSHIRISH ─────
-  let currentStudent          = null;
-  let liveCheckInterval       = null;
-  let connectedRoomId         = null;
-  let currentLiveTeacherName  = null;
-  let currentLiveTeacherLogin = null;
-
-  async function checkLiveStream() {
-    if (!currentStudent || userLeftLive) return;
-    try {
-      const r = await fetch('/api/assign_student?student_login=' + currentStudent.login);
-      const teachers = await r.json();
-      if (!teachers.length) { showNoLive(); return; }
-
-      for (const t of teachers) {
-        const lr = await fetch('/api/live?teacher_login=' + encodeURIComponent(t.login));
-        const sessions = await lr.json();
-        if (sessions.length > 0) {
-          const session = sessions[0];
-          if (connectedRoomId !== session.room_id) {
-            connectToLive(session, t);
-          }
-          return;
-        }
-      }
-      showNoLive();
-    } catch(e) { console.error(e); }
-  }
-
-  function showNoLive() {
-    document.getElementById('sd-live-section').style.display = 'none';
-    document.getElementById('sd-no-live').style.display = '';
-    if (connectedRoomId && !userLeftLive) {
-      leaveCall(false);
-    }
-  }
-
-  function connectToLive(session, teacher) {
-    connectedRoomId = session.room_id;
-    currentLiveTeacherName = teacher.name;
-    currentLiveTeacherLogin = teacher.login;
-    liveTitle = session.title || 'Jonli dars';
-    liveRoomId = session.room_id;
-    callMode = 'student';
-    userLeftLive = false;
-
-    document.getElementById('sd-live-title').textContent = liveTitle;
-    document.getElementById('sd-live-teacher').textContent = '👨‍🏫 ' + teacher.name;
-    document.getElementById('sd-no-live').style.display = 'none';
-    document.getElementById('sd-live-section').style.display = '';
-
-    // O'z kamerasini olishga harakat qiladi (ruxsat berilmasa — bo'sh stream)
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      .then(stream => { localStream = stream; afterStudentStreamReady(); })
-      .catch(() => {
-        localStream = null;
-        camOn = false; micOn = false;
-        afterStudentStreamReady();
-      });
-  }
-
-  function afterStudentStreamReady() {
-    myPeerId = 'peer-' + (currentStudent?.login || 'student') + '-' + Math.floor(Math.random()*100000);
-    if (!document.getElementById('call-overlay').classList.contains('open')) {
-      openCallOverlay('student');
-    } else {
-      rebuildVideoGrid();
-    }
-    initPeerAndJoin(myPeerId, currentStudent?.name || "O'quvchi", 'student');
-  }
-
-  // ── O'QUVCHI BIRIKTIRISH ──────────────────────────────────
-  // ── O'QUVCHI BIRIKTIRISH ──────────────────────────────────
-  let allStudentsDB = [];
-
-  async function loadAssignedStudents() {
-    if (!currentTeacher) return;
-    try {
-      // Barcha o'quvchilar
-      const r1 = await fetch('/api/students');
-      allStudentsDB = await r1.json();
-      // Biriktrilganlar
-      const r2 = await fetch('/api/assign_student?teacher_login=' + currentTeacher.login);
-      const assigned = await r2.json();
-      const assignedLogins = assigned.map(s => s.login);
-      renderAssignStudents(allStudentsDB, assignedLogins);
-    } catch(e) { console.error(e); }
-  }
-
-  function renderAssignStudents(all, assignedLogins) {
-    const list = document.getElementById('assign-student-list');
-    if (!list) return;
-    list.innerHTML = '';
-    if (!all.length) {
-      list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px">Hali o\'quvchi yo\'q</div>';
-      return;
-    }
-    all.forEach(s => {
-      const isAssigned = assignedLogins.includes(s.login);
-      const div = document.createElement('div');
-      div.className = 'assign-student-item';
-      div.innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:32px;height:32px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px">${s.name.charAt(0).toUpperCase()}</div>
-          <div>
-            <div style="font-size:13px;font-weight:600">${s.name}</div>
-            <div style="font-size:11px;color:var(--text-3)">${s.login}</div>
-          </div>
-        </div>
-        <button onclick="toggleAssign('${s.login}', ${isAssigned})" style="font-size:12px;padding:5px 12px;border-radius:7px;border:none;cursor:pointer;font-weight:600;${isAssigned ? 'background:#fee2e2;color:#dc2626' : 'background:#d1fae5;color:#059669'}">
-          ${isAssigned ? "✖ Chiqarish" : "✔ Qo'shish"}
-        </button>
-      `;
-      list.appendChild(div);
-    });
-  }
-
-  async function toggleAssign(studentLogin, isAssigned) {
-    if (!currentTeacher) return;
-    await fetch('/api/assign_student', {
-      method: isAssigned ? 'DELETE' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ teacher_login: currentTeacher.login, student_login: studentLogin })
-    });
-    loadAssignedStudents();
-    renderStudents();
-    updateSelects();
-  }
-
-  function openProfile() {
-    closeAll();
-    showPage('profile');
-  }
-
-  function openAddStudent() {
-    closeAll();
-    document.getElementById('input-find-login').value = '';
-    document.getElementById('find-student-result').innerHTML = '';
-    document.getElementById('modal-student').classList.add('open');
-  }
-
-  function closeStudentModal() {
-    document.getElementById('find-student-result').innerHTML = '';
-    closeModal('modal-student');
-  }
-
-  function openCreateLesson() {
-    closeAll();
-    document.getElementById('modal-lesson-choice').classList.add('open');
-  }
-
-  function openLessonForm() {
-    closeAll();
-    document.getElementById('modal-lesson').classList.add('open');
-  }
-
-  function openStartNow() {
-    closeAll();
-    document.getElementById('modal-start-now').classList.add('open');
-  }
-
-  function startLesson() {
-    const sel = document.getElementById('start-student-select');
-    const topic = document.getElementById('start-topic').value.trim();
-    if (sel && sel.value) {
-      const s = students.find(x => x.login == sel.value);
-      if (s) addToHistory(s.name, s.color, getInitial(s.name), topic);
-    }
-    document.getElementById('start-topic').value = '';
-    closeAll();
-  }
-
-  function toggleNotif(e) {
-    e.stopPropagation();
-    document.getElementById('notif-panel').classList.toggle('open');
-  }
-
-  function markAllNotifsRead() {
-    document.querySelectorAll('.notif-item.unread').forEach(el => {
-      el.classList.remove('unread');
-      const dot = el.querySelector('.notif-unread-dot');
-      if (dot) dot.remove();
-    });
-    document.getElementById('notif-dot').style.display = 'none';
-  }
-
-  function readAllMessages() {
-    document.querySelectorAll('#msg-list .unread-badge').forEach(b => b.remove());
-    document.getElementById('msg-count').textContent = '0 ta yangi';
-    document.getElementById('msg-footer').querySelector('button').style.color = 'var(--green)';
-  }
-
-  document.addEventListener('click', function() {
-    document.getElementById('notif-panel').classList.remove('open');
-  });
-
-  document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', function(e) {
-      if (e.target === this) closeAll();
-    });
-  });
-
-  renderStudents();
-  updateSelects();
-
-  // ══════════════════════════════════════════════════════════
-  // XAVFSIZLIK — Security helpers
-  // ══════════════════════════════════════════════════════════
-  function escapeHtml(str) {
-    if (typeof str !== 'string') return '';
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-              .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
-
-  // Auth headers — har bir so'rovga qo'shiladi
-  function authHeaders() {
-    const login = (currentTeacher || currentStudent)?.login || '';
-    const role  = currentTeacher ? 'teacher' : 'student';
-    return {
-      'Content-Type': 'application/json',
-      'X-User-Login': login,
-      'X-User-Role':  role
-    };
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // TASDIQLASH MODALI (Confirm Modal)
-  // ══════════════════════════════════════════════════════════
-  let confirmCallback = null;
-
-  function showConfirm(title, sub, okText, onOk) {
-    document.getElementById('confirm-title').textContent = title;
-    document.getElementById('confirm-sub').textContent   = sub;
-    document.getElementById('confirm-ok-btn').textContent = okText || 'O\'chirish';
-    confirmCallback = onOk;
-    document.getElementById('confirm-modal').classList.add('open');
-  }
-
-  function closeConfirm() {
-    document.getElementById('confirm-modal').classList.remove('open');
-    confirmCallback = null;
-  }
-
-  function executeConfirm() {
-    closeConfirm();
-    if (typeof confirmCallback === 'function') confirmCallback();
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // O'QUVCHINI O'CHIRISH (tasdiqlash bilan)
-  // ══════════════════════════════════════════════════════════
-  function confirmRemoveStudent(studentLogin, studentName) {
-    showConfirm(
-      `"${escapeHtml(studentName)}" ni o'chirish`,
-      `Bu o'quvchi sizning sinfingizdan chiqariladi va chat tarixi o'chadi. Bu amalni qaytarib bo'lmaydi.`,
-      'Ha, o\'chirish',
-      () => removeStudent(studentLogin, studentName)
+  // Server ga xabar
+  if (roomToken && myPeerId) {
+    navigator.sendBeacon('/api/room?action=leave',
+      new Blob([JSON.stringify({ peer_id: myPeerId })], { type: 'application/json' })
     );
   }
 
-  async function removeStudent(studentLogin, studentName) {
-    if (!currentTeacher) return;
-    try {
-      const r = await fetch('/api/remove_student', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ student_login: studentLogin, confirm: true })
-      });
-      const d = await r.json();
-      if (d.ok) {
-        renderStudents();
-        updateSelects();
-        // Agar chat ochiq bo'lsa — yopish
-        if (currentChatStudentLogin === studentLogin) closeChat();
-        loadChatList();
-      } else {
-        alert('Xato: ' + (d.msg || 'Noma\'lum xato'));
-      }
-    } catch(e) {
-      alert('Server bilan ulanishda xato');
+  // Sahifani yopish yoki reload
+  if (myRole === 'teacher') {
+    showError('👋', 'Dars tugatildi', 'Dars muvaffaqiyatli yakunlandi.');
+  } else {
+    showError('👋', 'Darsdan chiqdingiz', 'Darsga qaytish uchun ustozingizdan havola so\'rang.');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// CHAT (in-memory, PeerJS data channel emas, xotira)
+// ══════════════════════════════════════════════════════════════
+function sendChat() {
+  const inp = document.getElementById('chat-inp');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = ''; inp.style.height = 'auto';
+
+  const msg = { text, sender: myName, time: Date.now(), mine: true };
+  chatMessages.push(msg);
+  renderChat();
+  // TODO: PeerJS data channel bilan real-time chat qo'shish mumkin
+}
+
+function renderChat() {
+  const container = document.getElementById('chat-msgs');
+  container.innerHTML = '';
+  if (!chatMessages.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Hali xabar yo\'q</div>';
+    return;
+  }
+  chatMessages.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'msg ' + (m.mine ? 'mine' : 'theirs');
+    const time = new Date(m.time).toLocaleTimeString('uz',{hour:'2-digit',minute:'2-digit'});
+    div.innerHTML = `${escHtml(m.text)}<div class="msg-time">${escHtml(m.sender)} · ${time}</div>`;
+    container.appendChild(div);
+  });
+  container.scrollTop = container.scrollHeight;
+}
+
+// ══════════════════════════════════════════════════════════════
+// PARTICIPANTS SIDEBAR
+// ══════════════════════════════════════════════════════════════
+function updateParticipants() {
+  const list = document.getElementById('part-list');
+  list.innerHTML = '';
+
+  const all = [
+    { peer_id: myPeerId, name: myName, role: myRole, self: true },
+    ...participantsList.filter(p => p.peer_id !== myPeerId)
+  ];
+
+  all.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'part-item';
+    const av = document.createElement('div');
+    av.className = 'part-av';
+    av.style.background = p.role === 'teacher' ? '#4f46e5' : '#0ea5e9';
+    av.textContent = (p.name||'U').charAt(0).toUpperCase();
+    const info = document.createElement('div');
+    info.style.flex = '1';
+    info.style.minWidth = '0';
+    info.innerHTML = `<div class="part-name">${escHtml(p.name||'Foydalanuvchi')}${p.self?' <span style="color:var(--text3);font-size:10px">(Siz)</span>':''}</div>
+      <div class="part-role">${p.role==='teacher'?'👨‍🏫 Ustoz':"🎓 O'quvchi"}</div>`;
+    div.appendChild(av);
+    div.appendChild(info);
+    if (p.role==='teacher') {
+      const b = document.createElement('span');
+      b.className = 'part-badge';
+      b.textContent = 'USTOZ';
+      div.appendChild(b);
     }
-  }
+    list.appendChild(div);
+  });
 
-  // ══════════════════════════════════════════════════════════
-  // CHAT TIZIMI — real-time polling + bildirishlar
-  // ══════════════════════════════════════════════════════════
-  let currentChatId = null;
-  let currentChatStudentLogin = null;
-  let currentChatColor = '#4f46e5';
-  let chatPollInterval    = null;  // ochiq chat uchun (3s)
-  let bgPollInterval      = null;  // fon polling (8s) — yangi xabar bormi?
-  let lastMessageCount    = 0;
-  let lastUnreadCount     = 0;
-  let notifPermission     = false; // Browser notification ruxsat
+  document.getElementById('room-sub').textContent = `${all.length} ishtirokchi`;
+}
 
-  // Browser notification ruxsat so'rash
-  function requestNotifPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then(p => { notifPermission = p === 'granted'; });
-    } else if (Notification.permission === 'granted') {
-      notifPermission = true;
-    }
-  }
+// ══════════════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════════════
+function showRoom() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('room').style.display = 'flex';
+  document.getElementById('live-dot').style.display = '';
+  document.getElementById('room-timer').style.display = '';
+}
 
-  function showNotif(title, body, onClick) {
-    // Browser notification
-    if (notifPermission && document.hidden) {
-      const n = new Notification(title, { body, icon: '/favicon.ico' });
-      if (onClick) n.onclick = () => { window.focus(); onClick(); n.close(); };
-    }
-    // In-app toast
-    showToast(title + ': ' + body);
-  }
+function showError(icon, title, sub) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('waiting').style.display = 'none';
+  document.getElementById('room').style.display = 'none';
+  document.getElementById('err-icon').textContent = icon;
+  document.getElementById('err-title').textContent = title;
+  document.getElementById('err-sub').textContent = sub;
+  document.getElementById('error-page').style.display = 'flex';
+}
 
-  function showToast(msg) {
-    let toast = document.getElementById('chat-toast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'chat-toast';
-      toast.style.cssText = `
-        position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-        background:#1e293b;color:#fff;padding:12px 20px;border-radius:10px;
-        font-size:13px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.3);
-        display:none;max-width:320px;text-align:center;cursor:pointer;
-      `;
-      document.body.appendChild(toast);
-    }
-    toast.textContent = msg;
-    toast.style.display = 'block';
-    if (toast._timer) clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 4000);
-  }
+function showToast(msg, dur = 3500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), dur);
+}
 
-  // ── Chat ochish (ustoz) ────────────────────────────────────
-  async function openChatWith(studentLogin, studentName, color) {
-    if (!currentTeacher) return;
-    currentChatStudentLogin = studentLogin;
-    currentChatColor = color || '#4f46e5';
+function switchTab(name) {
+  document.querySelectorAll('.stab').forEach((el, i) => {
+    const tabs = ['participants','chat'];
+    el.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.stab-panel').forEach((el, i) => {
+    const tabs = ['tab-participants','tab-chat'];
+    el.classList.toggle('active', el.id === 'tab-' + name);
+  });
+}
 
-    document.getElementById('chat-header-av').textContent    = getInitial(studentName);
-    document.getElementById('chat-header-av').style.background = currentChatColor;
-    document.getElementById('chat-header-name').textContent  = escapeHtml(studentName);
-    document.getElementById('chat-header-sub').textContent   = '@' + escapeHtml(studentLogin);
-    document.getElementById('chat-modal').classList.add('open');
+function startTimer() {
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+    const s = Math.floor((Date.now()-startTime)/1000);
+    const m = Math.floor(s/60).toString().padStart(2,'0');
+    const sec = (s%60).toString().padStart(2,'0');
+    document.getElementById('room-timer').textContent = `${m}:${sec}`;
+  }, 1000);
+}
 
-    // Chat ID olish yoki yaratish
-    try {
-      const r = await fetch('/api/chat', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ action: 'create', teacher_login: currentTeacher.login, student_login: studentLogin })
-      });
-      const d = await r.json();
-      if (d.ok) {
-        currentChatId = d.chat_id;
-        await loadChatMessages();
-        startChatPoll();
-      }
-    } catch(e) { console.error(e); }
-  }
-
-  // ── Chat ochish (o'quvchi) ─────────────────────────────────
-  async function openStudentChat(teacherLogin, teacherName) {
-    if (!currentStudent) return;
-
-    document.getElementById('chat-header-av').textContent    = getInitial(teacherName);
-    document.getElementById('chat-header-av').style.background = '#4f46e5';
-    document.getElementById('chat-header-name').textContent  = escapeHtml(teacherName);
-    document.getElementById('chat-header-sub').textContent   = 'Ustoz';
-    document.getElementById('chat-modal').classList.add('open');
-
-    try {
-      const r = await fetch(`/api/chat?action=student_chat&teacher_login=${encodeURIComponent(teacherLogin)}`, {
-        headers: authHeaders()
-      });
-      const d = await r.json();
-      if (d && d.chat_id) {
-        currentChatId = d.chat_id;
-        renderMessages(d.messages || []);
-        startChatPoll();
-      }
-    } catch(e) { console.error(e); }
-  }
-
-  // ── Xabarlarni yuklash ─────────────────────────────────────
-  async function loadChatMessages() {
-    if (!currentChatId) return;
-    try {
-      const r = await fetch(`/api/chat?action=messages&chat_id=${currentChatId}`, {
-        headers: authHeaders()
-      });
-      const msgs = await r.json();
-      if (Array.isArray(msgs)) renderMessages(msgs);
-    } catch(e) { console.error(e); }
-  }
-
-  function renderMessages(msgs) {
-    const container = document.getElementById('chat-messages');
-    const myLogin = (currentTeacher || currentStudent)?.login;
-    const empty = document.getElementById('chat-empty');
-    const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 60;
-
-    container.querySelectorAll('.msg-bubble').forEach(el => el.remove());
-
-    if (!msgs.length) { empty.style.display = 'flex'; return; }
-    empty.style.display = 'none';
-
-    msgs.forEach(m => {
-      const isMine = m.sender_login === myLogin;
-      const bubble = document.createElement('div');
-      bubble.className = 'msg-bubble ' + (isMine ? 'mine' : 'theirs');
-      const time = new Date(m.created_at).toLocaleTimeString('uz-UZ', { hour:'2-digit', minute:'2-digit' });
-      bubble.innerHTML = `
-        ${escapeHtml(m.content)}
-        <div class="msg-time-label">${time}${isMine && m.is_read ? ' ✓✓' : isMine ? ' ✓' : ''}</div>
-      `;
-      container.appendChild(bubble);
+async function copyStudentLink() {
+  // Student URL ni serverdan olish
+  try {
+    const r = await fetch('/api/room?action=info', {
+      headers: { 'X-Room-Token': roomToken }
     });
+    const d = await r.json();
+    if (!d.ok) return;
+    // Student token — server dan olish mumkin emas bevosita
+    // Lekin biz uni yaratish uchun botga murojaat qilamiz
+    showToast('🔗 Dars havolasini Telegram botdan oling');
+  } catch(e) {}
+}
 
-    // Yangi xabar bo'lsa scroll
-    if (wasAtBottom || msgs.length !== lastMessageCount) {
-      container.scrollTop = container.scrollHeight;
-    }
-    lastMessageCount = msgs.length;
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════════════════════
+// START
+// ══════════════════════════════════════════════════════════════
+window.addEventListener('beforeunload', () => {
+  if (roomToken && myPeerId) {
+    navigator.sendBeacon('/api/room?action=leave',
+      new Blob([JSON.stringify({peer_id:myPeerId})],{type:'application/json'})
+    );
   }
+});
 
-  // ── Active chat poll (3s) ──────────────────────────────────
-  function startChatPoll() {
-    if (chatPollInterval) clearInterval(chatPollInterval);
-    chatPollInterval = setInterval(async () => {
-      if (!currentChatId) return;
-      if (!document.getElementById('chat-modal').classList.contains('open')) return;
-      await loadChatMessages();
-    }, 3000);
-  }
-
-  // ── Fon polling (8s) — xabar bormi, bildirishlar ──────────
-  function startBgPoll() {
-    if (bgPollInterval) clearInterval(bgPollInterval);
-    bgPollInterval = setInterval(async () => {
-      try {
-        if (currentTeacher) {
-          // Ustoz: o'qilmagan xabarlar
-          const r = await fetch('/api/chat?action=unread_count', { headers: authHeaders() });
-          const d = await r.json();
-          const newCount = parseInt(d.count) || 0;
-          if (newCount > lastUnreadCount && lastUnreadCount >= 0) {
-            showNotif('💬 Yangi xabar', `${newCount} ta o'qilmagan xabar`, () => {
-              // Yaqinda xabar yozgan o'quvchi bilan chatni ochish
-              loadChatList();
-            });
-          }
-          lastUnreadCount = newCount;
-          updateUnreadBadgeCount(newCount);
-          // Chat ro'yxatini ham yangilash
-          loadChatList();
-        } else if (currentStudent) {
-          // O'quvchi: o'z chatida yangi xabar bormi
-          if (currentChatId && !document.getElementById('chat-modal').classList.contains('open')) {
-            const r = await fetch(`/api/chat?action=messages&chat_id=${currentChatId}`, { headers: authHeaders() });
-            const msgs = await r.json();
-            if (Array.isArray(msgs) && msgs.length > lastMessageCount) {
-              const last = msgs[msgs.length - 1];
-              if (last.sender_login !== currentStudent.login) {
-                showNotif('💬 Yangi xabar', last.content?.slice(0, 60) || 'Ustoz xabar yozdi', () => {
-                  document.getElementById('chat-modal').classList.add('open');
-                  loadChatMessages();
-                  startChatPoll();
-                });
-              }
-              lastMessageCount = msgs.length;
-            }
-          }
-          // O'quvchi chat ro'yxatini yangilash
-          loadStudentChatList();
-        }
-      } catch(e) {}
-    }, 8000);
-  }
-
-  function closeChat() {
-    document.getElementById('chat-modal').classList.remove('open');
-    if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
-    // currentChatId ni saqlaymiz — fon polling uchun
-    document.getElementById('chat-messages').querySelectorAll('.msg-bubble').forEach(el => el.remove());
-    document.getElementById('chat-empty').style.display = 'flex';
-  }
-
-  async function sendChatMsg() {
-    const input = document.getElementById('chat-input');
-    const text = input.value.trim();
-    if (!text || !currentChatId) return;
-
-    const btn = document.getElementById('chat-send-btn');
-    btn.disabled = true;
-    input.value = '';
-    input.style.height = 'auto';
-
-    try {
-      const r = await fetch('/api/chat', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ action: 'send', chat_id: currentChatId, content: text })
-      });
-      const d = await r.json();
-      if (d.ok) {
-        await loadChatMessages();
-      } else {
-        input.value = text;
-        showToast('❌ ' + (d.msg || 'Xabar yuborishda xato'));
-      }
-    } catch(e) {
-      input.value = text;
-    } finally {
-      btn.disabled = false;
-      input.focus();
-    }
-  }
-
-  // ── Ustoz: chat ro'yxati (home sahifasida) ─────────────────
-  async function loadChatList() {
-    if (!currentTeacher) return;
-    try {
-      const r = await fetch(`/api/chat?action=list&teacher_login=${encodeURIComponent(currentTeacher.login)}`, {
-        headers: authHeaders()
-      });
-      const chats = await r.json();
-      renderChatList(chats);
-    } catch(e) { console.error(e); }
-  }
-
-  function renderChatList(chats) {
-    const list = document.getElementById('msg-list');
-    const msgCount = document.getElementById('msg-count');
-    list.querySelectorAll('.chat-list-item').forEach(el => el.remove());
-
-    const totalUnread = chats.reduce((s, c) => s + parseInt(c.unread || 0), 0);
-    msgCount.textContent = totalUnread > 0 ? totalUnread + ' ta yangi' : '0 ta yangi';
-
-    if (!chats.length) {
-      document.getElementById('msg-empty').style.display = 'flex';
-      document.getElementById('msg-footer').style.display = 'none';
-      return;
-    }
-    document.getElementById('msg-empty').style.display = 'none';
-    document.getElementById('msg-footer').style.display = 'block';
-
-    const colors = ['#4f46e5','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6'];
-    chats.forEach((c, i) => {
-      const color = colors[i % colors.length];
-      const item = document.createElement('div');
-      item.className = 'chat-list-item' + (currentChatStudentLogin === c.student_login ? ' active' : '');
-      const preview = c.last_msg ? escapeHtml(c.last_msg).slice(0, 40) + (c.last_msg.length > 40 ? '…' : '') : 'Hali xabar yo\'q';
-      const timeStr = c.last_time ? new Date(c.last_time).toLocaleTimeString('uz-UZ', { hour:'2-digit', minute:'2-digit' }) : '';
-      item.innerHTML = `
-        <div class="av" style="background:${color};width:36px;height:36px;font-size:14px;flex-shrink:0">${getInitial(c.student_name || c.student_login)}</div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-            <span style="font-size:13px;font-weight:600">${escapeHtml(c.student_name || c.student_login)}</span>
-            <span style="font-size:11px;color:var(--text-3)">${timeStr}</span>
-          </div>
-          <div style="font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${preview}</div>
-        </div>
-        ${parseInt(c.unread) > 0 ? `<div class="chat-unread-dot">${c.unread}</div>` : ''}
-      `;
-      item.onclick = () => openChatWith(c.student_login, c.student_name || c.student_login, color);
-      list.insertBefore(item, document.getElementById('msg-empty'));
-    });
-  }
-
-  // ── Unread badge ───────────────────────────────────────────
-  function updateUnreadBadgeCount(count) {
-    const badge = document.getElementById('notif-badge');
-    if (badge) { badge.textContent = count || ''; badge.style.display = count > 0 ? '' : 'none'; }
-  }
-
-  async function updateUnreadBadge() {
-    if (!currentTeacher) return;
-    try {
-      const r = await fetch('/api/chat?action=unread_count', { headers: authHeaders() });
-      const d = await r.json();
-      updateUnreadBadgeCount(parseInt(d.count) || 0);
-    } catch(e) {}
-  }
-
-  // ── O'quvchi: FAQAT O'Z USTOZI ko'rinadi ──────────────────
-  async function loadStudentChatList() {
-    if (!currentStudent) return;
-    try {
-      // Faqat bu o'quvchiga biriktirilgan ustozlar (teacher_students jadvalidan)
-      const r = await fetch(`/api/assign_student?student_login=${encodeURIComponent(currentStudent.login)}`, {
-        headers: authHeaders()
-      });
-      const teachers = await r.json();
-      const sdMsgList = document.getElementById('sd-msg-list');
-      if (!sdMsgList) return;
-      sdMsgList.innerHTML = '';
-
-      if (!Array.isArray(teachers) || !teachers.length) {
-        sdMsgList.innerHTML = '<div style="padding:20px;text-align:center;font-size:13px;color:var(--text-3)">Hali ustoz biriktirilmagan</div>';
-        return;
-      }
-
-      teachers.forEach(t => {
-        const btn = document.createElement('div');
-        btn.className = 'chat-list-item';
-        btn.innerHTML = `
-          <div class="av" style="background:#4f46e5;width:36px;height:36px;font-size:14px;flex-shrink:0">${getInitial(t.name)}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600">${escapeHtml(t.name)}</div>
-            <div style="font-size:12px;color:var(--text-3)">Ustoz • ${escapeHtml(t.phone || '')}</div>
-          </div>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color:#4f46e5;flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        `;
-        btn.onclick = () => openStudentChat(t.login, t.name);
-        sdMsgList.appendChild(btn);
-      });
-    } catch(e) { console.error(e); }
-  }
-
-
-  let pendingJoinRoomId = null;
-  (function checkJoinLink() {
-    const params = new URLSearchParams(window.location.search);
-    const joinRoom = params.get('join');
-    if (joinRoom) {
-      pendingJoinRoomId = joinRoom;
-      // URL ni tozalash (parametrni olib tashlash)
-      const cleanUrl = window.location.origin + window.location.pathname;
-      window.history.replaceState({}, document.title, cleanUrl);
-
-      // Login sahifasida xabar ko'rsatish
-      const loginPage = document.getElementById('login-page');
-      if (loginPage) {
-        const notice = document.createElement('div');
-        notice.id = 'join-link-notice';
-        notice.style.cssText = 'background:#eef2ff;color:#3b5bdb;border:1px solid #c7d2fe;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;margin-bottom:14px;text-align:center';
-        notice.textContent = '🔗 Siz dars havolasi orqali keldingiz. Davom etish uchun tizimga kiring (ro\'yxatdan o\'tmagansiz bo\'lsa — avval ro\'yxatdan o\'ting).';
-        const card = document.querySelector('.login-card');
-        if (card) card.insertBefore(notice, card.firstChild);
-      }
-    }
-  })();
-
-  // Login muvaffaqiyatli bo'lgandan keyin, agar pendingJoinRoomId bo'lsa — darsga ulanish
-  async function tryJoinPendingRoom() {
-    if (!pendingJoinRoomId || !currentStudent) return;
-    try {
-      // Sessiya hali faolligini tekshirish
-      const r = await fetch('/api/live?room_id=' + encodeURIComponent(pendingJoinRoomId));
-      const participants = await r.json();
-      if (!Array.isArray(participants)) { pendingJoinRoomId = null; return; }
-
-      const teacherPart = participants.find(p => p.role === 'teacher');
-      const teacherName = teacherPart ? teacherPart.name : 'Ustoz';
-      // room_id formati: study-<teacher_login>-<timestamp>
-      let teacherLogin = null;
-      const m = pendingJoinRoomId.match(/^study-(.+)-(\d+)$/);
-      if (m) teacherLogin = m[1];
-
-      connectedRoomId = pendingJoinRoomId;
-      currentLiveTeacherName = teacherName;
-      currentLiveTeacherLogin = teacherLogin;
-      liveTitle = 'Jonli dars';
-      liveRoomId = pendingJoinRoomId;
-      callMode = 'student';
-      userLeftLive = false;
-
-      document.getElementById('sd-live-title').textContent = liveTitle;
-      document.getElementById('sd-live-teacher').textContent = '👨‍🏫 ' + teacherName;
-      document.getElementById('sd-no-live').style.display = 'none';
-      document.getElementById('sd-live-section').style.display = '';
-
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => { localStream = stream; afterStudentStreamReady(); })
-        .catch(() => { localStream = null; camOn = false; micOn = false; afterStudentStreamReady(); });
-    } catch(e) { console.error(e); }
-    pendingJoinRoomId = null;
-  }
+init();
 </script>
-
-<!-- STUDENT DASHBOARD -->
-<!-- PAGE: STUDENTS ASSIGN (ustoz o'quvchilarni biriktiradi) -->
-<div id="page-students-page" class="content" style="display:none">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;cursor:pointer;width:fit-content" onclick="showPage('home')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color:var(--text-2)"><polyline points="15 18 9 12 15 6"/></svg>
-    <span style="font-size:14px;color:var(--text-2)">Orqaga</span>
-  </div>
-  <div style="font-size:22px;font-weight:700;margin-bottom:4px">O'quvchilarni boshqarish</div>
-  <div style="font-size:13px;color:var(--text-3);margin-bottom:20px">O'z sinfingizga o'quvchi qo'shing yoki chiqaring</div>
-  <div class="section-card">
-    <div class="section-card-header">
-      <span>Barcha o'quvchilar</span>
-    </div>
-    <div id="assign-student-list">
-      <div style="padding:30px;text-align:center;color:var(--text-3);font-size:13px">Yuklanmoqda...</div>
-    </div>
-  </div>
-</div>
-
-<div id="student-dashboard" style="display:none;flex-direction:column;height:100vh">
-  <!-- STUDENT TOPBAR -->
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="logo-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-      </div>
-      <span class="logo-text">O'quvchi kabineti</span>
-    </div>
-    <div class="topbar-right">
-      <div class="user-chip" onclick="doLogout()" style="cursor:pointer">
-        <div id="sd-avatar" class="av-teacher" style="background:#4f46e5">A</div>
-        <div>
-          <div class="user-name" id="sd-name">O'quvchi</div>
-          <div class="user-role">O'quvchi</div>
-        </div>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="color:var(--text-3);margin-left:2px"><polyline points="6 9 12 15 18 9"/></svg>
-      </div>
-    </div>
-  </div>
-
-  <!-- STUDENT CONTENT -->
-  <div class="content">
-    <div class="welcome-title">Xush kelibsiz, <span id="sd-name2"></span>! 👋</div>
-    <div class="welcome-sub">Bu sizning shaxsiy kabinetingiz.</div>
-
-    <!-- JONLI DARS holati (texnik, video call-overlay orqali ko'rinadi) -->
-    <div id="sd-live-section" style="display:none">
-      <span id="sd-live-title"></span>
-      <span id="sd-live-teacher"></span>
-    </div>
-
-    <div id="sd-no-live" style="margin-top:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:30px;text-align:center">
-      <div style="font-size:32px;margin-bottom:8px" id="sd-no-live-icon">📺</div>
-      <div style="font-size:14px;font-weight:600;margin-bottom:4px" id="sd-no-live-title">Hozircha jonli dars yo'q</div>
-      <div style="font-size:12px;color:var(--text-3)" id="sd-no-live-sub">Ustoz dars boshlaganda bu yerda avtomatik ko'rinadi</div>
-      <button id="sd-return-live-btn" onclick="restoreCallOverlay()" style="display:none;margin-top:14px;background:#3a8ee6;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
-        🔴 Darsga qaytish
-      </button>
-    </div>
-
-    <div class="home-grid" style="margin-top:24px">
-      <!-- PROFILE CARD -->
-      <div class="section-card">
-        <div class="section-card-header">Mening profilim</div>
-        <div style="padding:20px">
-          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-            <div id="sd-avatar2" style="width:60px;height:60px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff" id="sd-initial">A</div>
-            <div>
-              <div style="font-size:18px;font-weight:700" id="sd-fullname">—</div>
-              <div style="font-size:12px;color:var(--text-3);margin-top:2px">O'quvchi</div>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:12px">
-            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-              <span style="font-size:13px;color:var(--text-2)">Telefon</span>
-              <span style="font-size:13px;font-weight:500" id="sd-phone-show">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-              <span style="font-size:13px;color:var(--text-2)">Login</span>
-              <span style="font-size:13px;font-weight:500" id="sd-login-show">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;padding:10px 0">
-              <span style="font-size:13px;color:var(--text-2)">Holat</span>
-              <span style="font-size:12px;font-weight:600;color:var(--green);background:var(--green-soft);padding:3px 10px;border-radius:20px">Faol</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- MESSAGES CARD -->
-      <div class="section-card">
-        <div class="section-card-header">
-          <span>Xabarlar</span>
-          <span class="section-count">O'qituvchidan</span>
-        </div>
-        <div id="sd-msg-list">
-          <div class="empty-state">
-            <div class="empty-icon" style="background:#f0fdf4;color:#12b76a">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </div>
-            <div class="empty-text">Hozircha xabar yo'q.<br>O'qituvchi xabar yuborganda bu yerda ko'rinadi.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- LOGOUT BTN -->
-    <div style="margin-top:20px">
-      <button class="btn btn-outline" style="color:var(--red);border-color:#fecaca" onclick="doLogout()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Chiqish
-      </button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
