@@ -6,258 +6,599 @@
 <title>Study — Onlayn Dars</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <style>
+/* ══════════════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════════════ */
 :root {
-  --bg:#0f1117; --card:#1a1d27; --border:#2a2d3e;
-  --text:#e8eaf0; --text2:#9499b0; --text3:#5c6080;
-  --accent:#4f46e5; --accent2:#6366f1;
-  --green:#10b981; --red:#ef4444; --yellow:#f59e0b;
-  --radius:12px;
+  --bg:       #080b14;
+  --bg2:      #0d1120;
+  --card:     #111827;
+  --card2:    #1a2035;
+  --border:   #1f2d45;
+  --border2:  #243350;
+  --text:     #e2e8f4;
+  --text2:    #8896b3;
+  --text3:    #4a5878;
+  --accent:   #4f6ef7;
+  --accent2:  #6b82f8;
+  --accent3:  #3451d1;
+  --green:    #10b981;
+  --red:      #ef4444;
+  --yellow:   #f59e0b;
+  --purple:   #8b5cf6;
+  --radius:   14px;
+  --radius-sm:8px;
+  --shadow:   0 8px 32px rgba(0,0,0,.45);
+  --shadow-sm:0 2px 12px rgba(0,0,0,.3);
 }
+
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden;
+}
 
-/* ── LOADING ── */
-#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999}
-.loader{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+/* ══════════════════════════════════════════════════
+   SCROLLBAR
+══════════════════════════════════════════════════ */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ══════════════════════════════════════════════════
+   LOADING
+══════════════════════════════════════════════════ */
+#loading{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;
+}
+.loader-ring{
+  width:48px;height:48px;border-radius:50%;
+  border:3px solid var(--border2);
+  border-top-color:var(--accent);
+  animation:spin .7s linear infinite;
+}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-size:14px;color:var(--text2)}
+.loading-text{font-size:13px;color:var(--text3);letter-spacing:.5px}
 
-/* ── ERROR PAGE ── */
-#error-page{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center}
-.error-icon{font-size:56px}
-.error-title{font-size:20px;font-weight:700}
-.error-sub{font-size:14px;color:var(--text2);max-width:380px;line-height:1.6}
-.error-btn{margin-top:8px;padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+/* ══════════════════════════════════════════════════
+   LOGIN PAGE
+══════════════════════════════════════════════════ */
+#login-page{
+  display:none;position:fixed;inset:0;z-index:9000;
+  background:radial-gradient(ellipse at 60% 20%,rgba(79,110,247,.12) 0%,transparent 60%),
+             radial-gradient(ellipse at 10% 80%,rgba(139,92,246,.08) 0%,transparent 50%),
+             var(--bg);
+  align-items:center;justify-content:center;
+}
 
-/* ── CALL ROOM ── */
+/* Animated grid background */
+#login-page::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:50px 50px;
+  opacity:.25;
+  mask-image:radial-gradient(ellipse at center,black 30%,transparent 80%);
+}
+
+.login-wrap{
+  position:relative;z-index:1;
+  width:100%;max-width:440px;padding:16px;
+}
+
+.login-logo-area{text-align:center;margin-bottom:36px}
+.login-icon{
+  width:72px;height:72px;border-radius:22px;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:32px;margin-bottom:16px;
+  box-shadow:0 12px 40px rgba(79,110,247,.35);
+}
+.login-brand{font-size:30px;font-weight:800;letter-spacing:-.5px;
+  background:linear-gradient(135deg,#fff 30%,var(--text2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-brand-sub{font-size:13px;color:var(--text3);margin-top:4px}
+
+.login-card{
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-radius:22px;
+  padding:32px;
+  box-shadow:var(--shadow),0 0 0 1px rgba(255,255,255,.04) inset;
+}
+.login-card-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.login-card-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.5}
+
+.input-group{position:relative;margin-bottom:8px}
+.input-icon{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  color:var(--text3);font-size:16px;pointer-events:none;
+}
+#link-input{
+  width:100%;padding:14px 16px 14px 42px;
+  border-radius:12px;border:1.5px solid var(--border2);
+  background:var(--bg2);color:var(--text);
+  font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;
+  font-family:inherit;
+}
+#link-input::placeholder{color:var(--text3)}
+#link-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,110,247,.15)}
+
+.login-err{
+  font-size:12px;color:#fb7185;min-height:20px;
+  padding:0 4px;margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;
+}
+
+.login-btn{
+  width:100%;padding:14px;border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--accent3));
+  color:#fff;border:none;font-size:15px;font-weight:700;
+  cursor:pointer;transition:opacity .15s,transform .1s;
+  box-shadow:0 4px 20px rgba(79,110,247,.4);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.login-btn:hover{opacity:.92;transform:translateY(-1px)}
+.login-btn:active{opacity:.82;transform:translateY(0)}
+.login-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+.login-divider{
+  display:flex;align-items:center;gap:12px;
+  margin:20px 0;color:var(--text3);font-size:12px;
+}
+.login-divider::before,.login-divider::after{
+  content:'';flex:1;height:1px;background:var(--border2);
+}
+
+.login-hint-card{
+  background:rgba(79,110,247,.06);
+  border:1px solid rgba(79,110,247,.15);
+  border-radius:10px;padding:12px 14px;
+  font-size:12px;color:var(--text2);line-height:1.6;
+}
+.login-hint-card strong{color:var(--text)}
+
+@media(max-width:480px){
+  .login-card{padding:24px 20px;border-radius:18px}
+  .login-brand{font-size:26px}
+}
+
+/* ══════════════════════════════════════════════════
+   ERROR PAGE
+══════════════════════════════════════════════════ */
+#error-page{
+  display:none;position:fixed;inset:0;background:var(--bg);
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;padding:32px;text-align:center;
+}
+.error-icon{font-size:64px;line-height:1;margin-bottom:8px}
+.error-title{font-size:22px;font-weight:800}
+.error-sub{font-size:14px;color:var(--text2);max-width:380px;line-height:1.7}
+.error-btn{
+  margin-top:12px;padding:12px 28px;
+  background:var(--accent);color:#fff;border:none;
+  border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;
+  transition:.15s;
+}
+.error-btn:hover{background:var(--accent2)}
+
+/* ══════════════════════════════════════════════════
+   WAITING SCREEN
+══════════════════════════════════════════════════ */
+#waiting{
+  display:none;position:fixed;inset:0;
+  background:radial-gradient(ellipse at center,rgba(79,110,247,.08),transparent 70%),var(--bg);
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:20px;text-align:center;padding:32px;
+}
+.waiting-av{
+  width:88px;height:88px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-size:36px;font-weight:800;color:#fff;
+  box-shadow:0 0 0 12px rgba(79,110,247,.1),0 0 0 24px rgba(79,110,247,.05);
+  animation:pulse-ring 2s ease-in-out infinite;
+}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 12px rgba(79,110,247,.1),0 0 0 24px rgba(79,110,247,.05)}
+  50%{box-shadow:0 0 0 16px rgba(79,110,247,.07),0 0 0 32px rgba(79,110,247,.03)}}
+.waiting-title{font-size:22px;font-weight:700}
+.waiting-sub{font-size:14px;color:var(--text2);line-height:1.7;max-width:360px}
+.waiting-dots{display:flex;gap:7px}
+.wdot{width:9px;height:9px;border-radius:50%;background:var(--accent);
+  animation:wbounce .9s ease-in-out infinite}
+.wdot:nth-child(2){animation-delay:.18s}
+.wdot:nth-child(3){animation-delay:.36s}
+@keyframes wbounce{0%,80%,100%{transform:scale(.35);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+/* ══════════════════════════════════════════════════
+   ROOM
+══════════════════════════════════════════════════ */
 #room{display:none;flex-direction:column;height:100vh;height:100dvh}
-.room-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0}
-.room-title{display:flex;align-items:center;gap:10px}
-.room-title-text{font-size:15px;font-weight:700}
-.room-title-sub{font-size:12px;color:var(--text2);margin-top:2px}
-.live-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite;flex-shrink:0}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.room-timer{font-size:13px;color:var(--text2);font-variant-numeric:tabular-nums}
-.header-right{display:flex;align-items:center;gap:10px}
 
-/* ── VIDEO GRID ── */
-.room-body{flex:1;display:flex;min-height:0;gap:0}
-.video-area{flex:1;background:#000;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-.video-grid{width:100%;height:100%;display:grid;gap:3px;padding:3px}
+/* Header */
+.room-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 18px;
+  background:rgba(17,24,39,.95);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.room-title-area{display:flex;align-items:center;gap:12px}
+.room-logo{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  flex-shrink:0;
+}
+.room-title-text{font-size:15px;font-weight:700;line-height:1.2}
+.room-title-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.live-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);
+  color:#fca5a5;font-size:10px;font-weight:700;letter-spacing:.8px;
+  padding:3px 8px;border-radius:20px;flex-shrink:0;
+}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+.header-center{display:flex;align-items:center}
+.room-timer{
+  font-size:13px;color:var(--text2);
+  font-variant-numeric:tabular-nums;letter-spacing:.5px;
+  background:var(--card2);padding:5px 12px;border-radius:20px;
+  border:1px solid var(--border);
+}
+
+.header-right{display:flex;align-items:center;gap:8px}
+.hdr-btn{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(79,110,247,.1);border:1px solid rgba(79,110,247,.2);
+  color:var(--accent2);padding:7px 14px;border-radius:8px;
+  font-size:12px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap;
+}
+.hdr-btn:hover{background:rgba(79,110,247,.18);border-color:rgba(79,110,247,.35)}
+.hdr-btn.copied{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:var(--green)}
+
+/* Body */
+.room-body{flex:1;display:flex;min-height:0}
+
+/* Video Area */
+.video-area{flex:1;background:#030508;position:relative;overflow:hidden}
+.video-grid{width:100%;height:100%;display:grid;gap:4px;padding:4px}
 .video-grid.g1{grid-template-columns:1fr}
 .video-grid.g2{grid-template-columns:1fr 1fr}
 .video-grid.g3,.video-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
-.video-grid.g5,.video-grid.g6{grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr}
+.video-grid.g5,.video-grid.g6{grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr}
 .video-grid.g7,.video-grid.g8,.video-grid.g9{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
 
-.vtile{position:relative;background:#111;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+/* Video Tile */
+.vtile{
+  position:relative;border-radius:10px;overflow:hidden;
+  background:#0a0d15;display:flex;align-items:center;justify-content:center;
+  transition:outline .15s;
+}
 .vtile video{width:100%;height:100%;object-fit:cover;display:block}
 .vtile.no-cam video{display:none}
-.vtile-av{width:clamp(44px,15%,88px);aspect-ratio:1;border-radius:50%;background:#2b5278;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:clamp(18px,5%,34px)}
-.vtile-label{position:absolute;bottom:8px;left:8px;right:8px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.5);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:#fff;width:fit-content;max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vtile-label .mic-off{color:var(--red);flex-shrink:0}
-.vtile.self-tile{outline:2px solid var(--accent)}
-.vtile.teacher-tile{outline:2px solid var(--yellow)}
-.vtile.waiting{background:#0a0e1a}
-.vtile.waiting .vtile-av{opacity:.4}
 
-/* ── SIDEBAR ── */
-.room-sidebar{width:240px;background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.vtile-av{
+  width:clamp(48px,14%,88px);aspect-ratio:1;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;color:#fff;font-size:clamp(20px,5%,36px);
+  position:relative;
+}
+.vtile-av::after{
+  content:'';position:absolute;inset:-3px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.1);
+}
+
+.vtile-label{
+  position:absolute;bottom:10px;left:10px;
+  display:flex;align-items:center;gap:5px;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:5px 10px;
+  font-size:12px;font-weight:600;color:#fff;
+  max-width:calc(100% - 20px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.vtile-label .muted-icon{color:#f87171;font-size:10px}
+
+.vtile.self-tile{outline:2px solid var(--accent);outline-offset:-2px}
+.vtile.teacher-tile{outline:2px solid var(--yellow);outline-offset:-2px}
+.vtile.no-stream{background:radial-gradient(circle at center,#0d1529,#030508)}
+
+/* Sidebar */
+.room-sidebar{
+  width:260px;background:var(--card);
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;
+}
+.sidebar-head{
+  padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;
+  font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--text3);
+  text-transform:uppercase;
+}
 .sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
-.stab{flex:1;padding:12px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:.15s}
-.stab.active{color:var(--accent);border-color:var(--accent)}
+.stab{
+  flex:1;padding:11px 0;font-size:12px;font-weight:600;
+  text-align:center;cursor:pointer;color:var(--text3);
+  border-bottom:2px solid transparent;transition:.15s;
+}
+.stab:hover{color:var(--text2)}
+.stab.active{color:var(--accent2);border-color:var(--accent)}
+
 .stab-panel{flex:1;overflow-y:auto;display:none;flex-direction:column}
 .stab-panel.active{display:flex}
 
 /* Chat */
-.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-.chat-msgs::-webkit-scrollbar{width:3px}
-.chat-msgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-.msg{max-width:88%;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.5;word-break:break-word}
-.msg.mine{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:3px}
-.msg.theirs{align-self:flex-start;background:#252836;color:var(--text);border-bottom-left-radius:3px}
-.msg-time{font-size:10px;opacity:.6;margin-top:3px;text-align:right}
-.chat-input-row{display:flex;gap:6px;padding:10px;border-top:1px solid var(--border);flex-shrink:0}
-.chat-inp{flex:1;background:#252836;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text);outline:none;font-family:inherit;resize:none;max-height:80px}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.chat-empty{padding:32px 20px;text-align:center;color:var(--text3);font-size:13px}
+.chat-empty-icon{font-size:32px;margin-bottom:8px}
+
+.msg-wrap{display:flex;flex-direction:column;gap:2px}
+.msg-wrap.mine{align-items:flex-end}
+.msg-wrap.theirs{align-items:flex-start}
+.msg-sender{font-size:10px;color:var(--text3);padding:0 4px}
+
+.msg{
+  max-width:88%;padding:9px 13px;
+  font-size:13px;line-height:1.5;word-break:break-word;
+  border-radius:12px;
+}
+.msg.mine{background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff;border-bottom-right-radius:4px}
+.msg.theirs{background:var(--card2);color:var(--text);border-bottom-left-radius:4px;border:1px solid var(--border)}
+.msg-time{font-size:10px;opacity:.55;margin-top:3px;text-align:right}
+
+.chat-input-row{
+  display:flex;gap:8px;padding:10px;
+  border-top:1px solid var(--border);flex-shrink:0;background:var(--card);
+}
+.chat-inp{
+  flex:1;background:var(--card2);border:1px solid var(--border2);
+  border-radius:10px;padding:9px 13px;font-size:13px;
+  color:var(--text);outline:none;font-family:inherit;resize:none;max-height:80px;
+  transition:border-color .15s;
+}
 .chat-inp:focus{border-color:var(--accent)}
-.chat-send{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;flex-shrink:0}
+.chat-inp::placeholder{color:var(--text3)}
+.chat-send{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--accent);color:#fff;border:none;
+  cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:.15s;align-self:flex-end;
+}
 .chat-send:hover{background:var(--accent2)}
+.chat-send svg{width:15px;height:15px}
 
 /* Participants */
-.part-list{padding:8px;display:flex;flex-direction:column;gap:4px}
-.part-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:#252836}
-.part-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0}
-.part-name{font-size:12px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.part-role{font-size:10px;color:var(--text2)}
-.part-badge{font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(245,158,11,.15);color:var(--yellow);font-weight:700}
-
-/* ── CONTROLS ── */
-.room-controls{display:flex;align-items:center;justify-content:center;gap:16px;padding:16px;background:var(--card);border-top:1px solid var(--border);flex-shrink:0}
-.ctrl-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#252836;color:#fff;transition:.15s;flex-shrink:0}
-.ctrl-btn:hover{background:#2f3447}
-.ctrl-btn.on{background:var(--accent)}
-.ctrl-btn.off{background:#374151}
-.ctrl-btn.end{background:var(--red)}
-.ctrl-btn.end:hover{background:#dc2626}
-.ctrl-lbl{font-size:10px;color:var(--text2);text-align:center}
-.ctrl-col{display:flex;flex-direction:column;align-items:center;gap:6px}
-
-/* ── WAITING SCREEN ── */
-#waiting{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px}
-.waiting-av{width:80px;height:80px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#fff;margin-bottom:8px}
-.waiting-title{font-size:20px;font-weight:700}
-.waiting-sub{font-size:14px;color:var(--text2);line-height:1.6;max-width:340px}
-.waiting-loader{display:flex;gap:6px;margin-top:4px}
-.wdot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:wbounce .8s ease-in-out infinite}
-.wdot:nth-child(2){animation-delay:.15s}
-.wdot:nth-child(3){animation-delay:.3s}
-@keyframes wbounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
-
-/* ── TOAST ── */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e2538;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.4);display:none;max-width:90vw;text-align:center;pointer-events:none}
-.toast.show{display:block}
-
-/* ── COPY LINK ── */
-.copy-link-btn{background:rgba(79,70,229,.15);border:1px solid rgba(79,70,229,.3);color:var(--accent);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
-.copy-link-btn:hover{background:rgba(79,70,229,.25)}
-.copy-link-btn.copied{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.3);color:var(--green)}
-
-/* ── MOBILE ── */
-@media(max-width:700px){
-  .room-sidebar{display:none}
-  .ctrl-btn{width:46px;height:46px}
-  .room-controls{gap:12px;padding:12px}
-  .vtile-label{font-size:11px}
+.part-list{padding:10px;display:flex;flex-direction:column;gap:4px}
+.part-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:10px;
+  background:var(--card2);border:1px solid transparent;
+  transition:.15s;
 }
-/* ── Login page ─────────────────────────────────────────────── */
-#login-page{display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center}
-.login-box{width:100%;max-width:380px;margin:0 auto;padding:40px 32px;background:var(--card);border-radius:20px;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.25);text-align:center}
-.login-logo{font-size:48px;margin-bottom:12px}
-.login-title{font-size:26px;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,var(--accent),#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.login-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
-.login-form{display:flex;flex-direction:column;gap:12px}
-#link-input{width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none;box-sizing:border-box;transition:border-color .2s}
-#link-input:focus{border-color:var(--accent)}
-.login-err{font-size:12px;color:#f87171;min-height:18px;text-align:left}
-.login-btn{padding:13px;border-radius:12px;background:var(--accent);color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s}
-.login-btn:hover{opacity:.88}
-.login-btn:active{opacity:.75}
-.login-hint{margin-top:20px;font-size:12px;color:var(--text2)}
-@media(max-width:440px){.login-box{margin:16px;padding:28px 20px;border-radius:16px}}
+.part-item:hover{border-color:var(--border2)}
+.part-av{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:13px;color:#fff;flex-shrink:0;
+}
+.part-info{flex:1;min-width:0}
+.part-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.part-role-txt{font-size:11px;color:var(--text3);margin-top:1px}
+.part-badge{
+  font-size:9px;font-weight:800;letter-spacing:.5px;
+  padding:3px 7px;border-radius:6px;
+  background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.2);
+  color:#fcd34d;flex-shrink:0;
+}
+.part-self{font-size:10px;color:var(--text3)}
+
+/* Controls */
+.room-controls{
+  display:flex;align-items:center;justify-content:center;gap:20px;
+  padding:14px 20px;
+  background:rgba(17,24,39,.97);border-top:1px solid var(--border);
+  flex-shrink:0;backdrop-filter:blur(8px);
+}
+.ctrl-col{display:flex;flex-direction:column;align-items:center;gap:6px}
+.ctrl-btn{
+  width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:.15s;flex-shrink:0;position:relative;
+}
+.ctrl-btn svg{width:20px;height:20px;pointer-events:none}
+.ctrl-btn.on{background:var(--card2);color:var(--text);border:1.5px solid var(--border2)}
+.ctrl-btn.on:hover{background:var(--border2)}
+.ctrl-btn.off{background:rgba(239,68,68,.12);color:#f87171;border:1.5px solid rgba(239,68,68,.2)}
+.ctrl-btn.off:hover{background:rgba(239,68,68,.2)}
+.ctrl-btn.screen-on{background:rgba(79,110,247,.15);color:var(--accent2);border:1.5px solid rgba(79,110,247,.25)}
+.ctrl-btn.end{background:var(--red);color:#fff;border:1.5px solid transparent}
+.ctrl-btn.end:hover{background:#dc2626}
+.ctrl-lbl{font-size:10px;color:var(--text3);white-space:nowrap}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(8px);
+  background:var(--card2);color:var(--text);
+  padding:11px 20px;border-radius:10px;font-size:13px;
+  z-index:99999;box-shadow:var(--shadow);
+  border:1px solid var(--border2);
+  display:none;max-width:90vw;text-align:center;
+  pointer-events:none;opacity:0;
+  transition:opacity .2s,transform .2s;
+}
+.toast.show{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Mobile */
+@media(max-width:720px){
+  .room-sidebar{display:none}
+  .ctrl-btn{width:48px;height:48px}
+  .room-controls{gap:14px;padding:10px}
+  .room-header{padding:10px 14px}
+  .hdr-btn span{display:none}
+  .room-timer{font-size:12px;padding:4px 10px}
+}
 </style>
 </head>
 <body>
 
-<!-- Login / Havola kiritish sahifasi -->
+<!-- ═══════════ LOGIN PAGE ═══════════ -->
 <div id="login-page">
-  <div class="login-box">
-    <div class="login-logo">📚</div>
-    <div class="login-title">Study</div>
-    <div class="login-sub">Darsga kirish uchun havolani kiriting</div>
-    <div class="login-form">
-      <input
-        id="link-input"
-        type="text"
-        placeholder="Havolani yoki tokenni kiriting..."
-        autocomplete="off"
-        autocorrect="off"
-        spellcheck="false"
-        onkeydown="if(event.key==='Enter')doEnter()"
-      />
-      <div id="login-err" class="login-err"></div>
-      <button class="login-btn" onclick="doEnter()">Kirish →</button>
+  <div class="login-wrap">
+    <div class="login-logo-area">
+      <div class="login-icon">📚</div>
+      <div class="login-brand">Study</div>
+      <div class="login-brand-sub">Onlayn dars platformasi</div>
     </div>
-    <div class="login-hint">Havola bot orqali yuboriladi</div>
+    <div class="login-card">
+      <div class="login-card-title">Darsga kirish</div>
+      <div class="login-card-sub">Telegram botdan olgan havolangizni pastga kiriting</div>
+      <div class="input-group">
+        <span class="input-icon">🔗</span>
+        <input
+          id="link-input"
+          type="text"
+          placeholder="https://study-zeta-neon.vercel.app/?s=..."
+          autocomplete="off" autocorrect="off" spellcheck="false"
+          onkeydown="if(event.key==='Enter')doEnter()"
+        />
+      </div>
+      <div id="login-err" class="login-err"></div>
+      <button class="login-btn" onclick="doEnter()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Darsga kirish
+      </button>
+      <div class="login-divider">yoki</div>
+      <div class="login-hint-card">
+        💡 <strong>Qanday kirish mumkin?</strong><br>
+        Telegram botga yozing va <strong>/newlesson</strong> buyrug'ini yuboring. Bot sizga kirish havolasini yuboradi.
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Loading -->
+<!-- ═══════════ LOADING ═══════════ -->
 <div id="loading">
-  <div class="loader"></div>
+  <div class="loader-ring"></div>
   <div class="loading-text">Dars xonasi yuklanmoqda...</div>
 </div>
 
-<!-- Error -->
+<!-- ═══════════ ERROR ═══════════ -->
 <div id="error-page">
   <div class="error-icon" id="err-icon">🔒</div>
   <div class="error-title" id="err-title">Kirish mumkin emas</div>
-  <div class="error-sub" id="err-sub">Havola noto'g'ri yoki muddati o'tgan. Ustozingizdan yangi havola so'rang.</div>
+  <div class="error-sub" id="err-sub">Havola noto'g'ri yoki muddati o'tgan.</div>
+  <button class="error-btn" onclick="location.reload()">← Qaytish</button>
 </div>
 
-<!-- Waiting (student - teacher hasn't started yet) -->
+<!-- ═══════════ WAITING ═══════════ -->
 <div id="waiting">
   <div class="waiting-av" id="waiting-av">?</div>
-  <div class="waiting-title" id="waiting-title">Dars kutilmoqda</div>
-  <div class="waiting-sub" id="waiting-sub">Ustoz darsni boshlaguncha kuting...</div>
-  <div class="waiting-loader"><div class="wdot"></div><div class="wdot"></div><div class="wdot"></div></div>
+  <div class="waiting-title" id="waiting-title">Dars boshlanishini kutmoqdasiz</div>
+  <div class="waiting-sub" id="waiting-sub">Ustoz darsni boshlaguncha biroz kuting. Avtomatik ulanasiz.</div>
+  <div class="waiting-dots"><div class="wdot"></div><div class="wdot"></div><div class="wdot"></div></div>
 </div>
 
-<!-- Main room -->
+<!-- ═══════════ ROOM ═══════════ -->
 <div id="room">
+
+  <!-- Header -->
   <div class="room-header">
-    <div class="room-title">
-      <div class="live-dot" id="live-dot" style="display:none"></div>
+    <div class="room-title-area">
+      <div class="room-logo">📚</div>
       <div>
         <div class="room-title-text" id="room-title-text">Dars xonasi</div>
-        <div class="room-title-sub" id="room-sub">Yuklanmoqda...</div>
+        <div class="room-title-sub" id="room-sub">Ulanmoqda...</div>
+      </div>
+      <div class="live-chip" id="live-chip" style="display:none">
+        <div class="live-dot"></div>JONLI
       </div>
     </div>
-    <div class="room-timer" id="room-timer" style="display:none">00:00</div>
+
+    <div class="header-center">
+      <div class="room-timer" id="room-timer" style="display:none">00:00</div>
+    </div>
+
     <div class="header-right">
-      <button class="copy-link-btn" id="copy-link-btn" style="display:none" onclick="copyStudentLink()">🔗 Ulashish</button>
+      <button class="hdr-btn" id="copy-link-btn" style="display:none" onclick="copyStudentLink()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span>Ulashish</span>
+      </button>
     </div>
   </div>
 
+  <!-- Body -->
   <div class="room-body">
+
+    <!-- Video -->
     <div class="video-area">
       <div class="video-grid g1" id="video-grid"></div>
     </div>
+
+    <!-- Sidebar -->
     <div class="room-sidebar">
       <div class="sidebar-tabs">
         <div class="stab active" onclick="switchTab('participants')">👥 Ishtirokchilar</div>
         <div class="stab" onclick="switchTab('chat')">💬 Chat</div>
       </div>
+
       <div class="stab-panel active" id="tab-participants">
-        <div class="part-list" id="part-list"></div>
+        <div class="part-list" id="part-list">
+          <div class="chat-empty"><div class="chat-empty-icon">👥</div>Yuklanmoqda...</div>
+        </div>
       </div>
+
       <div class="stab-panel" id="tab-chat">
         <div class="chat-msgs" id="chat-msgs">
-          <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Hali xabar yo'q</div>
+          <div class="chat-empty">
+            <div class="chat-empty-icon">💬</div>
+            Hali xabar yo'q
+          </div>
         </div>
         <div class="chat-input-row">
-          <textarea class="chat-inp" id="chat-inp" placeholder="Xabar..." rows="1" maxlength="500"
+          <textarea
+            class="chat-inp" id="chat-inp"
+            placeholder="Xabar yozing..." rows="1" maxlength="500"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
-            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"
+          ></textarea>
           <button class="chat-send" onclick="sendChat()">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
           </button>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Controls -->
   <div class="room-controls">
     <div class="ctrl-col">
       <button class="ctrl-btn on" id="btn-cam" onclick="toggleCam()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
       </button>
       <span class="ctrl-lbl">Video</span>
     </div>
     <div class="ctrl-col">
       <button class="ctrl-btn on" id="btn-mic" onclick="toggleMic()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
       </button>
       <span class="ctrl-lbl">Mikrofon</span>
     </div>
     <div class="ctrl-col" id="screen-ctrl" style="display:none">
-      <button class="ctrl-btn off" id="btn-screen" onclick="toggleScreen()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <button class="ctrl-btn on" id="btn-screen" onclick="toggleScreen()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       </button>
       <span class="ctrl-lbl">Ekran</span>
     </div>
     <div class="ctrl-col">
       <button class="ctrl-btn end" onclick="leaveRoom()">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" style="transform:rotate(135deg)"><path d="M21 15.46l-5.27-.61a2 2 0 0 0-1.69.55l-2.2 2.2a15 15 0 0 1-6.59-6.59l2.2-2.2a2 2 0 0 0 .55-1.69L7.4 1.18A2 2 0 0 0 5.21.06L1.08.96A2 2 0 0 0 0 2.96C0 13.13 8.87 22 19.04 22a2 2 0 0 0 1.96-1.06l.9-4.13a2 2 0 0 0-1.1-2.21z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15.46l-5.27-.61a2 2 0 0 0-1.69.55l-2.2 2.2a15 15 0 0 1-6.59-6.59l2.2-2.2a2 2 0 0 0 .55-1.69L7.4 1.18A2 2 0 0 0 5.21.06L1.08.96A2 2 0 0 0 0 2.96C0 13.13 8.87 22 19.04 22a2 2 0 0 0 1.96-1.06l.9-4.13a2 2 0 0 0-1.1-2.21z"/></svg>
       </button>
       <span class="ctrl-lbl">Chiqish</span>
     </div>
@@ -271,43 +612,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 // ══════════════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════════════
-let roomToken     = null;   // URL dan olingan token
-let myRole        = null;   // 'teacher' | 'student'
-let myName        = null;
-let roomId        = null;
-let peerRoomId    = null;
-let roomInfo      = null;
-let studentUrl    = null;   // Ustoz o'quvchilarga ulashadi
-
-let localStream   = null;
-let myPeer        = null;
-let myPeerId      = null;
-let camOn         = true;
-let micOn         = true;
-let screenSharing = false;
-let screenStream  = null;
-
-let peers         = {};     // peerId -> { call, stream, name, role }
-let participantsList = [];
-
-// Chat (xotirada saqlanadi)
-let chatMessages  = [];
-
-// Timer
-let timerInterval = null;
-let startTime     = null;
-
-// Polling — ishtirokchilar ro'yxati (faqat signaling uchun, 6s)
-let syncInterval  = null;
+let roomToken = null, myRole = null, myName = null;
+let roomId = null, peerRoomId = null, roomInfo = null;
+let localStream = null, myPeer = null, myPeerId = null;
+let camOn = true, micOn = true, screenSharing = false, screenStream = null;
+let peers = {}, participantsList = [];
+let chatMessages = [];
+let timerInterval = null, startTime = null, syncInterval = null;
 
 // ══════════════════════════════════════════════════════════════
-// INIT
+// LOGIN
 // ══════════════════════════════════════════════════════════════
-// ══════════════════════════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════════════════════════
-
-// Havoladan token ajratib olish
 function extractToken(input) {
   input = (input || '').trim();
   if (!input) return { token: null, role: null };
@@ -318,12 +633,10 @@ function extractToken(input) {
     if (t) return { token: t, role: 'teacher' };
     if (s) return { token: s, role: 'student' };
   } catch {}
-  // Token o'zi kiritilgan
   if (input.includes('.')) return { token: input, role: null };
   return { token: null, role: null };
 }
 
-// "Kirish" tugmasi
 async function doEnter() {
   const input = document.getElementById('link-input').value;
   const errEl = document.getElementById('login-err');
@@ -332,24 +645,23 @@ async function doEnter() {
 
   const { token, role } = extractToken(input);
   if (!token) {
-    errEl.textContent = "❌ Havola noto'g'ri. Bot yuborgan havolani to'liq kiriting.";
+    errEl.innerHTML = "❌ Havola noto'g'ri. Botdan kelgan to'liq havolani kiriting.";
+    document.getElementById('link-input').focus();
     return;
   }
 
-  btn.textContent = 'Tekshirilmoqda...';
+  btn.innerHTML = '<div class="loader-ring" style="width:18px;height:18px;border-width:2px"></div> Tekshirilmoqda...';
   btn.disabled = true;
 
   try {
-    const r = await fetch('/api/room?action=info', {
-      headers: { 'X-Room-Token': token }
-    });
+    const r = await fetch('/api/room?action=info', { headers: { 'X-Room-Token': token } });
     const d = await r.json();
 
-    btn.textContent = 'Kirish →';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Darsga kirish';
     btn.disabled = false;
 
     if (!d.ok) {
-      errEl.textContent = '❌ ' + (d.msg || "Havola noto'g'ri yoki muddati o'tgan");
+      errEl.innerHTML = '❌ ' + esc(d.msg || "Havola noto'g'ri yoki muddati o'tgan");
       return;
     }
 
@@ -359,61 +671,59 @@ async function doEnter() {
     document.getElementById('loading').style.display = 'flex';
     await enterRoom(d);
   } catch(e) {
-    btn.textContent = 'Kirish →';
+    btn.innerHTML = 'Darsga kirish';
     btn.disabled = false;
-    errEl.textContent = "❌ Server bilan aloqa yo'q. Qayta urinib ko'ring.";
+    errEl.innerHTML = "❌ Server bilan aloqa yo'q. Qayta urinib ko'ring.";
   }
 }
 
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
 async function init() {
-  // URL dan token olish
   const params = new URLSearchParams(window.location.search);
   const tToken = params.get('t');
   const sToken = params.get('s');
-
   roomToken = tToken || sToken || null;
   myRole    = tToken ? 'teacher' : 'student';
 
   if (!roomToken) {
-    // Token yo'q — login sahifasini ko'rsatish
     document.getElementById('loading').style.display = 'none';
     document.getElementById('login-page').style.display = 'flex';
     setTimeout(() => document.getElementById('link-input').focus(), 150);
     return;
   }
 
-  // URL ni tozalash
   window.history.replaceState({}, '', window.location.pathname);
 
   try {
-    const r = await fetch('/api/room?action=info', {
-      headers: { 'X-Room-Token': roomToken }
-    });
+    const r = await fetch('/api/room?action=info', { headers: { 'X-Room-Token': roomToken } });
     const d = await r.json();
     if (!d.ok) { showError('🚫', 'Kirish rad etildi', d.msg); return; }
     await enterRoom(d);
   } catch(e) {
-    showError('⚠️', 'Ulanish xatosi', "Server bilan ulanib bo'lmadi. Qayta urinib ko'ring.");
+    showError('⚠️', 'Ulanish xatosi', "Server bilan ulanib bo'lmadi.");
   }
 }
 
 async function enterRoom(d) {
-    roomInfo   = d.room;
-    myRole     = myRole || d.user.role;
-    myName     = d.user.name + (myRole === 'teacher' ? ' (Ustoz)' : '');
-    roomId     = d.room.id;
-    peerRoomId = d.room.peer_room_id;
+  roomInfo   = d.room;
+  myRole     = myRole || d.user.role;
+  myName     = d.user.name + (myRole === 'teacher' ? ' (Ustoz)' : '');
+  roomId     = d.room.id;
+  peerRoomId = d.room.peer_room_id;
 
-    document.getElementById('room-title-text').textContent = roomInfo.title;
-
-    if (myRole === 'teacher') {
-      document.getElementById('screen-ctrl').style.display = '';
-      document.getElementById('copy-link-btn').style.display = '';
-    }
-
-    await getMedia();
+  document.getElementById('room-title-text').textContent = roomInfo.title;
+  if (myRole === 'teacher') {
+    document.getElementById('screen-ctrl').style.display = '';
+    document.getElementById('copy-link-btn').style.display = '';
+  }
+  await getMedia();
 }
 
+// ══════════════════════════════════════════════════════════════
+// MEDIA
+// ══════════════════════════════════════════════════════════════
 async function getMedia() {
   try {
     localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -432,59 +742,36 @@ async function getMedia() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// PEER CONNECTION (PeerJS)
+// PEER
 // ══════════════════════════════════════════════════════════════
 function startPeer() {
   const peerId = (myRole === 'teacher' ? 'tr-' : 'st-') +
                   peerRoomId + '-' + Math.random().toString(36).slice(2,8);
-
   myPeer = new Peer(peerId, {
     debug: 0,
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-      ]
-    }
+    config: { iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]}
   });
 
   myPeer.on('open', id => {
     myPeerId = id;
     showRoom();
     joinRoomServer();
-    // Signaling: 6 soniyada bir ishtirokchilar ro'yxatini sinxronlash
     syncInterval = setInterval(syncParticipants, 6000);
     startTimer();
   });
-
-  // Kelayotgan ulanishlarni qabul qilish
-  myPeer.on('call', call => {
-    call.answer(localStream || new MediaStream());
-    handleCall(call);
-  });
-
-  myPeer.on('error', e => {
-    console.warn('Peer error:', e.type, e.message);
-    if (e.type === 'unavailable-id') {
-      // ID band — boshqa ID bilan urinish
-      setTimeout(startPeer, 500);
-    }
-  });
-
-  myPeer.on('disconnected', () => {
-    setTimeout(() => myPeer.reconnect(), 2000);
-  });
+  myPeer.on('call', call => { call.answer(localStream || new MediaStream()); handleCall(call); });
+  myPeer.on('error', e => { if (e.type === 'unavailable-id') setTimeout(startPeer, 500); });
+  myPeer.on('disconnected', () => setTimeout(() => myPeer?.reconnect(), 2000));
 }
 
 function handleCall(call) {
   const pid = call.peer;
-  if (peers[pid]) return; // Allaqachon ulangan
+  if (peers[pid]) return;
   peers[pid] = { call, stream: null, name: '...', role: '?' };
-
-  call.on('stream', stream => {
-    peers[pid].stream = stream;
-    rebuildGrid();
-  });
+  call.on('stream', s => { peers[pid].stream = s; rebuildGrid(); });
   call.on('close',  () => { delete peers[pid]; rebuildGrid(); updateParticipants(); });
   call.on('error',  () => { delete peers[pid]; rebuildGrid(); });
 }
@@ -492,23 +779,17 @@ function handleCall(call) {
 async function connectToPeer(peerId) {
   if (!myPeer || !myPeerId || peers[peerId] || peerId === myPeerId) return;
   peers[peerId] = { call: null, stream: null, name: '...', role: '?' };
-
   try {
     const call = myPeer.call(peerId, localStream || new MediaStream());
     peers[peerId].call = call;
-    call.on('stream', stream => {
-      peers[peerId].stream = stream;
-      rebuildGrid();
-    });
+    call.on('stream', s => { peers[peerId].stream = s; rebuildGrid(); });
     call.on('close',  () => { delete peers[peerId]; rebuildGrid(); });
     call.on('error',  () => { delete peers[peerId]; rebuildGrid(); });
-  } catch(e) {
-    delete peers[peerId];
-  }
+  } catch { delete peers[peerId]; }
 }
 
 // ══════════════════════════════════════════════════════════════
-// SERVER SIGNALING (faqat yangi ishtirokchilarni topish uchun)
+// SERVER SIGNALING
 // ══════════════════════════════════════════════════════════════
 async function joinRoomServer() {
   try {
@@ -518,38 +799,28 @@ async function joinRoomServer() {
       body: JSON.stringify({ peer_id: myPeerId, name: myName })
     });
     const d = await r.json();
-    if (!d.ok) { showToast('⚠️ ' + (d.msg || 'Server xatosi')); return; }
-    handleParticipants(d.participants || []);
-  } catch(e) { console.error('joinRoom xato:', e); }
+    if (d.ok) handleParticipants(d.participants || []);
+  } catch {}
 }
 
 async function syncParticipants() {
   if (!roomToken || !myPeerId) return;
   try {
-    // Heartbeat + yangi ishtirokchilarni olish
     const r = await fetch('/api/room?action=join', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
       body: JSON.stringify({ peer_id: myPeerId, name: myName })
     });
     const d = await r.json();
-    if (!d.ok) return;
-    handleParticipants(d.participants || []);
-  } catch(e) {}
+    if (d.ok) handleParticipants(d.participants || []);
+  } catch {}
 }
 
 function handleParticipants(list) {
   participantsList = list;
-  // Yangi ishtirokchilarga ulanish
   list.forEach(p => {
-    if (p.peer_id !== myPeerId && !peers[p.peer_id]) {
-      connectToPeer(p.peer_id);
-    }
-    // Nom va role yangilash
-    if (peers[p.peer_id]) {
-      peers[p.peer_id].name = p.name;
-      peers[p.peer_id].role = p.role;
-    }
+    if (p.peer_id !== myPeerId && !peers[p.peer_id]) connectToPeer(p.peer_id);
+    if (peers[p.peer_id]) { peers[p.peer_id].name = p.name; peers[p.peer_id].role = p.role; }
   });
   updateParticipants();
   rebuildGrid();
@@ -564,25 +835,22 @@ function rebuildGrid() {
   grid.className = 'video-grid g' + Math.min(total, 9);
   grid.innerHTML = '';
 
-  // O'zim
   grid.appendChild(makeTile(myPeerId, myName, myRole, localStream, true, camOn, micOn));
-
-  // Boshqalar
   Object.entries(peers).forEach(([pid, p]) => {
     const info = participantsList.find(x => x.peer_id === pid) || {};
-    const name = info.name || p.name || 'Ishtirokchi';
-    const role = info.role || p.role || 'student';
-    grid.appendChild(makeTile(pid, name, role, p.stream, false, true, true));
+    grid.appendChild(makeTile(pid, info.name || p.name || 'Ishtirokchi',
+      info.role || p.role || 'student', p.stream, false, true, true));
   });
 }
 
 function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
   const tile = document.createElement('div');
+  const hasVideo = hasCam && stream && stream.getVideoTracks().some(t => t.enabled);
   let cls = 'vtile';
-  if (!hasCam || !stream || stream.getVideoTracks().every(t => !t.enabled)) cls += ' no-cam';
-  if (isSelf) cls += ' self-tile';
+  if (!hasVideo) cls += ' no-cam';
+  if (isSelf)  cls += ' self-tile';
   if (role === 'teacher') cls += ' teacher-tile';
-  if (!stream) cls += ' waiting';
+  if (!stream) cls += ' no-stream';
   tile.className = cls;
   tile.id = 'tile-' + pid.replace(/[^a-z0-9]/gi, '_');
 
@@ -594,21 +862,19 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
 
   const av = document.createElement('div');
   av.className = 'vtile-av';
+  av.style.background = role === 'teacher'
+    ? 'linear-gradient(135deg,#4f46e5,#7c3aed)'
+    : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
   av.textContent = (name || 'U').charAt(0).toUpperCase();
-  av.style.background = role === 'teacher' ? '#4f46e5' : '#0ea5e9';
   tile.appendChild(av);
 
   const label = document.createElement('div');
   label.className = 'vtile-label';
-  if (!hasMic) {
-    const mic = document.createElement('svg');
-    mic.innerHTML = '<svg class="mic-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>';
-    mic.style.color = 'var(--red)';
-    label.appendChild(mic);
-  }
-  label.appendChild(document.createTextNode((isSelf ? 'Siz' : name) + (role === 'teacher' ? ' 👨‍🏫' : '')));
+  if (!hasMic) label.innerHTML += '<span class="muted-icon">🔇</span>';
+  label.appendChild(document.createTextNode(
+    (isSelf ? 'Siz' : name) + (role === 'teacher' ? ' 👨‍🏫' : '')
+  ));
   tile.appendChild(label);
-
   return tile;
 }
 
@@ -618,44 +884,33 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
 function toggleCam() {
   camOn = !camOn;
   if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
-  updateBtnState();
-  rebuildGrid();
+  updateBtnState(); rebuildGrid();
 }
-
 function toggleMic() {
   micOn = !micOn;
   if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = micOn);
   updateBtnState();
 }
-
 async function toggleScreen() {
-  if (screenSharing) {
-    stopScreen();
-    return;
-  }
+  if (screenSharing) { stopScreen(); return; }
   try {
     screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
     const track = screenStream.getVideoTracks()[0];
-    // Barcha ulanishlarda video trekni almashtirish
     Object.values(peers).forEach(p => {
-      if (!p.call?.peerConnection) return;
-      const sender = p.call.peerConnection.getSenders().find(s => s.track?.kind === 'video');
+      const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
       if (sender) sender.replaceTrack(track);
     });
-    // O'z tile ni yangilash
     const myTile = document.getElementById('tile-' + myPeerId?.replace(/[^a-z0-9]/gi,'_'));
-    if (myTile) myTile.querySelector('video').srcObject = new MediaStream([track, ...(localStream?.getAudioTracks()||[])]);
-
+    if (myTile) myTile.querySelector('video').srcObject = new MediaStream([track]);
     track.onended = stopScreen;
     screenSharing = true;
-    document.getElementById('btn-screen').classList.replace('off','on');
+    document.getElementById('btn-screen').className = 'ctrl-btn screen-on';
     showToast('📺 Ekran ulashish boshlandi');
-  } catch(e) { showToast('Ekran ulashish bekor qilindi'); }
+  } catch { showToast('Ekran ulashish bekor qilindi'); }
 }
-
 function stopScreen() {
   screenSharing = false;
-  if (screenStream) { screenStream.getTracks().forEach(t=>t.stop()); screenStream = null; }
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
   if (localStream) {
     const camTrack = localStream.getVideoTracks()[0];
     if (camTrack) {
@@ -667,109 +922,85 @@ function stopScreen() {
       if (myTile) myTile.querySelector('video').srcObject = localStream;
     }
   }
-  document.getElementById('btn-screen')?.classList.replace('on','off');
-  showToast('Ekran ulashish to\'xtatildi');
+  const sb = document.getElementById('btn-screen');
+  if (sb) sb.className = 'ctrl-btn on';
+  showToast("Ekran ulashish to'xtatildi");
 }
-
 function updateBtnState() {
-  const cb = document.getElementById('btn-cam');
-  const mb = document.getElementById('btn-mic');
-  cb.className = 'ctrl-btn ' + (camOn ? 'on' : 'off');
-  mb.className = 'ctrl-btn ' + (micOn ? 'on' : 'off');
+  document.getElementById('btn-cam').className = 'ctrl-btn ' + (camOn ? 'on' : 'off');
+  document.getElementById('btn-mic').className = 'ctrl-btn ' + (micOn ? 'on' : 'off');
 }
-
 async function leaveRoom() {
-  // Stop tracks
-  if (localStream) { localStream.getTracks().forEach(t=>t.stop()); localStream = null; }
-  if (screenStream) { screenStream.getTracks().forEach(t=>t.stop()); screenStream = null; }
+  if (localStream)  { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
   Object.values(peers).forEach(p => p.call?.close());
   peers = {};
   if (myPeer) { myPeer.destroy(); myPeer = null; }
-  if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
+  if (syncInterval)  { clearInterval(syncInterval); syncInterval = null; }
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-
-  // Server ga xabar
   if (roomToken && myPeerId) {
     navigator.sendBeacon('/api/room?action=leave',
-      new Blob([JSON.stringify({ peer_id: myPeerId })], { type: 'application/json' })
-    );
+      new Blob([JSON.stringify({ peer_id: myPeerId })], { type: 'application/json' }));
   }
-
-  // Sahifani yopish yoki reload
-  if (myRole === 'teacher') {
-    showError('👋', 'Dars tugatildi', 'Dars muvaffaqiyatli yakunlandi.');
-  } else {
-    showError('👋', 'Darsdan chiqdingiz', 'Darsga qaytish uchun ustozingizdan havola so\'rang.');
-  }
+  showError('👋', myRole === 'teacher' ? 'Dars yakunlandi' : 'Darsdan chiqdingiz',
+    myRole === 'teacher' ? 'Dars muvaffaqiyatli o\'tkazildi.' : "Qaytish uchun havoladan foydalaning.");
 }
 
 // ══════════════════════════════════════════════════════════════
-// CHAT (in-memory, PeerJS data channel emas, xotira)
+// CHAT
 // ══════════════════════════════════════════════════════════════
 function sendChat() {
   const inp = document.getElementById('chat-inp');
   const text = inp.value.trim();
   if (!text) return;
   inp.value = ''; inp.style.height = 'auto';
-
-  const msg = { text, sender: myName, time: Date.now(), mine: true };
-  chatMessages.push(msg);
+  chatMessages.push({ text, sender: myName, time: Date.now(), mine: true });
   renderChat();
-  // TODO: PeerJS data channel bilan real-time chat qo'shish mumkin
 }
-
 function renderChat() {
-  const container = document.getElementById('chat-msgs');
-  container.innerHTML = '';
+  const box = document.getElementById('chat-msgs');
   if (!chatMessages.length) {
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Hali xabar yo\'q</div>';
+    box.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">💬</div>Hali xabar yo\'q</div>';
     return;
   }
+  box.innerHTML = '';
   chatMessages.forEach(m => {
-    const div = document.createElement('div');
-    div.className = 'msg ' + (m.mine ? 'mine' : 'theirs');
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-wrap ' + (m.mine ? 'mine' : 'theirs');
+    if (!m.mine) wrap.innerHTML = `<div class="msg-sender">${esc(m.sender)}</div>`;
     const time = new Date(m.time).toLocaleTimeString('uz',{hour:'2-digit',minute:'2-digit'});
-    div.innerHTML = `${escHtml(m.text)}<div class="msg-time">${escHtml(m.sender)} · ${time}</div>`;
-    container.appendChild(div);
+    wrap.innerHTML += `<div class="msg ${m.mine?'mine':'theirs'}">${esc(m.text)}<div class="msg-time">${time}</div></div>`;
+    box.appendChild(wrap);
   });
-  container.scrollTop = container.scrollHeight;
+  box.scrollTop = box.scrollHeight;
 }
 
 // ══════════════════════════════════════════════════════════════
-// PARTICIPANTS SIDEBAR
+// PARTICIPANTS
 // ══════════════════════════════════════════════════════════════
 function updateParticipants() {
   const list = document.getElementById('part-list');
-  list.innerHTML = '';
-
   const all = [
     { peer_id: myPeerId, name: myName, role: myRole, self: true },
     ...participantsList.filter(p => p.peer_id !== myPeerId)
   ];
-
+  list.innerHTML = '';
   all.forEach(p => {
     const div = document.createElement('div');
     div.className = 'part-item';
-    const av = document.createElement('div');
-    av.className = 'part-av';
-    av.style.background = p.role === 'teacher' ? '#4f46e5' : '#0ea5e9';
-    av.textContent = (p.name||'U').charAt(0).toUpperCase();
-    const info = document.createElement('div');
-    info.style.flex = '1';
-    info.style.minWidth = '0';
-    info.innerHTML = `<div class="part-name">${escHtml(p.name||'Foydalanuvchi')}${p.self?' <span style="color:var(--text3);font-size:10px">(Siz)</span>':''}</div>
-      <div class="part-role">${p.role==='teacher'?'👨‍🏫 Ustoz':"🎓 O'quvchi"}</div>`;
-    div.appendChild(av);
-    div.appendChild(info);
-    if (p.role==='teacher') {
-      const b = document.createElement('span');
-      b.className = 'part-badge';
-      b.textContent = 'USTOZ';
-      div.appendChild(b);
-    }
+    const bg = p.role === 'teacher'
+      ? 'linear-gradient(135deg,#4f46e5,#7c3aed)'
+      : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
+    div.innerHTML = `
+      <div class="part-av" style="background:${bg}">${(p.name||'U').charAt(0).toUpperCase()}</div>
+      <div class="part-info">
+        <div class="part-name">${esc(p.name||'Foydalanuvchi')} ${p.self?'<span class="part-self">(Siz)</span>':''}</div>
+        <div class="part-role-txt">${p.role==='teacher'?'👨‍🏫 Ustoz':"🎓 O'quvchi"}</div>
+      </div>
+      ${p.role==='teacher'?'<div class="part-badge">USTOZ</div>':''}
+    `;
     list.appendChild(div);
   });
-
   document.getElementById('room-sub').textContent = `${all.length} ishtirokchi`;
 }
 
@@ -779,79 +1010,55 @@ function updateParticipants() {
 function showRoom() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('room').style.display = 'flex';
-  document.getElementById('live-dot').style.display = '';
+  document.getElementById('live-chip').style.display = '';
   document.getElementById('room-timer').style.display = '';
 }
-
 function showError(icon, title, sub) {
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('waiting').style.display = 'none';
-  document.getElementById('room').style.display = 'none';
-  document.getElementById('err-icon').textContent = icon;
+  ['loading','waiting','room'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('err-icon').textContent  = icon;
   document.getElementById('err-title').textContent = title;
-  document.getElementById('err-sub').textContent = sub;
+  document.getElementById('err-sub').textContent   = sub;
   document.getElementById('error-page').style.display = 'flex';
 }
-
+let _toastTimer;
 function showToast(msg, dur = 3500) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove('show'), dur);
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), dur);
 }
-
 function switchTab(name) {
-  document.querySelectorAll('.stab').forEach((el, i) => {
-    const tabs = ['participants','chat'];
-    el.classList.toggle('active', tabs[i] === name);
-  });
-  document.querySelectorAll('.stab-panel').forEach((el, i) => {
-    const tabs = ['tab-participants','tab-chat'];
-    el.classList.toggle('active', el.id === 'tab-' + name);
-  });
+  document.querySelectorAll('.stab').forEach((el,i) =>
+    el.classList.toggle('active', ['participants','chat'][i] === name));
+  document.querySelectorAll('.stab-panel').forEach(el =>
+    el.classList.toggle('active', el.id === 'tab-' + name));
 }
-
 function startTimer() {
   startTime = Date.now();
   timerInterval = setInterval(() => {
     const s = Math.floor((Date.now()-startTime)/1000);
-    const m = Math.floor(s/60).toString().padStart(2,'0');
-    const sec = (s%60).toString().padStart(2,'0');
+    const m = String(Math.floor(s/60)).padStart(2,'0');
+    const sec = String(s%60).padStart(2,'0');
     document.getElementById('room-timer').textContent = `${m}:${sec}`;
   }, 1000);
 }
-
 async function copyStudentLink() {
-  // Student URL ni serverdan olish
-  try {
-    const r = await fetch('/api/room?action=info', {
-      headers: { 'X-Room-Token': roomToken }
-    });
-    const d = await r.json();
-    if (!d.ok) return;
-    // Student token — server dan olish mumkin emas bevosita
-    // Lekin biz uni yaratish uchun botga murojaat qilamiz
-    showToast('🔗 Dars havolasini Telegram botdan oling');
-  } catch(e) {}
+  showToast('🔗 Dars havolasini Telegram botdan oling');
 }
-
-function escHtml(str) {
+function esc(str) {
   if (!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 // ══════════════════════════════════════════════════════════════
 // START
 // ══════════════════════════════════════════════════════════════
 window.addEventListener('beforeunload', () => {
-  if (roomToken && myPeerId) {
+  if (roomToken && myPeerId)
     navigator.sendBeacon('/api/room?action=leave',
-      new Blob([JSON.stringify({peer_id:myPeerId})],{type:'application/json'})
-    );
-  }
+      new Blob([JSON.stringify({peer_id:myPeerId})],{type:'application/json'}));
 });
-
 init();
 </script>
 </body>
