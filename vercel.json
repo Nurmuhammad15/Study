@@ -1,64 +1,20 @@
 {
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET,POST,OPTIONS"
-        }
-      ]
-    },
-    {
-      "source": "/((?!api).*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "camera=self, microphone=self"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; connect-src 'self' https://0.peerjs.com wss://0.peerjs.com; media-src 'self' blob: mediastream:; frame-ancestors 'none'"
-        }
+        { "key": "X-Content-Type-Options",    "value": "nosniff" },
+        { "key": "X-Frame-Options",           "value": "DENY" },
+        { "key": "X-XSS-Protection",          "value": "1; mode=block" },
+        { "key": "Referrer-Policy",           "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",        "value": "camera=self, microphone=self, display-capture=self" },
+        { "key": "Content-Security-Policy",   "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; connect-src 'self' https://0.peerjs.com wss://0.peerjs.com; media-src 'self' blob:; frame-ancestors 'none'" }
       ]
     }
   ],
   "rewrites": [
-    {
-      "source": "/api/webhook",
-      "destination": "/api/webhook.py"
-    },
-    {
-      "source": "/api/room",
-      "destination": "/api/room.js"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/webhook", "destination": "/api/webhook.py" },
+    { "source": "/api/room",    "destination": "/api/room.js" },
+    { "source": "/(.*)",        "destination": "/index.html" }
   ]
 }
