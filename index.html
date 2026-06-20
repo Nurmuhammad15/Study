@@ -90,7 +90,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* Header */
 .room-header{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:rgba(255,255,255,.97);border-bottom:1px solid var(--border);flex-shrink:0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
 .room-title-area{display:flex;align-items:center;gap:12px}
-.room-logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.room-logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent3));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.5px;}
 .room-title-text{font-size:14px;font-weight:700;line-height:1.2;color:var(--text)}
 .room-title-sub{font-size:11px;color:var(--text3);margin-top:1px}
 .live-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#ef4444;font-size:10px;font-weight:700;letter-spacing:.8px;padding:3px 8px;border-radius:20px;flex-shrink:0;}
@@ -243,7 +243,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="login-card-title">Darsga kirish</div>
       <div class="login-card-sub">Telegram botdan olgan havolangizni pastga kiriting</div>
       <div class="input-group">
-        <span class="input-icon">🔗</span>
+        <span class="input-icon" style="font-style:normal;font-size:13px;color:var(--text3);">@</span>
         <input id="link-input" type="text" placeholder="https://study-zeta-neon.vercel.app/?s=..." autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doEnter()"/>
       </div>
       <div id="login-err" class="login-err"></div>
@@ -253,7 +253,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       </button>
       <div class="login-divider">yoki</div>
       <div class="login-hint-card">
-        💡 <strong>Qanday kirish mumkin?</strong><br>
+        <strong>Qanday kirish mumkin?</strong><br>
         Telegram botga yozing va <strong>/newlesson</strong> buyrug'ini yuboring. Bot sizga kirish havolasini yuboradi.
       </div>
     </div>
@@ -268,7 +268,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 <!-- ERROR -->
 <div id="error-page">
-  <div class="error-icon" id="err-icon">🔒</div>
+  <div class="error-icon" id="err-icon"></div>
   <div class="error-title" id="err-title">Kirish mumkin emas</div>
   <div class="error-sub" id="err-sub">Havola noto'g'ri yoki muddati o'tgan.</div>
   <button class="error-btn" onclick="location.reload()">← Qaytish</button>
@@ -288,7 +288,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <!-- Header -->
   <div class="room-header">
     <div class="room-title-area">
-      <div class="room-logo">📚</div>
+      <div class="room-logo">S</div>
       <div>
         <div class="room-title-text" id="room-title-text">Dars xonasi</div>
         <div class="room-title-sub" id="room-sub">Ulanmoqda...</div>
@@ -301,8 +301,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="header-center">
       <div class="room-timer" id="room-timer" style="display:none">00:00</div>
       <div class="view-tabs">
-        <button class="view-tab active" id="tab-video-btn" onclick="switchView('video')">📹 Video</button>
-        <button class="view-tab" id="tab-board-btn" onclick="switchView('board')">🖊️ Doska</button>
+        <button class="view-tab active" id="tab-video-btn" onclick="switchView('video')"> Video</button>
+        <button class="view-tab" id="tab-board-btn" onclick="switchView('board')"> Doska</button>
       </div>
     </div>
 
@@ -395,8 +395,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         </div>
 
         <div class="board-actions">
-          <button class="board-action-btn" onclick="downloadBoard()">⬇ Saqlash</button>
-          <button class="board-action-btn danger" onclick="clearBoard()">🗑 Tozalash</button>
+          <button class="board-action-btn" onclick="downloadBoard()">Saqlash</button>
+          <button class="board-action-btn danger" onclick="clearBoard()">Tozalash</button>
         </div>
       </div>
       <canvas id="board-canvas"></canvas>
@@ -407,17 +407,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <!-- Sidebar -->
     <div class="room-sidebar">
       <div class="sidebar-tabs">
-        <div class="stab active" onclick="switchTab('participants')">👥 Ishtirokchilar</div>
-        <div class="stab" onclick="switchTab('chat')">💬 Chat</div>
+        <div class="stab active" onclick="switchTab('participants')"> Ishtirokchilar</div>
+        <div class="stab" onclick="switchTab('chat')"> Chat</div>
       </div>
       <div class="stab-panel active" id="tab-participants">
         <div class="part-list" id="part-list">
-          <div class="chat-empty"><div class="chat-empty-icon">👥</div>Yuklanmoqda...</div>
+          <div class="chat-empty">Yuklanmoqda...</div>
         </div>
       </div>
       <div class="stab-panel" id="tab-chat">
         <div class="chat-msgs" id="chat-msgs">
-          <div class="chat-empty"><div class="chat-empty-icon">💬</div>Hali xabar yo'q</div>
+          <div class="chat-empty">Hali xabar yo'q</div>
         </div>
         <div class="chat-input-row">
           <textarea class="chat-inp" id="chat-inp" placeholder="Xabar yozing..." rows="1" maxlength="500" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
@@ -793,7 +793,7 @@ async function doEnter() {
   errEl.textContent = '';
   const { token, role } = extractToken(input);
   if (!token) {
-    errEl.innerHTML = "❌ Havola noto'g'ri. Botdan kelgan to'liq havolani kiriting.";
+    errEl.innerHTML = "Havola noto'g'ri. Botdan kelgan to'liq havolani kiriting.";
     document.getElementById('link-input').focus();
     return;
   }
@@ -804,7 +804,7 @@ async function doEnter() {
     const d = await r.json();
     btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Darsga kirish';
     btn.disabled = false;
-    if (!d.ok) { errEl.innerHTML = '❌ ' + esc(d.msg || "Havola noto'g'ri yoki muddati o'tgan"); return; }
+    if (!d.ok) { errEl.innerHTML = esc(d.msg || "Havola noto'g'ri yoki muddati o'tgan"); return; }
     roomToken = token;
     myRole    = role || d.user.role || 'student';
     document.getElementById('login-page').style.display = 'none';
@@ -813,7 +813,7 @@ async function doEnter() {
   } catch(e) {
     btn.innerHTML = 'Darsga kirish';
     btn.disabled = false;
-    errEl.innerHTML = "❌ Server bilan aloqa yo'q. Qayta urinib ko'ring.";
+    errEl.innerHTML = "Server bilan aloqa yo'q. Qayta urinib ko'ring.";
   }
 }
 
@@ -837,10 +837,10 @@ async function init() {
   try {
     const r = await fetch('/api/room?action=info', { headers: { 'X-Room-Token': roomToken } });
     const d = await r.json();
-    if (!d.ok) { showError('🚫', 'Kirish rad etildi', d.msg); return; }
+    if (!d.ok) { showError('', 'Kirish rad etildi', d.msg); return; }
     await enterRoom(d);
   } catch(e) {
-    showError('⚠️', 'Ulanish xatosi', "Server bilan ulanib bo'lmadi.");
+    showError('', 'Ulanish xatosi', "Server bilan ulanib bo'lmadi.");
   }
 }
 
@@ -877,14 +877,14 @@ async function getMedia() {
       localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
       camOn = false;
       micOn = true;
-      showToast('⚠️ Kamera ruxsat berilmagan — faqat mikrofon');
+      showToast('Kamera ruxsat berilmagan — faqat mikrofon');
     } catch(e2) {
       console.warn('Audio only failed:', e2.name);
       // No permissions at all
       localStream = new MediaStream();
       camOn = false;
       micOn = false;
-      showToast('⚠️ Kamera va mikrofon topilmadi yoki ruxsat berilmagan');
+      showToast('Kamera va mikrofon topilmadi yoki ruxsat berilmagan');
     }
   }
   updateBtnState();
@@ -910,9 +910,9 @@ async function requestCamAccess() {
     camOn = true;
     updateBtnState();
     rebuildGrid();
-    showToast('✅ Kamera yoqildi');
+    showToast('Kamera yoqildi');
   } catch(e) {
-    showToast('❌ Kamera ruxsati berilmadi: ' + e.message);
+    showToast('Kamera ruxsati berilmadi: ' + e.message);
   }
 }
 
@@ -933,14 +933,14 @@ async function toggleCam() {
   });
   updateBtnState();
   rebuildGrid();
-  showToast(camOn ? '📹 Kamera yoqildi' : '📷 Kamera o\'chirildi');
+  showToast(camOn ? 'Kamera yoqildi' : 'Kamera o\'chirildi');
 }
 
 function toggleMic() {
   micOn = !micOn;
   localStream.getAudioTracks().forEach(t => { t.enabled = micOn; });
   updateBtnState();
-  showToast(micOn ? '🎤 Mikrofon yoqildi' : '🔇 Mikrofon o\'chirildi');
+  showToast(micOn ? 'Mikrofon yoqildi' : 'Mikrofon o\'chirildi');
 }
 
 async function toggleScreen() {
@@ -957,7 +957,7 @@ async function toggleScreen() {
     track.onended = stopScreen;
     screenSharing = true;
     document.getElementById('btn-screen').className = 'ctrl-btn screen-on';
-    showToast('📺 Ekran ulashish boshlandi');
+    showToast('Ekran ulashish boshlandi');
   } catch { showToast('Ekran ulashish bekor qilindi'); }
 }
 
@@ -1158,8 +1158,8 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
 
   const label = document.createElement('div');
   label.className = 'vtile-label';
-  if (!hasMic) label.innerHTML += '<span style="color:#f87171;font-size:10px">🔇</span>';
-  label.appendChild(document.createTextNode((isSelf?'Siz':name)+(role==='teacher'?' 👨‍🏫':'')));
+  if (!hasMic) label.innerHTML += '<span style="color:#f87171;font-size:10px;font-weight:700">M</span>';
+  label.appendChild(document.createTextNode((isSelf?'Siz':name)));
   tile.appendChild(label);
   return tile;
 }
@@ -1178,7 +1178,7 @@ async function leaveRoom() {
   if (roomToken && myPeerId) {
     navigator.sendBeacon('/api/room?action=leave', new Blob([JSON.stringify({peer_id:myPeerId})],{type:'application/json'}));
   }
-  showError('👋', myRole==='teacher'?'Dars yakunlandi':'Darsdan chiqdingiz', myRole==='teacher'?'Dars muvaffaqiyatli o\'tkazildi.':"Qaytish uchun havoladan foydalaning.");
+  showError('', myRole==='teacher'?'Dars yakunlandi':'Darsdan chiqdingiz', myRole==='teacher'?'Dars muvaffaqiyatli o\'tkazildi.':"Qaytish uchun havoladan foydalaning.");
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1194,7 +1194,7 @@ function sendChat() {
 }
 function renderChat() {
   const box = document.getElementById('chat-msgs');
-  if (!chatMessages.length) { box.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">💬</div>Hali xabar yo\'q</div>'; return; }
+  if (!chatMessages.length) { box.innerHTML = '<div class="chat-empty">Hali xabar yo\'q</div>'; return; }
   box.innerHTML = '';
   chatMessages.forEach(m => {
     const wrap = document.createElement('div');
@@ -1218,7 +1218,7 @@ function updateParticipants() {
     const div = document.createElement('div');
     div.className = 'part-item';
     const bg = p.role==='teacher' ? 'linear-gradient(135deg,#4f46e5,#7c3aed)' : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
-    div.innerHTML = `<div class="part-av" style="background:${bg}">${(p.name||'U').charAt(0).toUpperCase()}</div><div class="part-info"><div class="part-name">${esc(p.name||'Foydalanuvchi')} ${p.self?'<span class="part-self">(Siz)</span>':''}</div><div class="part-role-txt">${p.role==='teacher'?'👨‍🏫 Ustoz':"🎓 O'quvchi"}</div></div>${p.role==='teacher'?'<div class="part-badge">USTOZ</div>':''}`;
+    div.innerHTML = `<div class="part-av" style="background:${bg}">${(p.name||'U').charAt(0).toUpperCase()}</div><div class="part-info"><div class="part-name">${esc(p.name||'Foydalanuvchi')} ${p.self?'<span class="part-self">(Siz)</span>':''}</div><div class="part-role-txt">${p.role==='teacher'?'Ustoz':"O'quvchi"}</div></div>${p.role==='teacher'?'<div class="part-badge">USTOZ</div>':''}`;
     list.appendChild(div);
   });
   document.getElementById('room-sub').textContent = `${all.length} ishtirokchi`;
@@ -1264,7 +1264,7 @@ function startTimer() {
   }, 1000);
 }
 async function copyStudentLink() {
-  showToast('🔗 Dars havolasini Telegram botdan oling');
+  showToast('Dars havolasini Telegram botdan oling');
 }
 function esc(str) {
   if (!str) return '';
