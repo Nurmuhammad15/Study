@@ -476,18 +476,21 @@ let timerInterval = null, startTime = null, syncInterval = null;
 // VIEW SWITCH (Video / Board)
 // ══════════════════════════════════════════════════════════════
 function switchView(view) {
-  const vv = document.getElementById('video-view');
-  const ba = document.getElementById('board-area');
+  const vv  = document.getElementById('video-view');
+  const ba  = document.getElementById('board-area');
   const tvb = document.getElementById('tab-video-btn');
   const tbb = document.getElementById('tab-board-btn');
   if (view === 'board') {
     vv.style.display = 'none';
+    ba.style.display = 'flex';   // visible FIRST
     ba.classList.add('active');
     tvb.classList.remove('active');
     tbb.classList.add('active');
-    resizeCanvas();
+    // 2 frames so browser computes layout before we measure
+    requestAnimationFrame(() => requestAnimationFrame(() => resizeCanvas()));
   } else {
     vv.style.display = '';
+    ba.style.display = 'none';
     ba.classList.remove('active');
     tvb.classList.add('active');
     tbb.classList.remove('active');
@@ -552,6 +555,7 @@ function clearBoard() {
   saveHistory();
   ctx.fillStyle = boardBg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  broadcastBoard({type:'clear'});
 }
 
 function downloadBoard() {
@@ -674,6 +678,7 @@ function commitText() {
   const lines = ti.value.split('\n');
   const lh = Math.max(14, brushSize * 4) * 1.3;
   lines.forEach((line, i) => ctx.fillText(line, x, y + lh * (i + 1)));
+  broadcastBoard({type:'text', text:ti.value, x, y, color:brushColor, fontSize:Math.max(14,brushSize*4)});
   ti.style.display = 'none';
   ti.value = '';
   textActive = false;
@@ -695,6 +700,7 @@ canvas.addEventListener('mousedown', e => {
   if (tool === 'pen' || tool === 'eraser') {
     ctx.beginPath();
     ctx.moveTo(x, y);
+    queueStroke({op:'begin',x,y,color:brushColor,size:brushSize});
   }
 });
 
@@ -708,6 +714,7 @@ canvas.addEventListener('mousemove', e => {
     ctx.lineJoin = 'round';
     ctx.lineTo(x, y);
     ctx.stroke();
+    queueStroke({op:'move',x,y,color:brushColor,size:brushSize});
   } else if (tool === 'eraser') {
     ctx.globalCompositeOperation = 'destination-out';
     ctx.lineWidth = brushSize * 3;
@@ -715,6 +722,7 @@ canvas.addEventListener('mousemove', e => {
     ctx.lineTo(x, y);
     ctx.stroke();
     ctx.globalCompositeOperation = 'source-over';
+    queueStroke({op:'move',x,y,color:brushColor,size:brushSize*3,eraser:true});
   } else {
     drawShape(x, y);
   }
@@ -725,6 +733,8 @@ canvas.addEventListener('mouseup', e => {
   drawing = false;
   if (tool !== 'pen' && tool !== 'eraser') {
     drawShape(...Object.values(getPos(e)));
+    // broadcast final shape as image patch
+    queueStroke({op:'shape', patch: canvas.toDataURL('image/jpeg',0.6)});
   }
 });
 canvas.addEventListener('mouseleave', () => { drawing = false; });
@@ -1001,6 +1011,7 @@ function startPeer() {
   myPeer.on('open', id => {
     myPeerId = id;
     peerRetries = 0;
+    listenDataConns();
     showRoom();
     joinRoomServer();
     syncInterval = setInterval(syncParticipants, 4000);
@@ -1055,6 +1066,8 @@ async function connectToPeer(peerId) {
     call.on('close',  () => { delete peers[peerId]; rebuildGrid(); });
     call.on('error',  () => { delete peers[peerId]; rebuildGrid(); });
   } catch(e) { console.warn('connectToPeer error:', e); delete peers[peerId]; }
+  // also open data channel for board sync
+  setTimeout(() => openDataConn(peerId), 800);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1256,6 +1269,111 @@ async function copyStudentLink() {
 function esc(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// BOARD SYNC — real-time via PeerJS DataConnections
+// ══════════════════════════════════════════════════════════════
+let dataConns = {};
+let boardSyncBuf = [];
+let syncTimer = null;
+let boardDrawing = false;
+
+function listenDataConns() {
+  if (!myPeer) return;
+  myPeer.on('connection', dc => setupDataConn(dc, dc.peer));
+}
+
+function openDataConn(peerId) {
+  if (!myPeer || !myPeer.open || dataConns[peerId]) return;
+  const dc = myPeer.connect(peerId, { reliable: true, serialization: 'json' });
+  setupDataConn(dc, peerId);
+}
+
+function setupDataConn(dc, peerId) {
+  dataConns[peerId] = dc;
+  dc.on('open', () => { sendBoardSnapshot(dc); });
+  dc.on('data', msg => {
+    if (!msg || !msg.type) return;
+    if (msg.type === 'stroke') applyRemoteStroke(msg);
+    if (msg.type === 'snapshot') applySnapshot(msg.data);
+    if (msg.type === 'clear') {
+      ctx.fillStyle = boardBg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    if (msg.type === 'text') applyRemoteText(msg);
+  });
+  dc.on('close', () => { delete dataConns[peerId]; });
+  dc.on('error', () => { delete dataConns[peerId]; });
+}
+
+function broadcastBoard(msg) {
+  Object.values(dataConns).forEach(dc => {
+    if (dc && dc.open) { try { dc.send(msg); } catch(e) {} }
+  });
+}
+
+function sendBoardSnapshot(dc) {
+  if (canvas.width < 10) return;
+  try { dc.send({ type: 'snapshot', data: canvas.toDataURL('image/jpeg', 0.7) }); }
+  catch(e) {}
+}
+
+function applySnapshot(dataUrl) {
+  const img = new Image();
+  img.onload = () => {
+    if (canvas.width < 10) { setTimeout(() => applySnapshot(dataUrl), 600); return; }
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  };
+  img.src = dataUrl;
+}
+
+function queueStroke(data) {
+  boardSyncBuf.push(data);
+  if (!syncTimer) {
+    syncTimer = setTimeout(() => {
+      if (boardSyncBuf.length)
+        broadcastBoard({ type: 'stroke', points: boardSyncBuf.splice(0) });
+      syncTimer = null;
+    }, 40);
+  }
+}
+
+function applyRemoteStroke(msg) {
+  if (!msg.points) return;
+  msg.points.forEach(p => {
+    ctx.strokeStyle = p.color || '#1a1a1a';
+    ctx.lineWidth   = p.size  || 3;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    if (p.op === 'begin') {
+      ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    } else if (p.op === 'move') {
+      if (p.eraser) {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineTo(p.x, p.y); ctx.stroke();
+        ctx.globalCompositeOperation = 'source-over';
+      } else {
+        ctx.lineTo(p.x, p.y); ctx.stroke();
+      }
+    } else if (p.op === 'shape') {
+      const img = new Image();
+      img.onload = () => {
+        if (canvas.width < 10) return;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+      img.src = p.patch;
+    }
+  });
+}
+
+function applyRemoteText(msg) {
+  ctx.fillStyle = msg.color || '#1a1a1a';
+  ctx.font = (msg.fontSize || 16) + 'px -apple-system, sans-serif';
+  const lines = (msg.text || '').split('\n');
+  const lh = (msg.fontSize || 16) * 1.3;
+  lines.forEach((line, i) => ctx.fillText(line, msg.x, msg.y + lh * (i + 1)));
 }
 
 window.addEventListener('beforeunload', () => {
