@@ -1790,101 +1790,105 @@ async function toggleRecording() {
 
 async function startRecording() {
   try {
-    // Capture the entire room body (video + board)
-    const roomBody = document.getElementById('room');
-    let captureStream;
-
-    // Try screen capture of just our content
+    // Step 1: Capture the tab/screen via getDisplayMedia
+    // Chrome will show a picker — user selects "This Tab" for best result
+    let displayStream;
     try {
-      // Create a combined stream: canvas + audio
-      const canvasEl = document.createElement('canvas');
-      const roomEl = document.getElementById('room');
-      canvasEl.width  = roomEl.offsetWidth  || 1280;
-      canvasEl.height = roomEl.offsetHeight || 720;
-      const captureCtx = canvasEl.getContext('2d');
-
-      // Capture stream from canvas at 30fps
-      captureStream = canvasEl.captureStream(30);
-
-      // Add audio from localStream
-      if (localStream) {
-        localStream.getAudioTracks().forEach(t => captureStream.addTrack(t));
-      }
-      // Add audio from remote peers
-      Object.values(peers).forEach(p => {
-        if (p.stream) p.stream.getAudioTracks().forEach(t => {
-          try { captureStream.addTrack(t.clone()); } catch(e) {}
-        });
+      displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          displaySurface: 'browser',   // prefer current tab
+          width:  { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30 }
+        },
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          sampleRate: 48000
+        },
+        preferCurrentTab: true,        // Chrome 107+ — auto-selects current tab
+        selfBrowserSurface: 'include'  // include our own tab
       });
-
-      recordingStream = captureStream;
-
-      // Draw loop — capture current view to canvas
-      let drawLoop;
-      const drawFrame = () => {
-        if (!isRecording) return;
-        const currentView = document.getElementById('board-area').classList.contains('active')
-          ? 'board' : 'video';
-        if (currentView === 'board') {
-          // Draw board canvas
-          const boardCanvas = document.getElementById('board-canvas');
-          if (boardCanvas.width > 0) {
-            captureCtx.fillStyle = '#ffffff';
-            captureCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
-            captureCtx.drawImage(boardCanvas, 0, 0, canvasEl.width, canvasEl.height);
-          }
-        } else {
-          // Draw video grid
-          captureCtx.fillStyle = '#1a1f2e';
-          captureCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
-          const videos = document.querySelectorAll('.vtile video');
-          const count  = videos.length;
-          if (count > 0) {
-            const cols = count <= 1 ? 1 : count <= 4 ? 2 : 3;
-            const rows = Math.ceil(count / cols);
-            const w = canvasEl.width  / cols;
-            const h = canvasEl.height / rows;
-            videos.forEach((v, i) => {
-              const col = i % cols, row = Math.floor(i / cols);
-              try { captureCtx.drawImage(v, col*w, row*h, w, h); } catch(e) {}
-            });
-          }
-        }
-        drawLoop = requestAnimationFrame(drawFrame);
-      };
-      drawFrame();
-      // Store loop cancel fn
-      recordingStream._stopDraw = () => cancelAnimationFrame(drawLoop);
-
     } catch(e) {
-      console.warn('Canvas capture failed, using localStream only:', e);
-      captureStream = new MediaStream();
-      if (localStream) localStream.getTracks().forEach(t => captureStream.addTrack(t.clone()));
+      showToast('Ekran ruxsati berilmadi: ' + e.message);
+      return;
     }
 
-    // Choose best codec
+    // Step 2: Mix all audio tracks (local mic + remote peers + display audio)
+    const audioCtxRec = new (window.AudioContext || window.webkitAudioContext)();
+    const dest = audioCtxRec.createMediaStreamDestination();
+
+    // Local microphone
+    if (localStream) {
+      localStream.getAudioTracks().forEach(t => {
+        try {
+          const src = audioCtxRec.createMediaStreamSource(new MediaStream([t]));
+          src.connect(dest);
+        } catch(e) {}
+      });
+    }
+
+    // Remote peers audio
+    Object.values(peers).forEach(p => {
+      if (p.stream) {
+        p.stream.getAudioTracks().forEach(t => {
+          try {
+            const src = audioCtxRec.createMediaStreamSource(new MediaStream([t.clone()]));
+            src.connect(dest);
+          } catch(e) {}
+        });
+      }
+    });
+
+    // Display audio (tab audio if captured)
+    displayStream.getAudioTracks().forEach(t => {
+      try {
+        const src = audioCtxRec.createMediaStreamSource(new MediaStream([t]));
+        src.connect(dest);
+      } catch(e) {}
+    });
+
+    // Step 3: Combine video from display + mixed audio
+    const combinedStream = new MediaStream([
+      ...displayStream.getVideoTracks(),
+      ...dest.stream.getAudioTracks()
+    ]);
+
+    recordingStream = combinedStream;
+    recordingStream._audioCtx = audioCtxRec;
+
+    // If user stops sharing via browser UI — stop recording too
+    displayStream.getVideoTracks()[0].onended = () => {
+      if (isRecording) stopRecording();
+    };
+
+    // Step 4: Start MediaRecorder
     const mimeTypes = [
+      'video/webm;codecs=h264,opus',
       'video/webm;codecs=vp9,opus',
       'video/webm;codecs=vp8,opus',
       'video/webm',
-      'video/mp4',
     ];
-    const mimeType = mimeTypes.find(m => MediaRecorder.isTypeSupported(m)) || '';
+    const mimeType = mimeTypes.find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
 
     recordedChunks = [];
-    mediaRecorder = new MediaRecorder(captureStream, mimeType ? { mimeType } : {});
+    mediaRecorder = new MediaRecorder(combinedStream, { mimeType, videoBitsPerSecond: 3000000 });
     mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
-    mediaRecorder.onstop = saveRecording;
-    mediaRecorder.start(1000); // collect every 1s
+    mediaRecorder.onstop = () => {
+      audioCtxRec.close();
+      displayStream.getTracks().forEach(t => t.stop());
+      saveRecording();
+    };
+    mediaRecorder.start(1000);
 
     isRecording = true;
     document.getElementById('btn-rec').className = 'ctrl-btn rec-active';
     document.getElementById('rec-lbl').textContent = "To'xtat";
     document.getElementById('rec-dot').style.background = '#fff';
-    showToast('Yozib olish boshlandi');
+    showToast('Yozib olish boshlandi — bu tabni tanlang!');
   } catch(e) {
     console.error('Recording error:', e);
-    showToast('Yozib olish xatosi: ' + e.message);
+    showToast('Xato: ' + e.message);
   }
 }
 
