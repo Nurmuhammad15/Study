@@ -112,7 +112,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .room-body{flex:1;display:flex;min-height:0;position:relative;}
 
 /* Video Area */
-.video-area{flex:1;background:#1a1f2e;position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.video-area{flex:1;background:#181c2a;position:relative;overflow:hidden;display:flex;flex-direction:column;}
 .video-grid{width:100%;height:100%;display:grid;gap:4px;padding:4px;box-sizing:border-box;}
 .video-grid.g1{grid-template-columns:1fr}
 .video-grid.g2{grid-template-columns:1fr 1fr}
@@ -121,7 +121,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .video-grid.g7,.video-grid.g8,.video-grid.g9{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
 
 /* Video Tile */
-.vtile{position:relative;border-radius:10px;overflow:hidden;background:#1a1f2e;display:flex;align-items:center;justify-content:center;transition:outline .15s;min-height:0;min-width:0;}
+.vtile{position:relative;border-radius:12px;overflow:hidden;background:#2a2f42;display:flex;align-items:center;justify-content:center;transition:outline .15s;min-height:0;min-width:0;}
 .vtile video{width:100%;height:100%;object-fit:cover;display:block;min-height:0;}
 .vtile.no-cam video{display:none}
 .vtile-av{width:clamp(48px,14%,88px);aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:clamp(20px,5%,36px);position:relative;}
@@ -130,10 +130,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .vtile.teacher-tile{outline:2px solid var(--yellow);outline-offset:-2px}
 
 /* WHITEBOARD AREA */
-#board-area{display:none;flex:1;flex-direction:column;background:#fff;position:relative;overflow:hidden;}
+#board-area{display:none;flex:1;flex-direction:column;background:#fff;overflow:hidden;}
 /* O'quvchi doskani faqat ko'radi - toolbar yashirin */
 #board-area.student-board .board-toolbar{display:none !important;}
-#board-area.student-board #board-canvas{pointer-events:none;cursor:default;top:0 !important;}
+#board-area.student-board #board-canvas{pointer-events:none;cursor:default;}
 .board-toolbar{position:relative;}
 #board-area.active{display:flex;}
 .board-toolbar{display:flex;align-items:center;gap:4px;padding:8px 12px;background:#fff;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;}
@@ -150,7 +150,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .tb-size input[type=range]{width:70px;accent-color:var(--accent);}
 .tb-size span{font-size:11px;color:var(--text2);min-width:20px}
 .tb-label{font-size:10px;font-weight:700;color:var(--text3);padding:0 4px;letter-spacing:.5px;text-transform:uppercase;}
-#board-canvas{display:block;cursor:crosshair;touch-action:none;position:absolute;top:0;left:0;}
+#board-canvas{display:block;cursor:crosshair;touch-action:none;flex:1;width:100%;min-height:0;}
 .board-actions{display:flex;align-items:center;gap:6px;margin-left:auto;}
 .board-action-btn{padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:#fff;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:.15s;}
 .board-action-btn:hover{background:var(--bg2)}
@@ -266,9 +266,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   .room-body{flex:1;min-height:0;}
   #video-view{height:100%;}
   .video-grid{height:100%;}
-  /* Mobile: board full screen for student */
-  #board-area.student-board{height:100%;}
-  #board-area.student-board #board-canvas{top:0 !important;}
+  /* Mobile: board fills full area */
+  #board-area{flex:1 !important;}
+  #board-canvas{width:100% !important;}
+
 }
 @media(max-width:480px){
   .room-header{padding:8px 10px;}
@@ -564,12 +565,14 @@ function switchView(view) {
     ba.classList.add('active');
     if (tvb) tvb.classList.remove('active');
     if (tbb) tbb.classList.add('active');
-    // Update student label
     const lbl = document.getElementById('student-view-text');
     if (lbl) lbl.textContent = 'Doska';
-    void ba.offsetHeight;
-    void ba.offsetWidth;
-    requestAnimationFrame(() => { void ba.offsetHeight; resizeCanvas(); });
+    // Force layout then resize — use multiple rAF for mobile
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resizeCanvas());
+      });
+    });
   } else {
     vv.style.display = '';
     ba.style.display = 'none';
@@ -608,23 +611,17 @@ const ctx = canvas.getContext('2d');
 
 function resizeCanvas() {
   const area = document.getElementById('board-area');
-  const toolbar = area.querySelector('.board-toolbar');
+  if (!area || area.style.display === 'none') return;
 
-  // Must be visible and have real size
-  const w = area.offsetWidth;
-  const tbH = toolbar.offsetHeight;
-  const h = area.offsetHeight - tbH;
+  // Use getBoundingClientRect for accurate mobile size
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.floor(rect.width  || canvas.offsetWidth  || area.offsetWidth);
+  const h = Math.floor(rect.height || canvas.offsetHeight || (area.offsetHeight - (area.querySelector('.board-toolbar')?.offsetHeight || 0)));
 
   if (w < 10 || h < 10) {
-    // Not visible yet — retry
-    setTimeout(resizeCanvas, 50);
+    setTimeout(resizeCanvas, 60);
     return;
   }
-
-  // Position canvas below toolbar
-  canvas.style.top = tbH + 'px';
-  canvas.style.width  = w + 'px';
-  canvas.style.height = h + 'px';
 
   // Preserve existing drawing
   const tmp = document.createElement('canvas');
@@ -725,10 +722,18 @@ function setBg(color) {
 
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
-  if (e.touches) {
-    return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+  const scaleX = canvas.width  / r.width;
+  const scaleY = canvas.height / r.height;
+  if (e.touches && e.touches.length > 0) {
+    return {
+      x: (e.touches[0].clientX - r.left) * scaleX,
+      y: (e.touches[0].clientY - r.top)  * scaleY
+    };
   }
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
+  return {
+    x: (e.clientX - r.left) * scaleX,
+    y: (e.clientY - r.top)  * scaleY
+  };
 }
 
 function drawShape(x, y) {
