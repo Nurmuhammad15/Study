@@ -34,7 +34,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
 
 /* LOADING */
-#loading{position:fixed;inset:0;background:#f4f6fb;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;}
+#loading{position:fixed;inset:0;background:#f4f6fb;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;}
 .loader-ring{width:48px;height:48px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--accent);animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{font-size:13px;color:var(--text3);letter-spacing:.5px}
@@ -957,19 +957,25 @@ async function init() {
   myRole    = tToken ? 'teacher' : 'student';
 
   if (!roomToken) {
-    document.getElementById('loading').style.display = 'none';
+    // No token in URL — show login form immediately
     document.getElementById('login-page').style.display = 'flex';
-    setTimeout(() => document.getElementById('link-input').focus(), 150);
+    setTimeout(() => {
+      const inp = document.getElementById('link-input');
+      if (inp) inp.focus();
+    }, 150);
     return;
   }
+
+  // Token found — show loading and fetch room info
   window.history.replaceState({}, '', window.location.pathname);
+  document.getElementById('loading').style.display = 'flex';
   try {
     const r = await fetch('/api/room?action=info', { headers: { 'X-Room-Token': roomToken } });
     const d = await r.json();
-    if (!d.ok) { showError('', 'Kirish rad etildi', d.msg); return; }
+    if (!d.ok) { showError('', 'Kirish rad etildi', d.msg || "Token noto'g'ri"); return; }
     await enterRoom(d);
   } catch(e) {
-    showError('', 'Ulanish xatosi', "Server bilan ulanib bo'lmadi.");
+    showError('', 'Ulanish xatosi', "Server bilan ulanib bo'lmadi. Qayta urinib ko'ring.");
   }
 }
 
