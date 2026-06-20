@@ -131,6 +131,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* WHITEBOARD AREA */
 #board-area{display:none;flex:1;flex-direction:column;background:#fff;position:relative;overflow:hidden;}
+/* O'quvchi dosкani faqat ko'radi */
+#board-area.student-board .board-toolbar{pointer-events:none;opacity:.5;filter:grayscale(.5);}
+#board-area.student-board #board-canvas{pointer-events:none;cursor:default;}
+#board-area.student-board .board-toolbar::after{content:'Faqat ustoz boshqaradi';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--accent);background:rgba(79,110,247,.08);padding:3px 10px;border-radius:6px;border:1px solid rgba(79,110,247,.15);pointer-events:none;}
+.board-toolbar{position:relative;}
 #board-area.active{display:flex;}
 .board-toolbar{display:flex;align-items:center;gap:4px;padding:8px 12px;background:#fff;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;}
 .board-toolbar .tb-group{display:flex;align-items:center;gap:2px;padding:2px;background:var(--bg2);border-radius:8px;}
@@ -300,9 +305,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
     <div class="header-center">
       <div class="room-timer" id="room-timer" style="display:none">00:00</div>
-      <div class="view-tabs">
-        <button class="view-tab active" id="tab-video-btn" onclick="switchView('video')"> Video</button>
-        <button class="view-tab" id="tab-board-btn" onclick="switchView('board')"> Doska</button>
+      <div class="view-tabs" id="view-tabs-wrap">
+        <button class="view-tab active" id="tab-video-btn" onclick="teacherSwitchView('video')"> Video</button>
+        <button class="view-tab" id="tab-board-btn" onclick="teacherSwitchView('board')"> Doska</button>
+      </div>
+      <!-- O'quvchi uchun ko'rsatkish (faqat read-only) -->
+      <div id="student-view-label" style="display:none;font-size:12px;color:var(--text3);background:var(--bg2);padding:5px 12px;border-radius:8px;border:1px solid var(--border);">
+        <span id="student-view-text">Video</span>
       </div>
     </div>
 
@@ -431,13 +440,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
   <!-- Controls -->
   <div class="room-controls">
-    <div class="ctrl-col">
+    <!-- Ustoz controls -->
+    <div class="ctrl-col" id="ctrl-cam-col">
       <button class="ctrl-btn on" id="btn-cam" onclick="toggleCam()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
       </button>
       <span class="ctrl-lbl">Video</span>
     </div>
-    <div class="ctrl-col">
+    <div class="ctrl-col" id="ctrl-mic-col">
       <button class="ctrl-btn on" id="btn-mic" onclick="toggleMic()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
       </button>
@@ -449,7 +459,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       </button>
       <span class="ctrl-lbl">Ekran</span>
     </div>
-    <div class="ctrl-col">
+    <!-- Ustoz: dars yakunlash tugmasi -->
+    <div class="ctrl-col" id="ctrl-end-teacher" style="display:none">
+      <button class="ctrl-btn end" onclick="leaveRoom()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15.46l-5.27-.61a2 2 0 0 0-1.69.55l-2.2 2.2a15 15 0 0 1-6.59-6.59l2.2-2.2a2 2 0 0 0 .55-1.69L7.4 1.18A2 2 0 0 0 5.21.06L1.08.96A2 2 0 0 0 0 2.96C0 13.13 8.87 22 19.04 22a2 2 0 0 0 1.96-1.06l.9-4.13a2 2 0 0 0-1.1-2.21z"/></svg>
+      </button>
+      <span class="ctrl-lbl">Darsni tugatish</span>
+    </div>
+    <!-- O'quvchi: faqat chiqish -->
+    <div class="ctrl-col" id="ctrl-end-student" style="display:none">
       <button class="ctrl-btn end" onclick="leaveRoom()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15.46l-5.27-.61a2 2 0 0 0-1.69.55l-2.2 2.2a15 15 0 0 1-6.59-6.59l2.2-2.2a2 2 0 0 0 .55-1.69L7.4 1.18A2 2 0 0 0 5.21.06L1.08.96A2 2 0 0 0 0 2.96C0 13.13 8.87 22 19.04 22a2 2 0 0 0 1.96-1.06l.9-4.13a2 2 0 0 0-1.1-2.21z"/></svg>
       </button>
@@ -484,22 +502,31 @@ function switchView(view) {
     vv.style.display = 'none';
     ba.style.display = 'flex';
     ba.classList.add('active');
-    tvb.classList.remove('active');
-    tbb.classList.add('active');
-    // Force layout flush then resize
+    if (tvb) tvb.classList.remove('active');
+    if (tbb) tbb.classList.add('active');
+    // Update student label
+    const lbl = document.getElementById('student-view-text');
+    if (lbl) lbl.textContent = 'Doska';
     void ba.offsetHeight;
     void ba.offsetWidth;
-    requestAnimationFrame(() => {
-      void ba.offsetHeight;
-      resizeCanvas();
-    });
+    requestAnimationFrame(() => { void ba.offsetHeight; resizeCanvas(); });
   } else {
     vv.style.display = '';
     ba.style.display = 'none';
     ba.classList.remove('active');
-    tvb.classList.add('active');
-    tbb.classList.remove('active');
+    if (tvb) tvb.classList.add('active');
+    if (tbb) tbb.classList.remove('active');
+    const lbl = document.getElementById('student-view-text');
+    if (lbl) lbl.textContent = 'Video';
   }
+}
+
+// Ustoz tomonidan chaqiriladi — o'quvchilarga ham broadcast qiladi
+function teacherSwitchView(view) {
+  if (myRole !== 'teacher') return;
+  switchView(view);
+  // Broadcast to all students via DataConnection
+  broadcastBoard({ type: 'view_switch', view });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1074,40 +1101,77 @@ function startPeer() {
 
 function handleCall(call) {
   const pid = call.peer;
-  if (peers[pid]?.call) peers[pid].call.close();
+  // Close old call if exists
+  try { if (peers[pid]?.call) peers[pid].call.close(); } catch(e) {}
   peers[pid] = { call, stream: null, name: peers[pid]?.name || '...', role: peers[pid]?.role || '?' };
+
   call.on('stream', s => {
+    if (!s || s.getTracks().length === 0) return; // empty stream skip
     peers[pid].stream = s;
     rebuildGrid();
-    setTimeout(() => {
-      const el = document.querySelector('#tile-' + pid.replace(/[^a-z0-9]/gi,'_') + ' video');
-      if (el && el.paused) el.play().catch(()=>{});
-    }, 300);
+    // Retry video play up to 5 times
+    let tries = 0;
+    const tryPlay = () => {
+      const tileId = '#tile-' + pid.replace(/[^a-z0-9]/gi,'_') + ' video';
+      const el = document.querySelector(tileId);
+      if (el) {
+        el.srcObject = s;
+        el.play().catch(() => {});
+      } else if (tries++ < 5) {
+        setTimeout(tryPlay, 400);
+      }
+    };
+    setTimeout(tryPlay, 200);
   });
+
   call.on('close',  () => { delete peers[pid]; rebuildGrid(); updateParticipants(); });
-  call.on('error',  () => { delete peers[pid]; rebuildGrid(); });
+  call.on('error',  (e) => { console.warn('call error', pid, e); delete peers[pid]; rebuildGrid(); });
 }
 
 async function connectToPeer(peerId) {
   if (!myPeer || !myPeerId || peerId === myPeerId) return;
-  if (peers[peerId]?.call) return;
+
+  // Prevent duplicate: lower peer_id calls, higher listens
+  // This ensures exactly one call between any two peers
+  const shouldCall = myPeerId < peerId;
+
+  if (!shouldCall) {
+    // I wait for the other side to call me (via handleCall)
+    // Just init the slot so we know about this peer
+    if (!peers[peerId]) {
+      peers[peerId] = { call: null, stream: null, name: '...', role: '?' };
+    }
+    setTimeout(() => openDataConn(peerId), 800);
+    return;
+  }
+
+  if (peers[peerId]?.call?.open) return; // already connected
   peers[peerId] = { call: null, stream: null, name: peers[peerId]?.name || '...', role: peers[peerId]?.role || '?' };
+
   try {
-    const call = myPeer.call(peerId, localStream || new MediaStream());
+    const stream = localStream && localStream.getTracks().length > 0
+      ? localStream
+      : new MediaStream();
+    const call = myPeer.call(peerId, stream);
     if (!call) { delete peers[peerId]; return; }
     peers[peerId].call = call;
+
     call.on('stream', s => {
+      if (!s || s.getTracks().length === 0) return;
       peers[peerId].stream = s;
       rebuildGrid();
-      setTimeout(() => {
+      let tries = 0;
+      const tryPlay = () => {
         const el = document.querySelector('#tile-' + peerId.replace(/[^a-z0-9]/gi,'_') + ' video');
-        if (el && el.paused) el.play().catch(()=>{});
-      }, 300);
+        if (el) { el.srcObject = s; el.play().catch(()=>{}); }
+        else if (tries++ < 5) setTimeout(tryPlay, 400);
+      };
+      setTimeout(tryPlay, 200);
     });
     call.on('close',  () => { delete peers[peerId]; rebuildGrid(); });
-    call.on('error',  () => { delete peers[peerId]; rebuildGrid(); });
+    call.on('error',  (e) => { console.warn('call err', peerId, e); delete peers[peerId]; rebuildGrid(); });
   } catch(e) { console.warn('connectToPeer error:', e); delete peers[peerId]; }
-  // also open data channel for board sync
+
   setTimeout(() => openDataConn(peerId), 800);
 }
 
@@ -1199,11 +1263,26 @@ function handleParticipants(list) {
   participantsList = list;
   list.forEach(p => {
     if (p.peer_id === myPeerId) return;
-    if (!peers[p.peer_id] || !peers[p.peer_id].call) connectToPeer(p.peer_id);
-    if (peers[p.peer_id]) { peers[p.peer_id].name = p.name; peers[p.peer_id].role = p.role; }
+    const existing = peers[p.peer_id];
+    // Connect if: no connection, or call object missing, or peerConnection closed
+    const needsConnect = !existing
+      || !existing.call
+      || existing.call.peerConnection?.connectionState === 'closed'
+      || existing.call.peerConnection?.connectionState === 'failed';
+    if (needsConnect) {
+      connectToPeer(p.peer_id);
+    }
+    if (peers[p.peer_id]) {
+      peers[p.peer_id].name = p.name || peers[p.peer_id].name;
+      peers[p.peer_id].role = p.role || peers[p.peer_id].role;
+    }
   });
+  // Remove peers no longer in list
   Object.keys(peers).forEach(pid => {
-    if (!list.find(p => p.peer_id === pid)) { peers[pid]?.call?.close(); delete peers[pid]; }
+    if (!list.find(p => p.peer_id === pid)) {
+      try { peers[pid]?.call?.close(); } catch(e) {}
+      delete peers[pid];
+    }
   });
   updateParticipants();
   rebuildGrid();
@@ -1329,7 +1408,34 @@ function showRoom() {
   document.getElementById('room').style.display = 'flex';
   document.getElementById('live-chip').style.display = '';
   document.getElementById('room-timer').style.display = '';
-  // Init board canvas
+
+  if (myRole === 'teacher') {
+    // Ustoz: barcha boshqaruvlar ko'rinadi
+    document.getElementById('view-tabs-wrap').style.display = '';
+    document.getElementById('student-view-label').style.display = 'none';
+    document.getElementById('screen-ctrl').style.display = '';
+    document.getElementById('copy-link-btn').style.display = '';
+    document.getElementById('ctrl-end-teacher').style.display = '';
+    document.getElementById('ctrl-end-student').style.display = 'none';
+    document.getElementById('ctrl-cam-col').style.display = '';
+    document.getElementById('ctrl-mic-col').style.display = '';
+    // Board toolbar clickable
+    document.getElementById('board-area').classList.add('teacher-board');
+  } else {
+    // O'quvchi: faqat ko'radi
+    document.getElementById('view-tabs-wrap').style.display = 'none';
+    document.getElementById('student-view-label').style.display = '';
+    document.getElementById('screen-ctrl').style.display = 'none';
+    document.getElementById('copy-link-btn').style.display = 'none';
+    document.getElementById('ctrl-end-teacher').style.display = 'none';
+    document.getElementById('ctrl-end-student').style.display = '';
+    // O'quvchi ham kamerni o'zi boshqara oladi
+    document.getElementById('ctrl-cam-col').style.display = '';
+    document.getElementById('ctrl-mic-col').style.display = '';
+    // Board readonly for students
+    document.getElementById('board-area').classList.add('student-board');
+  }
+
   setTimeout(initCanvas, 100);
 }
 function showError(icon, title, sub) {
@@ -1400,6 +1506,10 @@ function setupDataConn(dc, peerId) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     if (msg.type === 'text') applyRemoteText(msg);
+    // Teacher switched view — force students to follow
+    if (msg.type === 'view_switch' && myRole === 'student') {
+      switchView(msg.view);
+    }
   });
   dc.on('close', () => { delete dataConns[peerId]; });
   dc.on('error', () => { delete dataConns[peerId]; });
