@@ -1441,7 +1441,7 @@ async function leaveRoom() {
   if (token && pid) {
     navigator.sendBeacon('/api/room?action=leave', new Blob([JSON.stringify({peer_id:pid})],{type:'application/json'}));
   }
-  showError('', myRole==='teacher'?'Dars yakunlandi':'Darsdan chiqdingiz', myRole==='teacher'?'Dars muvaffaqiyatli o\'tkazildi.':"Qaytish uchun havoladan foydalaning.");
+  showError('', myRole==='teacher'?'Dars yakunlandi':'Darsdan chiqdingiz', myRole==='teacher'?"Dars muvaffaqiyatli o'tkazildi.":"Qaytish uchun havoladan foydalaning.");
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1879,7 +1879,7 @@ async function startRecording() {
 
     isRecording = true;
     document.getElementById('btn-rec').className = 'ctrl-btn rec-active';
-    document.getElementById('rec-lbl').textContent = 'To'xtat';
+    document.getElementById('rec-lbl').textContent = "To'xtat";
     document.getElementById('rec-dot').style.background = '#fff';
     showToast('Yozib olish boshlandi');
   } catch(e) {
@@ -1895,7 +1895,7 @@ function stopRecording() {
   isRecording = false;
   document.getElementById('btn-rec').className = 'ctrl-btn rec';
   document.getElementById('rec-lbl').textContent = 'Yozish';
-  showToast('Yozib olish to'xtatildi, saqlanmoqda...');
+  showToast("Yozib olish to'xtatildi, saqlanmoqda...");
 }
 
 function saveRecording() {
