@@ -130,7 +130,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .vtile.teacher-tile{outline:2px solid var(--yellow);outline-offset:-2px}
 
 /* WHITEBOARD AREA */
-#board-area{display:none;flex:1;flex-direction:column;background:#fff;position:relative;}
+#board-area{display:none;flex:1;flex-direction:column;background:#fff;position:relative;overflow:hidden;}
 #board-area.active{display:flex;}
 .board-toolbar{display:flex;align-items:center;gap:4px;padding:8px 12px;background:#fff;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;}
 .board-toolbar .tb-group{display:flex;align-items:center;gap:2px;padding:2px;background:var(--bg2);border-radius:8px;}
@@ -146,7 +146,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .tb-size input[type=range]{width:70px;accent-color:var(--accent);}
 .tb-size span{font-size:11px;color:var(--text2);min-width:20px}
 .tb-label{font-size:10px;font-weight:700;color:var(--text3);padding:0 4px;letter-spacing:.5px;text-transform:uppercase;}
-#board-canvas{display:block;cursor:crosshair;touch-action:none;}
+#board-canvas{display:block;cursor:crosshair;touch-action:none;position:absolute;top:0;left:0;}
 .board-actions{display:flex;align-items:center;gap:6px;margin-left:auto;}
 .board-action-btn{padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:#fff;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:.15s;}
 .board-action-btn:hover{background:var(--bg2)}
@@ -482,12 +482,17 @@ function switchView(view) {
   const tbb = document.getElementById('tab-board-btn');
   if (view === 'board') {
     vv.style.display = 'none';
-    ba.style.display = 'flex';   // visible FIRST
+    ba.style.display = 'flex';
     ba.classList.add('active');
     tvb.classList.remove('active');
     tbb.classList.add('active');
-    // 2 frames so browser computes layout before we measure
-    requestAnimationFrame(() => requestAnimationFrame(() => resizeCanvas()));
+    // Force layout flush then resize
+    void ba.offsetHeight;
+    void ba.offsetWidth;
+    requestAnimationFrame(() => {
+      void ba.offsetHeight;
+      resizeCanvas();
+    });
   } else {
     vv.style.display = '';
     ba.style.display = 'none';
@@ -509,6 +514,7 @@ let snapshot = null;
 let history = [];
 let redoStack = [];
 let boardBg = '#ffffff';
+let canvasReady = false;
 
 const canvas = document.getElementById('board-canvas');
 const ctx = canvas.getContext('2d');
@@ -516,17 +522,41 @@ const ctx = canvas.getContext('2d');
 function resizeCanvas() {
   const area = document.getElementById('board-area');
   const toolbar = area.querySelector('.board-toolbar');
-  const w = area.clientWidth;
-  const h = area.clientHeight - toolbar.offsetHeight;
-  // Save content
+
+  // Must be visible and have real size
+  const w = area.offsetWidth;
+  const tbH = toolbar.offsetHeight;
+  const h = area.offsetHeight - tbH;
+
+  if (w < 10 || h < 10) {
+    // Not visible yet — retry
+    setTimeout(resizeCanvas, 50);
+    return;
+  }
+
+  // Position canvas below toolbar
+  canvas.style.top = tbH + 'px';
+  canvas.style.width  = w + 'px';
+  canvas.style.height = h + 'px';
+
+  // Preserve existing drawing
   const tmp = document.createElement('canvas');
-  tmp.width = canvas.width; tmp.height = canvas.height;
-  tmp.getContext('2d').drawImage(canvas, 0, 0);
-  canvas.width = w;
+  tmp.width  = canvas.width  || w;
+  tmp.height = canvas.height || h;
+  if (canvas.width > 0 && canvas.height > 0) {
+    tmp.getContext('2d').drawImage(canvas, 0, 0);
+  }
+
+  canvas.width  = w;
   canvas.height = h;
+
   ctx.fillStyle = boardBg;
   ctx.fillRect(0, 0, w, h);
-  ctx.drawImage(tmp, 0, 0);
+
+  if (tmp.width > 0 && tmp.height > 0) {
+    ctx.drawImage(tmp, 0, 0);
+  }
+  canvasReady = true;
 }
 
 function saveHistory() {
@@ -595,8 +625,8 @@ function setBg(color) {
   document.querySelectorAll('#bg-white,#bg-black,#bg-cream,#bg-blue').forEach(el => el.classList.remove('active'));
   const map = {'#ffffff':'bg-white','#0f1117':'bg-black','#fefce8':'bg-cream','#eff6ff':'bg-blue'};
   if (map[color]) document.getElementById(map[color]).classList.add('active');
+  if (!canvasReady) return;
   saveHistory();
-  // redraw background preserving strokes
   const tmp = document.createElement('canvas');
   tmp.width = canvas.width; tmp.height = canvas.height;
   tmp.getContext('2d').drawImage(canvas, 0, 0);
@@ -690,6 +720,8 @@ function handleTextInput(e) {
 
 // Mouse / touch events
 canvas.addEventListener('mousedown', e => {
+  if (!canvasReady) return;
+  e.preventDefault();
   if (tool === 'text') { placeTextInput(...Object.values(getPos(e))); return; }
   if (textActive) commitText();
   saveHistory();
@@ -765,14 +797,17 @@ document.addEventListener('keydown', e => {
 });
 
 window.addEventListener('resize', () => {
-  if (document.getElementById('board-area').classList.contains('active')) resizeCanvas();
+  const ba = document.getElementById('board-area');
+  if (ba.classList.contains('active') && ba.style.display !== 'none') {
+    canvasReady = false;
+    resizeCanvas();
+  }
 });
 
 // Init canvas on first open
 function initCanvas() {
+  canvasReady = false;
   resizeCanvas();
-  ctx.fillStyle = boardBg;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 // ══════════════════════════════════════════════════════════════
