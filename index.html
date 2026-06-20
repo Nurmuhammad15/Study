@@ -714,13 +714,19 @@ canvas.addEventListener('mousemove', e => {
     ctx.lineJoin = 'round';
     ctx.lineTo(x, y);
     ctx.stroke();
+    // keep path open for next segment
+    ctx.beginPath();
+    ctx.moveTo(x, y);
     queueStroke({op:'move',x,y,color:brushColor,size:brushSize});
   } else if (tool === 'eraser') {
     ctx.globalCompositeOperation = 'destination-out';
     ctx.lineWidth = brushSize * 3;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.lineTo(x, y);
     ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
     ctx.globalCompositeOperation = 'source-over';
     queueStroke({op:'move',x,y,color:brushColor,size:brushSize*3,eraser:true});
   } else {
@@ -1094,8 +1100,34 @@ async function syncParticipants() {
       body: JSON.stringify({ peer_id: myPeerId, name: myName })
     });
     const d = await r.json();
-    if (d.ok) handleParticipants(d.participants || []);
+    if (d.ok) {
+      handleParticipants(d.participants || []);
+    } else if (r.status === 404 || r.status === 401) {
+      // Xona yopilgan yoki token o'chgan
+      if (myRole !== 'teacher') {
+        clearInterval(syncInterval); syncInterval = null;
+        showRoomClosed();
+      }
+    }
   } catch {}
+}
+
+function showRoomClosed() {
+  // Stop all media
+  if (localStream)  { localStream.getTracks().forEach(t => t.stop()); }
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); }
+  Object.values(peers).forEach(p => p.call?.close());
+  if (myPeer) { myPeer.destroy(); myPeer = null; }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+
+  // Show closed overlay
+  document.getElementById('room').style.display = 'none';
+  const el = document.getElementById('error-page');
+  document.getElementById('err-icon').textContent  = '';
+  document.getElementById('err-title').textContent = 'Dars yakunlandi';
+  document.getElementById('err-sub').textContent   = 'Ustoz darsni tugatdi. Ushbu havola endi ishlamaydi.';
+  document.querySelector('#error-page .error-btn').style.display = 'none';
+  el.style.display = 'flex';
 }
 
 function handleParticipants(list) {

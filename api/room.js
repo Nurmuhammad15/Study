@@ -172,9 +172,14 @@ export default async function handler(req, res) {
         [user.room_id, peer_id]
       );
 
-      // Agar ustoz chiqsa — xonani yopish
+      // Agar ustoz chiqsa — xonani yopish va link ni o'chirish
       if (user.role === 'teacher') {
-        await client.query('UPDATE rooms SET is_active=false WHERE id=$1', [user.room_id]);
+        await client.query(
+          'UPDATE rooms SET is_active=false, expires_at=now() WHERE id=$1',
+          [user.room_id]
+        );
+        // Barcha ishtirokchilarni ham chiqarish
+        await client.query('DELETE FROM room_participants WHERE room_id=$1', [user.room_id]);
       }
       res.json({ ok: true }); return;
     }
