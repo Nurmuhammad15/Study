@@ -112,22 +112,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .room-body{flex:1;display:flex;min-height:0;position:relative;}
 
 /* Video Area */
-.video-area{flex:1;background:#0d1117;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
-.video-grid{width:100%;height:100%;display:grid;gap:3px;padding:3px;box-sizing:border-box;}
-.video-grid.g1{grid-template-columns:1fr;grid-template-rows:1fr;}
-.video-grid.g2{grid-template-columns:1fr 1fr;grid-template-rows:1fr;}
-.video-grid.g3,.video-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}
-.video-grid.g5,.video-grid.g6{grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;}
-.video-grid.g7,.video-grid.g8,.video-grid.g9{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);}
-@media(max-width:600px){
-  .room-body{flex-direction:column;}
-  .video-area{flex:1;min-height:0;width:100%;}
-  .video-grid{height:100%;}
-}
+.video-area{flex:1;background:#1a1f2e;position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.video-grid{width:100%;height:100%;display:grid;gap:4px;padding:4px;box-sizing:border-box;}
+.video-grid.g1{grid-template-columns:1fr}
+.video-grid.g2{grid-template-columns:1fr 1fr}
+.video-grid.g3,.video-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.video-grid.g5,.video-grid.g6{grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr}
+.video-grid.g7,.video-grid.g8,.video-grid.g9{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
 
 /* Video Tile */
-.vtile{position:relative;border-radius:10px;overflow:hidden;background:#1a1f2e;display:flex;align-items:center;justify-content:center;transition:outline .15s;}
-.vtile video{width:100%;height:100%;object-fit:cover;display:block}
+.vtile{position:relative;border-radius:10px;overflow:hidden;background:#1a1f2e;display:flex;align-items:center;justify-content:center;transition:outline .15s;min-height:0;min-width:0;}
+.vtile video{width:100%;height:100%;object-fit:cover;display:block;min-height:0;}
 .vtile.no-cam video{display:none}
 .vtile-av{width:clamp(48px,14%,88px);aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:clamp(20px,5%,36px);position:relative;}
 .vtile-label{position:absolute;bottom:10px;left:10px;display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;color:#fff;max-width:calc(100% - 20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -136,10 +131,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* WHITEBOARD AREA */
 #board-area{display:none;flex:1;flex-direction:column;background:#fff;position:relative;overflow:hidden;}
-/* O'quvchi dosкani faqat ko'radi */
-#board-area.student-board .board-toolbar{pointer-events:none;opacity:.5;filter:grayscale(.5);}
-#board-area.student-board #board-canvas{pointer-events:none;cursor:default;}
-#board-area.student-board .board-toolbar::after{content:'Faqat ustoz boshqaradi';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--accent);background:rgba(79,110,247,.08);padding:3px 10px;border-radius:6px;border:1px solid rgba(79,110,247,.15);pointer-events:none;}
+/* O'quvchi doskani faqat ko'radi - toolbar yashirin */
+#board-area.student-board .board-toolbar{display:none !important;}
+#board-area.student-board #board-canvas{pointer-events:none;cursor:default;top:0 !important;}
 .board-toolbar{position:relative;}
 #board-area.active{display:flex;}
 .board-toolbar{display:flex;align-items:center;gap:4px;padding:8px 12px;background:#fff;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;}
@@ -199,23 +193,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .part-badge{font-size:9px;font-weight:800;letter-spacing:.5px;padding:3px 7px;border-radius:6px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#d97706;flex-shrink:0;}
 .part-self{font-size:10px;color:var(--text3)}
 .part-actions{display:flex;gap:4px;flex-shrink:0;}
-.part-action-btn{width:26px;height:26px;border-radius:6px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:.15s;}
-.part-action-btn.kick{background:rgba(239,68,68,.08);color:#ef4444;}
-.part-action-btn.kick:hover{background:rgba(239,68,68,.18);}
-.part-action-btn.promote{background:rgba(79,110,247,.08);color:var(--accent);}
-.part-action-btn.promote:hover{background:rgba(79,110,247,.18);}
-
-/* Kick confirm modal */
-#kick-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;align-items:center;justify-content:center;}
-.kick-box{background:#fff;border-radius:16px;padding:28px 28px 24px;max-width:360px;width:90%;box-shadow:0 16px 48px rgba(0,0,0,.2);text-align:center;}
-.kick-box h3{font-size:17px;font-weight:800;margin-bottom:8px;}
-.kick-box p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:22px;}
-.kick-box .kick-btns{display:flex;gap:10px;}
-.kick-box .kick-btns button{flex:1;padding:11px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.15s;}
-.kick-cancel{background:var(--bg2);color:var(--text2);}
-.kick-cancel:hover{background:var(--border);}
-.kick-confirm{background:var(--red);color:#fff;}
-.kick-confirm:hover{background:#dc2626;}
+.part-action-btn{padding:3px 8px;border-radius:6px;border:none;font-size:10px;font-weight:700;cursor:pointer;transition:.15s;}
+.part-action-promote{background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.2);}
+.part-action-promote:hover{background:rgba(79,110,247,.2);}
+.part-action-kick{background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.15);}
+.part-action-kick:hover{background:rgba(239,68,68,.15);}
+/* Confirm kick dialog */
+.kick-confirm{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;}
+.kick-confirm-box{background:#fff;border-radius:16px;padding:24px 28px;max-width:320px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.kick-confirm-box h3{font-size:16px;font-weight:700;margin-bottom:8px}
+.kick-confirm-box p{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.5}
+.kick-confirm-actions{display:flex;gap:10px;justify-content:center;}
+.kick-confirm-yes{padding:10px 22px;background:#ef4444;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;}
+.kick-confirm-no{padding:10px 22px;background:var(--bg2);color:var(--text2);border:1px solid var(--border);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;}
 
 /* Controls */
 .room-controls{display:flex;align-items:center;justify-content:center;gap:20px;padding:12px 20px;background:rgba(255,255,255,.97);border-top:1px solid var(--border);flex-shrink:0;backdrop-filter:blur(8px);}
@@ -229,6 +219,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .ctrl-btn.screen-on{background:rgba(79,110,247,.15);color:var(--accent);border:1.5px solid rgba(79,110,247,.25)}
 .ctrl-btn.end{background:var(--red);color:#fff;border:none}
 .ctrl-btn.end:hover{background:#dc2626}
+.ctrl-btn.rec{background:rgba(239,68,68,.1);color:#ef4444;border:1.5px solid rgba(239,68,68,.2);}
+.ctrl-btn.rec-active{background:#ef4444;color:#fff;border:none;animation:rec-pulse 1.5s infinite;}
+@keyframes rec-pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+.rec-dot{width:10px;height:10px;border-radius:50%;background:#fff;display:inline-block;}
+/* Student audio indicator */
+.student-audio-bar{position:fixed;bottom:85px;left:50%;transform:translateX(-50%);background:rgba(26,32,53,.9);color:#fff;padding:6px 16px;border-radius:20px;font-size:12px;display:none;align-items:center;gap:8px;z-index:100;}
+.student-audio-bar.show{display:flex;}
+.audio-wave{display:flex;gap:2px;align-items:center;}
+.audio-wave span{width:3px;background:#4f6ef7;border-radius:2px;animation:wave 1s ease-in-out infinite;}
+.audio-wave span:nth-child(1){height:8px;animation-delay:0s}
+.audio-wave span:nth-child(2){height:14px;animation-delay:.1s}
+.audio-wave span:nth-child(3){height:10px;animation-delay:.2s}
+.audio-wave span:nth-child(4){height:16px;animation-delay:.3s}
+.audio-wave span:nth-child(5){height:8px;animation-delay:.4s}
+@keyframes wave{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
 .ctrl-lbl{font-size:10px;color:var(--text3);white-space:nowrap}
 
 /* Cam permission overlay */
@@ -253,8 +258,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   .room-sidebar{display:none}
   .ctrl-btn{width:46px;height:46px}
   .room-controls{gap:12px;padding:10px}
-  .board-toolbar{gap:2px}
+  .board-toolbar{gap:2px;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;padding:6px 8px;}
   .tb-size input[type=range]{width:50px}
+  .tb-label{display:none}
+  .tb-sep{margin:0 2px}
+  /* Mobile: room body full height */
+  .room-body{flex:1;min-height:0;}
+  #video-view{height:100%;}
+  .video-grid{height:100%;}
+  /* Mobile: board full screen for student */
+  #board-area.student-board{height:100%;}
+  #board-area.student-board #board-canvas{top:0 !important;}
+}
+@media(max-width:480px){
+  .room-header{padding:8px 10px;}
+  .room-logo{width:28px;height:28px;font-size:11px;}
+  .room-title-text{font-size:12px;}
+  .room-sub{display:none;}
+  .room-timer{font-size:11px;padding:4px 8px;}
 }
 </style>
 </head>
@@ -482,12 +503,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       </button>
       <span class="ctrl-lbl">Ekran</span>
     </div>
+    <!-- Yozib olish (faqat ustoz) -->
+    <div class="ctrl-col" id="ctrl-rec-col" style="display:none">
+      <button class="ctrl-btn rec" id="btn-rec" onclick="toggleRecording()">
+        <span class="rec-dot" id="rec-dot" style="background:#ef4444;width:14px;height:14px;border-radius:50%;display:inline-block;"></span>
+      </button>
+      <span class="ctrl-lbl" id="rec-lbl">Yozish</span>
+    </div>
     <!-- Ustoz: dars yakunlash tugmasi -->
     <div class="ctrl-col" id="ctrl-end-teacher" style="display:none">
       <button class="ctrl-btn end" onclick="leaveRoom()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15.46l-5.27-.61a2 2 0 0 0-1.69.55l-2.2 2.2a15 15 0 0 1-6.59-6.59l2.2-2.2a2 2 0 0 0 .55-1.69L7.4 1.18A2 2 0 0 0 5.21.06L1.08.96A2 2 0 0 0 0 2.96C0 13.13 8.87 22 19.04 22a2 2 0 0 0 1.96-1.06l.9-4.13a2 2 0 0 0-1.1-2.21z"/></svg>
       </button>
-      <span class="ctrl-lbl">Darsni tugatish</span>
+      <span class="ctrl-lbl">Tugatish</span>
     </div>
     <!-- O'quvchi: faqat chiqish -->
     <div class="ctrl-col" id="ctrl-end-student" style="display:none">
@@ -499,16 +527,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
 </div>
 
-<!-- Kick confirm modal -->
-<div id="kick-modal">
-  <div class="kick-box">
-    <h3>⚠️ O'quvchini chiqarish</h3>
-    <p id="kick-modal-text">Bu o'quvchini darsdan chiqarishni tasdiqlaysizmi?</p>
-    <div class="kick-btns">
-      <button class="kick-cancel" onclick="closeKickModal()">Bekor qilish</button>
-      <button class="kick-confirm" onclick="confirmKick()">Ha, chiqarish</button>
-    </div>
-  </div>
+<!-- Student audio indicator -->
+<div class="student-audio-bar" id="student-audio-bar">
+  <div class="audio-wave"><span></span><span></span><span></span><span></span><span></span></div>
+  Ustoz gapirmoqda...
 </div>
 
 <div class="toast" id="toast"></div>
@@ -524,6 +546,9 @@ let camOn = true, micOn = true, screenSharing = false, screenStream = null;
 let peers = {}, participantsList = [];
 let chatMessages = [];
 let timerInterval = null, startTime = null, syncInterval = null;
+// Recording
+let mediaRecorder = null, recordedChunks = [], isRecording = false;
+let recordingStream = null;
 
 // ══════════════════════════════════════════════════════════════
 // VIEW SWITCH (Video / Board)
@@ -695,6 +720,7 @@ function setBg(color) {
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(tmp, 0, 0);
+  broadcastBoard({ type: 'board_bg', color });
 }
 
 function getPos(e) {
@@ -1141,9 +1167,14 @@ function handleCall(call) {
   peers[pid] = { call, stream: null, name: peers[pid]?.name || '...', role: peers[pid]?.role || '?' };
 
   call.on('stream', s => {
-    if (!s || s.getTracks().length === 0) return; // empty stream skip
+    if (!s || s.getTracks().length === 0) return;
     peers[pid].stream = s;
     rebuildGrid();
+    // Start audio monitor if teacher stream
+    const info = participantsList.find(x => x.peer_id === pid);
+    if (info?.role === 'teacher' || pid.startsWith('tr-')) {
+      startAudioMonitor(s);
+    }
     // Retry video play up to 5 times
     let tries = 0;
     const tryPlay = () => {
@@ -1277,21 +1308,40 @@ async function syncParticipants() {
 }
 
 function showRoomClosed() {
-  // Stop all media
-  if (localStream)  { localStream.getTracks().forEach(t => t.stop()); }
-  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); }
-  Object.values(peers).forEach(p => p.call?.close());
-  if (myPeer) { myPeer.destroy(); myPeer = null; }
-  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-
-  // Show closed overlay
+  stopAllMedia();
   document.getElementById('room').style.display = 'none';
-  const el = document.getElementById('error-page');
   document.getElementById('err-icon').textContent  = '';
   document.getElementById('err-title').textContent = 'Dars yakunlandi';
   document.getElementById('err-sub').textContent   = 'Ustoz darsni tugatdi. Ushbu havola endi ishlamaydi.';
   document.querySelector('#error-page .error-btn').style.display = 'none';
-  el.style.display = 'flex';
+  document.getElementById('error-page').style.display = 'flex';
+}
+
+function showKickedScreen(reason) {
+  stopAllMedia();
+  document.getElementById('room').style.display = 'none';
+  document.getElementById('err-icon').textContent  = '';
+  document.getElementById('err-title').textContent = 'Darsdan chiqarildingiz';
+  document.getElementById('err-sub').textContent   = reason || 'Ustoz sizi darsdan chiqardi.';
+  document.querySelector('#error-page .error-btn').style.display = 'none';
+  document.getElementById('error-page').style.display = 'flex';
+}
+
+function stopAllMedia() {
+  // Stop recording if active
+  if (isRecording && mediaRecorder) {
+    try { mediaRecorder.stop(); } catch(e) {}
+    isRecording = false;
+  }
+  if (audioCheckInterval) { clearInterval(audioCheckInterval); audioCheckInterval = null; }
+  if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
+  if (localStream)  { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+  Object.values(peers).forEach(p => { try { p.call?.close(); } catch(e) {} });
+  peers = {};
+  if (myPeer) { try { myPeer.destroy(); } catch(e) {} myPeer = null; }
+  if (syncInterval)  { clearInterval(syncInterval);  syncInterval  = null; }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 }
 
 function handleParticipants(list) {
@@ -1379,15 +1429,11 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
 // CONTROLS / LEAVE
 // ══════════════════════════════════════════════════════════════
 async function leaveRoom() {
-  if (localStream)  { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
-  Object.values(peers).forEach(p => p.call?.close());
-  peers = {};
-  if (myPeer) { myPeer.destroy(); myPeer = null; }
-  if (syncInterval)  { clearInterval(syncInterval); syncInterval = null; }
-  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-  if (roomToken && myPeerId) {
-    navigator.sendBeacon('/api/room?action=leave', new Blob([JSON.stringify({peer_id:myPeerId})],{type:'application/json'}));
+  const pid = myPeerId;
+  const token = roomToken;
+  stopAllMedia();
+  if (token && pid) {
+    navigator.sendBeacon('/api/room?action=leave', new Blob([JSON.stringify({peer_id:pid})],{type:'application/json'}));
   }
   showError('', myRole==='teacher'?'Dars yakunlandi':'Darsdan chiqdingiz', myRole==='teacher'?'Dars muvaffaqiyatli o\'tkazildi.':"Qaytish uchun havoladan foydalaning.");
 }
@@ -1421,86 +1467,92 @@ function renderChat() {
 // ══════════════════════════════════════════════════════════════
 // PARTICIPANTS
 // ══════════════════════════════════════════════════════════════
-
-// Kick modal state
-let kickTargetPeerId = null;
-let kickTargetName = null;
-let promotedPeers = {};
-
-function openKickModal(peerId, name) {
-  kickTargetPeerId = peerId;
-  kickTargetName = name;
-  document.getElementById('kick-modal-text').textContent = '"' + name + '" ni darsdan chiqarishni tasdiqlaysizmi?';
-  document.getElementById('kick-modal').style.display = 'flex';
-}
-function closeKickModal() {
-  kickTargetPeerId = null;
-  kickTargetName = null;
-  document.getElementById('kick-modal').style.display = 'none';
-}
-async function confirmKick() {
-  if (!kickTargetPeerId) return;
-  const peerId = kickTargetPeerId;
-  const name = kickTargetName;
-  closeKickModal();
-  if (peers[peerId]) {
-    try { peers[peerId].call?.close(); } catch(e) {}
-    delete peers[peerId];
-  }
-  try {
-    await fetch('/api/room?action=kick', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
-      body: JSON.stringify({ peer_id: peerId })
-    });
-  } catch(e) {}
-  participantsList = participantsList.filter(p => p.peer_id !== peerId);
-  updateParticipants();
-  rebuildGrid();
-  showToast('✅ "' + name + '" darsdan chiqarildi');
-}
-
-function promoteToTeacher(peerId, name) {
-  promotedPeers[peerId] = !promotedPeers[peerId];
-  const idx = participantsList.findIndex(p => p.peer_id === peerId);
-  if (idx !== -1) participantsList[idx].role = promotedPeers[peerId] ? 'teacher' : 'student';
-  updateParticipants();
-  rebuildGrid();
-  showToast(promotedPeers[peerId]
-    ? '👨\u200d🏫 "' + name + '" ga ustoz huquqi berildi'
-    : '🎓 "' + name + '" dan ustoz huquqi olindi');
-}
-
 function updateParticipants() {
   const list = document.getElementById('part-list');
-  const activePeerIds = new Set([myPeerId, ...Object.keys(peers)]);
-  const filtered = participantsList.filter(p => p.peer_id === myPeerId || activePeerIds.has(p.peer_id));
+  // Only show participants still in the list (left ones auto-removed by server)
   const all = [
-    { peer_id: myPeerId, name: myName, role: myRole, self: true },
-    ...filtered.filter(p => p.peer_id !== myPeerId)
+    { peer_id:myPeerId, name:myName, role:myRole, self:true },
+    ...participantsList.filter(p => p.peer_id !== myPeerId)
   ];
   list.innerHTML = '';
   all.forEach(p => {
     const div = document.createElement('div');
     div.className = 'part-item';
+    const bg = p.role==='teacher'
+      ? 'linear-gradient(135deg,#4f46e5,#7c3aed)'
+      : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
     const isTeacher = p.role === 'teacher';
-    const bg = isTeacher ? 'linear-gradient(135deg,#4f46e5,#7c3aed)' : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
-    let actionsHtml = '';
-    if (myRole === 'teacher' && !p.self) {
-      const safeName = (p.name||'').replace(/'/g, '').replace(/"/g, '');
-      actionsHtml = '<div class="part-actions">'
-        + '<button class="part-action-btn promote" title="' + (isTeacher ? 'Huquqni olish' : 'Ustoz huquqi') + '" onclick="promoteToTeacher(\'' + p.peer_id + '\',\'' + safeName + '\')">' + (isTeacher ? '⬇️' : '👨‍🏫') + '</button>'
-        + '<button class="part-action-btn kick" title="Chiqarish" onclick="openKickModal(\'' + p.peer_id + '\',\'' + safeName + '\')">✕</button>'
-        + '</div>';
-    }
-    div.innerHTML = '<div class="part-av" style="background:' + bg + '">' + (p.name||'U').charAt(0).toUpperCase() + '</div>'
-      + '<div class="part-info"><div class="part-name">' + esc(p.name||'Foydalanuvchi') + (p.self ? ' <span class="part-self">(Siz)</span>' : '') + '</div>'
-      + '<div class="part-role-txt">' + (isTeacher ? '👨‍🏫 Ustoz' : "🎓 O'quvchi") + '</div></div>'
-      + (isTeacher ? '<div class="part-badge">USTOZ</div>' : '')
-      + actionsHtml;
+    const canManage = myRole === 'teacher' && !p.self && !isTeacher;
+
+    div.innerHTML = `
+      <div class="part-av" style="background:${bg}">${(p.name||'U').charAt(0).toUpperCase()}</div>
+      <div class="part-info">
+        <div class="part-name">${esc(p.name||'Foydalanuvchi')}${p.self?' <span class="part-self">(Siz)</span>':''}</div>
+        <div class="part-role-txt">${isTeacher ? 'Ustoz' : "O'quvchi"}</div>
+      </div>
+      ${isTeacher ? '<div class="part-badge">USTOZ</div>' : ''}
+      ${canManage ? `<div class="part-actions">
+        <button class="part-action-btn part-action-promote" onclick="promoteToTeacher('${p.peer_id}','${esc(p.name)}')">Ustoz</button>
+        <button class="part-action-btn part-action-kick" onclick="confirmKick('${p.peer_id}','${esc(p.name)}')">Chiqar</button>
+      </div>` : ''}
+    `;
     list.appendChild(div);
   });
-  document.getElementById('room-sub').textContent = all.length + ' ishtirokchi';
+  document.getElementById('room-sub').textContent = `${all.length} ishtirokchi`;
+}
+
+// Show kick confirmation dialog
+function confirmKick(peerId, name) {
+  const existing = document.getElementById('kick-confirm-dialog');
+  if (existing) existing.remove();
+  const dlg = document.createElement('div');
+  dlg.className = 'kick-confirm';
+  dlg.id = 'kick-confirm-dialog';
+  dlg.innerHTML = `
+    <div class="kick-confirm-box">
+      <h3>O'quvchini chiqarish</h3>
+      <p><strong>${esc(name)}</strong> ni darsdan chiqarmoqchimisiz?</p>
+      <div class="kick-confirm-actions">
+        <button class="kick-confirm-no" onclick="document.getElementById('kick-confirm-dialog').remove()">Bekor</button>
+        <button class="kick-confirm-yes" onclick="kickParticipant('${peerId}','${esc(name)}')">Ha, chiqar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dlg);
+}
+
+// Kick participant via DataConnection
+function kickParticipant(peerId, name) {
+  const dlg = document.getElementById('kick-confirm-dialog');
+  if (dlg) dlg.remove();
+  // Send kick command via data connection
+  const dc = dataConns[peerId];
+  if (dc && dc.open) {
+    dc.send({ type: 'kick', reason: 'Ustoz tomonidan chiqarildi' });
+  }
+  // Also close peer call
+  if (peers[peerId]) {
+    try { peers[peerId].call?.close(); } catch(e) {}
+    delete peers[peerId];
+  }
+  // Remove from participants list locally
+  participantsList = participantsList.filter(p => p.peer_id !== peerId);
+  rebuildGrid();
+  updateParticipants();
+  showToast(`${name} darsdan chiqarildi`);
+}
+
+// Promote student to teacher role
+function promoteToTeacher(peerId, name) {
+  const dc = dataConns[peerId];
+  if (dc && dc.open) {
+    dc.send({ type: 'promote', role: 'teacher' });
+  }
+  // Update local list
+  const p = participantsList.find(x => x.peer_id === peerId);
+  if (p) p.role = 'teacher';
+  updateParticipants();
+  showToast(`${name} ga ustoz huquqi berildi`);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1522,6 +1574,7 @@ function showRoom() {
     document.getElementById('ctrl-end-student').style.display = 'none';
     document.getElementById('ctrl-cam-col').style.display = '';
     document.getElementById('ctrl-mic-col').style.display = '';
+    document.getElementById('ctrl-rec-col').style.display = '';
     // Board toolbar clickable
     document.getElementById('board-area').classList.add('teacher-board');
   } else {
@@ -1609,9 +1662,41 @@ function setupDataConn(dc, peerId) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     if (msg.type === 'text') applyRemoteText(msg);
+    // Teacher switched background
+    if (msg.type === 'board_bg') {
+      boardBg = msg.color;
+      if (canvasReady) {
+        const tmp = document.createElement('canvas');
+        tmp.width = canvas.width; tmp.height = canvas.height;
+        tmp.getContext('2d').drawImage(canvas, 0, 0);
+        ctx.fillStyle = msg.color;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(tmp, 0, 0);
+      }
+    }
     // Teacher switched view — force students to follow
     if (msg.type === 'view_switch' && myRole === 'student') {
       switchView(msg.view);
+    }
+    // Teacher kicked this student
+    if (msg.type === 'kick') {
+      const bar = document.getElementById('student-audio-bar');
+      if (bar) bar.classList.remove('show');
+      showKickedScreen(msg.reason || 'Ustoz tomonidan chiqarildi');
+    }
+    // Teacher promoted this student to teacher
+    if (msg.type === 'promote') {
+      myRole = 'teacher';
+      showToast('Sizga ustoz huquqi berildi!');
+      // Re-setup UI for teacher role
+      document.getElementById('view-tabs-wrap').style.display = '';
+      document.getElementById('student-view-label').style.display = 'none';
+      document.getElementById('screen-ctrl').style.display = '';
+      document.getElementById('ctrl-end-teacher').style.display = '';
+      document.getElementById('ctrl-end-student').style.display = 'none';
+      document.getElementById('board-area').classList.remove('student-board');
+      document.getElementById('board-area').classList.add('teacher-board');
+      updateParticipants();
     }
   });
   dc.on('close', () => { delete dataConns[peerId]; });
@@ -1684,6 +1769,166 @@ function applyRemoteText(msg) {
   const lines = (msg.text || '').split('\n');
   const lh = (msg.fontSize || 16) * 1.3;
   lines.forEach((line, i) => ctx.fillText(line, msg.x, msg.y + lh * (i + 1)));
+}
+
+// ══════════════════════════════════════════════════════════════
+// RECORDING — dars yozib olish (ustoz uchun)
+// ══════════════════════════════════════════════════════════════
+async function toggleRecording() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    // Capture the entire room body (video + board)
+    const roomBody = document.getElementById('room');
+    let captureStream;
+
+    // Try screen capture of just our content
+    try {
+      // Create a combined stream: canvas + audio
+      const canvasEl = document.createElement('canvas');
+      const roomEl = document.getElementById('room');
+      canvasEl.width  = roomEl.offsetWidth  || 1280;
+      canvasEl.height = roomEl.offsetHeight || 720;
+      const captureCtx = canvasEl.getContext('2d');
+
+      // Capture stream from canvas at 30fps
+      captureStream = canvasEl.captureStream(30);
+
+      // Add audio from localStream
+      if (localStream) {
+        localStream.getAudioTracks().forEach(t => captureStream.addTrack(t));
+      }
+      // Add audio from remote peers
+      Object.values(peers).forEach(p => {
+        if (p.stream) p.stream.getAudioTracks().forEach(t => {
+          try { captureStream.addTrack(t.clone()); } catch(e) {}
+        });
+      });
+
+      recordingStream = captureStream;
+
+      // Draw loop — capture current view to canvas
+      let drawLoop;
+      const drawFrame = () => {
+        if (!isRecording) return;
+        const currentView = document.getElementById('board-area').classList.contains('active')
+          ? 'board' : 'video';
+        if (currentView === 'board') {
+          // Draw board canvas
+          const boardCanvas = document.getElementById('board-canvas');
+          if (boardCanvas.width > 0) {
+            captureCtx.fillStyle = '#ffffff';
+            captureCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+            captureCtx.drawImage(boardCanvas, 0, 0, canvasEl.width, canvasEl.height);
+          }
+        } else {
+          // Draw video grid
+          captureCtx.fillStyle = '#1a1f2e';
+          captureCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+          const videos = document.querySelectorAll('.vtile video');
+          const count  = videos.length;
+          if (count > 0) {
+            const cols = count <= 1 ? 1 : count <= 4 ? 2 : 3;
+            const rows = Math.ceil(count / cols);
+            const w = canvasEl.width  / cols;
+            const h = canvasEl.height / rows;
+            videos.forEach((v, i) => {
+              const col = i % cols, row = Math.floor(i / cols);
+              try { captureCtx.drawImage(v, col*w, row*h, w, h); } catch(e) {}
+            });
+          }
+        }
+        drawLoop = requestAnimationFrame(drawFrame);
+      };
+      drawFrame();
+      // Store loop cancel fn
+      recordingStream._stopDraw = () => cancelAnimationFrame(drawLoop);
+
+    } catch(e) {
+      console.warn('Canvas capture failed, using localStream only:', e);
+      captureStream = new MediaStream();
+      if (localStream) localStream.getTracks().forEach(t => captureStream.addTrack(t.clone()));
+    }
+
+    // Choose best codec
+    const mimeTypes = [
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+      'video/mp4',
+    ];
+    const mimeType = mimeTypes.find(m => MediaRecorder.isTypeSupported(m)) || '';
+
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(captureStream, mimeType ? { mimeType } : {});
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = saveRecording;
+    mediaRecorder.start(1000); // collect every 1s
+
+    isRecording = true;
+    document.getElementById('btn-rec').className = 'ctrl-btn rec-active';
+    document.getElementById('rec-lbl').textContent = 'To'xtat';
+    document.getElementById('rec-dot').style.background = '#fff';
+    showToast('Yozib olish boshlandi');
+  } catch(e) {
+    console.error('Recording error:', e);
+    showToast('Yozib olish xatosi: ' + e.message);
+  }
+}
+
+function stopRecording() {
+  if (!mediaRecorder) return;
+  mediaRecorder.stop();
+  if (recordingStream?._stopDraw) recordingStream._stopDraw();
+  isRecording = false;
+  document.getElementById('btn-rec').className = 'ctrl-btn rec';
+  document.getElementById('rec-lbl').textContent = 'Yozish';
+  showToast('Yozib olish to'xtatildi, saqlanmoqda...');
+}
+
+function saveRecording() {
+  if (!recordedChunks.length) return;
+  const blob = new Blob(recordedChunks, { type: recordedChunks[0].type || 'video/webm' });
+  const ext  = blob.type.includes('mp4') ? 'mp4' : 'webm';
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().slice(0,19).replace(/:/g,'-');
+  a.href     = url;
+  a.download = `dars-${date}.${ext}`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  recordedChunks = [];
+  showToast('Yozuv saqlandi!');
+}
+
+// ══════════════════════════════════════════════════════════════
+// AUDIO MONITORING — o'quvchilarga ustoz audiosini ko'rsatish
+// ══════════════════════════════════════════════════════════════
+let audioCtx = null, analyser = null, audioCheckInterval = null;
+
+function startAudioMonitor(stream) {
+  if (myRole !== 'student') return;
+  try {
+    audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+    analyser  = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    const src = audioCtx.createMediaStreamSource(stream);
+    src.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    const bar  = document.getElementById('student-audio-bar');
+    audioCheckInterval = setInterval(() => {
+      analyser.getByteFrequencyData(data);
+      const avg = data.reduce((a,b) => a+b, 0) / data.length;
+      if (avg > 5) { bar.classList.add('show'); }
+      else         { bar.classList.remove('show'); }
+    }, 200);
+  } catch(e) { console.warn('Audio monitor error:', e); }
 }
 
 window.addEventListener('beforeunload', () => {
