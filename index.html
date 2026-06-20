@@ -1055,7 +1055,7 @@ function startPeer() {
     listenDataConns();
     showRoom();
     joinRoomServer();
-    syncInterval = setInterval(syncParticipants, 4000);
+    syncInterval = setInterval(syncParticipants, 8000);
     startTimer();
   });
   myPeer.on('call', call => { call.answer(localStream || new MediaStream()); handleCall(call); });
@@ -1126,25 +1126,55 @@ async function joinRoomServer() {
   } catch {}
 }
 
+// Smart sync: heartbeat every 8s, full join only when needed
+let lastParticipantCount = 0;
+let heartbeatFails = 0;
+let syncTick = 0;
+
 async function syncParticipants() {
   if (!roomToken || !myPeerId) return;
+  syncTick++;
+
+  // Every 5th tick (40s) do full join to refresh peer list
+  // Other ticks just heartbeat (tiny request, no body parsing)
+  const doFullJoin = syncTick % 5 === 0 || lastParticipantCount === 0;
+
   try {
-    const r = await fetch('/api/room?action=join', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
-      body: JSON.stringify({ peer_id: myPeerId, name: myName })
-    });
-    const d = await r.json();
-    if (d.ok) {
-      handleParticipants(d.participants || []);
-    } else if (r.status === 404 || r.status === 401) {
-      // Xona yopilgan yoki token o'chgan
-      if (myRole !== 'teacher') {
-        clearInterval(syncInterval); syncInterval = null;
-        showRoomClosed();
+    if (doFullJoin) {
+      // Full sync — returns participant list
+      const r = await fetch('/api/room?action=join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
+        body: JSON.stringify({ peer_id: myPeerId, name: myName })
+      });
+      if (r.status === 404 || r.status === 401 || r.status === 403) {
+        if (myRole !== 'teacher') { clearInterval(syncInterval); syncInterval = null; showRoomClosed(); }
+        return;
       }
+      const d = await r.json();
+      if (d.ok) {
+        heartbeatFails = 0;
+        lastParticipantCount = (d.participants || []).length;
+        handleParticipants(d.participants || []);
+      }
+    } else {
+      // Lightweight heartbeat — just keep-alive, no participant list
+      const r = await fetch('/api/room?action=heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
+        body: JSON.stringify({ peer_id: myPeerId })
+      });
+      if (r.status === 404 || r.status === 401 || r.status === 403) {
+        if (myRole !== 'teacher') { clearInterval(syncInterval); syncInterval = null; showRoomClosed(); }
+        return;
+      }
+      heartbeatFails = 0;
     }
-  } catch {}
+  } catch {
+    heartbeatFails++;
+    // After 3 consecutive fails — try full join
+    if (heartbeatFails >= 3) { syncTick = 0; heartbeatFails = 0; }
+  }
 }
 
 function showRoomClosed() {

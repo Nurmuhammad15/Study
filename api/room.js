@@ -160,6 +160,28 @@ export default async function handler(req, res) {
       return;
     }
 
+
+    // ── Heartbeat (lightweight keep-alive) ───────────────────
+    if (action === 'heartbeat' && req.method === 'POST') {
+      const token = req.headers['x-room-token'] || '';
+      const user  = verifyRoomToken(token);
+      if (!user) { res.status(401).json({ ok:false }); return; }
+      const peer_id = sanitize(req.body?.peer_id || '', 200);
+      await client.query(
+        `UPDATE room_participants SET last_seen=now()
+         WHERE room_id=$1 AND peer_id=$2`,
+        [user.room_id, peer_id]
+      );
+      const rr = await client.query(
+        'SELECT is_active FROM rooms WHERE id=$1 AND expires_at > now()',
+        [user.room_id]
+      );
+      if (!rr.rows.length || !rr.rows[0].is_active) {
+        res.status(404).json({ ok:false, msg:'Room closed' }); return;
+      }
+      res.json({ ok:true }); return;
+    }
+
     // ── Xonadan chiqish ───────────────────────────────────────
     if (action === 'leave' && req.method === 'POST') {
       const token = req.headers['x-room-token'] || '';
