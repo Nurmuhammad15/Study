@@ -112,13 +112,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .room-body{flex:1;display:flex;min-height:0;position:relative;}
 
 /* Video Area */
-.video-area{flex:1;background:#f0f2f8;position:relative;overflow:hidden;display:flex;flex-direction:column;}
-.video-grid{width:100%;height:100%;display:grid;gap:4px;padding:4px}
-.video-grid.g1{grid-template-columns:1fr}
-.video-grid.g2{grid-template-columns:1fr 1fr}
-.video-grid.g3,.video-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
-.video-grid.g5,.video-grid.g6{grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr}
-.video-grid.g7,.video-grid.g8,.video-grid.g9{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
+.video-area{flex:1;background:#0d1117;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
+.video-grid{width:100%;height:100%;display:grid;gap:3px;padding:3px;box-sizing:border-box;}
+.video-grid.g1{grid-template-columns:1fr;grid-template-rows:1fr;}
+.video-grid.g2{grid-template-columns:1fr 1fr;grid-template-rows:1fr;}
+.video-grid.g3,.video-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}
+.video-grid.g5,.video-grid.g6{grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;}
+.video-grid.g7,.video-grid.g8,.video-grid.g9{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);}
+@media(max-width:600px){
+  .room-body{flex-direction:column;}
+  .video-area{flex:1;min-height:0;width:100%;}
+  .video-grid{height:100%;}
+}
 
 /* Video Tile */
 .vtile{position:relative;border-radius:10px;overflow:hidden;background:#1a1f2e;display:flex;align-items:center;justify-content:center;transition:outline .15s;}
@@ -193,6 +198,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .part-role-txt{font-size:11px;color:var(--text3);margin-top:1px}
 .part-badge{font-size:9px;font-weight:800;letter-spacing:.5px;padding:3px 7px;border-radius:6px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#d97706;flex-shrink:0;}
 .part-self{font-size:10px;color:var(--text3)}
+.part-actions{display:flex;gap:4px;flex-shrink:0;}
+.part-action-btn{width:26px;height:26px;border-radius:6px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:.15s;}
+.part-action-btn.kick{background:rgba(239,68,68,.08);color:#ef4444;}
+.part-action-btn.kick:hover{background:rgba(239,68,68,.18);}
+.part-action-btn.promote{background:rgba(79,110,247,.08);color:var(--accent);}
+.part-action-btn.promote:hover{background:rgba(79,110,247,.18);}
+
+/* Kick confirm modal */
+#kick-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;align-items:center;justify-content:center;}
+.kick-box{background:#fff;border-radius:16px;padding:28px 28px 24px;max-width:360px;width:90%;box-shadow:0 16px 48px rgba(0,0,0,.2);text-align:center;}
+.kick-box h3{font-size:17px;font-weight:800;margin-bottom:8px;}
+.kick-box p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:22px;}
+.kick-box .kick-btns{display:flex;gap:10px;}
+.kick-box .kick-btns button{flex:1;padding:11px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.15s;}
+.kick-cancel{background:var(--bg2);color:var(--text2);}
+.kick-cancel:hover{background:var(--border);}
+.kick-confirm{background:var(--red);color:#fff;}
+.kick-confirm:hover{background:#dc2626;}
 
 /* Controls */
 .room-controls{display:flex;align-items:center;justify-content:center;gap:20px;padding:12px 20px;background:rgba(255,255,255,.97);border-top:1px solid var(--border);flex-shrink:0;backdrop-filter:blur(8px);}
@@ -472,6 +495,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15.46l-5.27-.61a2 2 0 0 0-1.69.55l-2.2 2.2a15 15 0 0 1-6.59-6.59l2.2-2.2a2 2 0 0 0 .55-1.69L7.4 1.18A2 2 0 0 0 5.21.06L1.08.96A2 2 0 0 0 0 2.96C0 13.13 8.87 22 19.04 22a2 2 0 0 0 1.96-1.06l.9-4.13a2 2 0 0 0-1.1-2.21z"/></svg>
       </button>
       <span class="ctrl-lbl">Chiqish</span>
+    </div>
+  </div>
+</div>
+
+<!-- Kick confirm modal -->
+<div id="kick-modal">
+  <div class="kick-box">
+    <h3>⚠️ O'quvchini chiqarish</h3>
+    <p id="kick-modal-text">Bu o'quvchini darsdan chiqarishni tasdiqlaysizmi?</p>
+    <div class="kick-btns">
+      <button class="kick-cancel" onclick="closeKickModal()">Bekor qilish</button>
+      <button class="kick-confirm" onclick="confirmKick()">Ha, chiqarish</button>
     </div>
   </div>
 </div>
@@ -1386,18 +1421,86 @@ function renderChat() {
 // ══════════════════════════════════════════════════════════════
 // PARTICIPANTS
 // ══════════════════════════════════════════════════════════════
+
+// Kick modal state
+let kickTargetPeerId = null;
+let kickTargetName = null;
+let promotedPeers = {};
+
+function openKickModal(peerId, name) {
+  kickTargetPeerId = peerId;
+  kickTargetName = name;
+  document.getElementById('kick-modal-text').textContent = '"' + name + '" ni darsdan chiqarishni tasdiqlaysizmi?';
+  document.getElementById('kick-modal').style.display = 'flex';
+}
+function closeKickModal() {
+  kickTargetPeerId = null;
+  kickTargetName = null;
+  document.getElementById('kick-modal').style.display = 'none';
+}
+async function confirmKick() {
+  if (!kickTargetPeerId) return;
+  const peerId = kickTargetPeerId;
+  const name = kickTargetName;
+  closeKickModal();
+  if (peers[peerId]) {
+    try { peers[peerId].call?.close(); } catch(e) {}
+    delete peers[peerId];
+  }
+  try {
+    await fetch('/api/room?action=kick', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
+      body: JSON.stringify({ peer_id: peerId })
+    });
+  } catch(e) {}
+  participantsList = participantsList.filter(p => p.peer_id !== peerId);
+  updateParticipants();
+  rebuildGrid();
+  showToast('✅ "' + name + '" darsdan chiqarildi');
+}
+
+function promoteToTeacher(peerId, name) {
+  promotedPeers[peerId] = !promotedPeers[peerId];
+  const idx = participantsList.findIndex(p => p.peer_id === peerId);
+  if (idx !== -1) participantsList[idx].role = promotedPeers[peerId] ? 'teacher' : 'student';
+  updateParticipants();
+  rebuildGrid();
+  showToast(promotedPeers[peerId]
+    ? '👨\u200d🏫 "' + name + '" ga ustoz huquqi berildi'
+    : '🎓 "' + name + '" dan ustoz huquqi olindi');
+}
+
 function updateParticipants() {
   const list = document.getElementById('part-list');
-  const all = [{ peer_id:myPeerId, name:myName, role:myRole, self:true }, ...participantsList.filter(p=>p.peer_id!==myPeerId)];
+  const activePeerIds = new Set([myPeerId, ...Object.keys(peers)]);
+  const filtered = participantsList.filter(p => p.peer_id === myPeerId || activePeerIds.has(p.peer_id));
+  const all = [
+    { peer_id: myPeerId, name: myName, role: myRole, self: true },
+    ...filtered.filter(p => p.peer_id !== myPeerId)
+  ];
   list.innerHTML = '';
   all.forEach(p => {
     const div = document.createElement('div');
     div.className = 'part-item';
-    const bg = p.role==='teacher' ? 'linear-gradient(135deg,#4f46e5,#7c3aed)' : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
-    div.innerHTML = `<div class="part-av" style="background:${bg}">${(p.name||'U').charAt(0).toUpperCase()}</div><div class="part-info"><div class="part-name">${esc(p.name||'Foydalanuvchi')} ${p.self?'<span class="part-self">(Siz)</span>':''}</div><div class="part-role-txt">${p.role==='teacher'?'Ustoz':"O'quvchi"}</div></div>${p.role==='teacher'?'<div class="part-badge">USTOZ</div>':''}`;
+    const isTeacher = p.role === 'teacher';
+    const bg = isTeacher ? 'linear-gradient(135deg,#4f46e5,#7c3aed)' : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
+    let actionsHtml = '';
+    if (myRole === 'teacher' && !p.self) {
+      const safeName = (p.name||'').replace(/'/g, '').replace(/"/g, '');
+      actionsHtml = '<div class="part-actions">'
+        + '<button class="part-action-btn promote" title="' + (isTeacher ? 'Huquqni olish' : 'Ustoz huquqi') + '" onclick="promoteToTeacher(\'' + p.peer_id + '\',\'' + safeName + '\')">' + (isTeacher ? '⬇️' : '👨‍🏫') + '</button>'
+        + '<button class="part-action-btn kick" title="Chiqarish" onclick="openKickModal(\'' + p.peer_id + '\',\'' + safeName + '\')">✕</button>'
+        + '</div>';
+    }
+    div.innerHTML = '<div class="part-av" style="background:' + bg + '">' + (p.name||'U').charAt(0).toUpperCase() + '</div>'
+      + '<div class="part-info"><div class="part-name">' + esc(p.name||'Foydalanuvchi') + (p.self ? ' <span class="part-self">(Siz)</span>' : '') + '</div>'
+      + '<div class="part-role-txt">' + (isTeacher ? '👨‍🏫 Ustoz' : "🎓 O'quvchi") + '</div></div>'
+      + (isTeacher ? '<div class="part-badge">USTOZ</div>' : '')
+      + actionsHtml;
     list.appendChild(div);
   });
-  document.getElementById('room-sub').textContent = `${all.length} ishtirokchi`;
+  document.getElementById('room-sub').textContent = all.length + ' ishtirokchi';
 }
 
 // ══════════════════════════════════════════════════════════════
