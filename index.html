@@ -62,6 +62,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border2);}
 .login-hint-card{background:rgba(79,110,247,.05);border:1px solid rgba(79,110,247,.15);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.6;}
 .login-hint-card strong{color:var(--text)}
+/* Name input screen */
+#name-page{display:none;position:fixed;inset:0;z-index:9000;background:#f4f6fb;align-items:center;justify-content:center;}
+#name-page::before{content:'';position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:50px 50px;opacity:.5;mask-image:radial-gradient(ellipse at center,black 30%,transparent 80%);}
+.name-card{position:relative;z-index:1;background:#fff;border:1px solid var(--border2);border-radius:22px;padding:32px;max-width:400px;width:90%;box-shadow:0 8px 40px rgba(79,110,247,.10);}
+.name-card-title{font-size:20px;font-weight:800;margin-bottom:6px;color:var(--text)}
+.name-card-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.5}
+.name-room-badge{display:inline-block;background:rgba(79,110,247,.08);border:1px solid rgba(79,110,247,.15);color:var(--accent);font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:20px;}
+#name-input{width:100%;padding:14px 16px;border-radius:12px;border:1.5px solid var(--border2);background:#f8faff;color:var(--text);font-size:15px;outline:none;font-family:inherit;transition:border-color .2s,box-shadow .2s;}
+#name-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,110,247,.10)}
+#name-input::placeholder{color:var(--text3)}
+#name-err{font-size:12px;color:#fb7185;min-height:18px;padding:0 4px;margin:6px 0;}
+.name-btn{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:.15s;margin-top:8px;}
+.name-btn:hover{opacity:.92}
 @media(max-width:480px){.login-card{padding:24px 20px;border-radius:18px}.login-brand{font-size:26px}}
 
 /* ERROR */
@@ -307,6 +320,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         Telegram botga yozing va <strong>/newlesson</strong> buyrug'ini yuboring. Bot sizga kirish havolasini yuboradi.
       </div>
     </div>
+  </div>
+</div>
+
+<!-- NAME INPUT (o'quvchi uchun) -->
+<div id="name-page">
+  <div class="name-card">
+    <div class="name-card-title">Darsga kirish</div>
+    <div class="name-card-sub">Ismingizni kiriting. U boshqa ishtirokchilarga ko'rinadi.</div>
+    <div class="name-room-badge" id="name-room-badge">Dars yuklanmoqda...</div>
+    <input id="name-input" type="text" placeholder="Ism Familiya" maxlength="40" autocomplete="off"
+      onkeydown="if(event.key==='Enter') confirmName()">
+    <div id="name-err"></div>
+    <button class="name-btn" onclick="confirmName()">Darsga kirish →</button>
   </div>
 </div>
 
@@ -987,14 +1013,39 @@ async function init() {
 async function enterRoom(d) {
   roomInfo   = d.room;
   myRole     = myRole || d.user.role;
-  myName     = d.user.name + (myRole === 'teacher' ? ' (Ustoz)' : '');
   roomId     = d.room.id;
   peerRoomId = d.room.peer_room_id;
-  document.getElementById('room-title-text').textContent = roomInfo.title;
-  if (myRole === 'teacher') {
-    document.getElementById('screen-ctrl').style.display = '';
-    document.getElementById('copy-link-btn').style.display = '';
+
+  if (myRole === 'student') {
+    // O'quvchidan ism so'rash
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('name-room-badge').textContent = d.room.title || 'Dars';
+    document.getElementById('name-page').style.display = 'flex';
+    setTimeout(() => document.getElementById('name-input').focus(), 150);
+    return; // getMedia enterRoomWithName da chaqiriladi
   }
+
+  // Ustoz — to'g'ri kiradi
+  myName = d.user.name;
+  document.getElementById('room-title-text').textContent = roomInfo.title;
+  document.getElementById('screen-ctrl').style.display = '';
+  document.getElementById('copy-link-btn').style.display = '';
+  await getMedia();
+}
+
+async function confirmName() {
+  const inp = document.getElementById('name-input');
+  const err = document.getElementById('name-err');
+  const name = inp.value.trim();
+  if (name.length < 2) {
+    err.textContent = "Ism kamida 2 ta harf bo'lsin";
+    inp.focus(); return;
+  }
+  err.textContent = '';
+  myName = name;
+  document.getElementById('name-page').style.display = 'none';
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('room-title-text').textContent = roomInfo.title;
   await getMedia();
 }
 
@@ -1006,7 +1057,14 @@ async function getMedia() {
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-      audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 48000 }
+      audio: {
+        echoCancellation: false,   // bu drum/barrel effect beradi — o'chirish kerak
+        noiseSuppression: false,   // bu ham ovozni buzadi
+        autoGainControl: false,    // bu ham distort qiladi
+        sampleRate: 48000,
+        channelCount: 1,
+        latency: 0                 // minimal latency
+      }
     });
     camOn = true;
     micOn = true;
@@ -1014,7 +1072,10 @@ async function getMedia() {
     console.warn('Video+audio failed:', e1.name, e1.message);
     // Try audio only
     try {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      });
       camOn = false;
       micOn = true;
       showToast('Kamera ruxsat berilmagan — faqat mikrofon');
@@ -1154,7 +1215,7 @@ function startPeer() {
     listenDataConns();
     showRoom();
     joinRoomServer();
-    syncInterval = setInterval(syncParticipants, 8000);
+    syncInterval = setInterval(syncParticipants, 4000);
     startTimer();
   });
   myPeer.on('call', call => { call.answer(localStream || new MediaStream()); handleCall(call); });
@@ -1390,13 +1451,54 @@ function handleParticipants(list) {
 function rebuildGrid() {
   const grid = document.getElementById('video-grid');
   const total = 1 + Object.keys(peers).length;
-  grid.className = 'video-grid g' + Math.min(total, 9);
-  grid.innerHTML = '';
-  grid.appendChild(makeTile(myPeerId, myName, myRole, localStream, true, camOn, micOn));
+  const gClass = 'video-grid g' + Math.min(total, 9);
+  if (grid.className !== gClass) grid.className = gClass;
+
+  // Build wanted tiles list
+  const wanted = [
+    { pid: myPeerId, name: myName, role: myRole, stream: localStream, isSelf: true, hasCam: camOn, hasMic: micOn }
+  ];
   Object.entries(peers).forEach(([pid, p]) => {
     const info = participantsList.find(x => x.peer_id === pid) || {};
-    grid.appendChild(makeTile(pid, info.name||p.name||'Ishtirokchi', info.role||p.role||'student', p.stream, false, true, true));
+    wanted.push({ pid, name: info.name||p.name||'Ishtirokchi', role: info.role||p.role||'student', stream: p.stream, isSelf: false, hasCam: !!p.stream, hasMic: true });
   });
+
+  // Remove tiles no longer needed
+  const wantedIds = new Set(wanted.map(w => 'tile-' + w.pid.replace(/[^a-z0-9]/gi,'_')));
+  Array.from(grid.children).forEach(el => {
+    if (!wantedIds.has(el.id)) el.remove();
+  });
+
+  // Add or update tiles
+  wanted.forEach((w, i) => {
+    const tileId = 'tile-' + w.pid.replace(/[^a-z0-9]/gi,'_');
+    let tile = document.getElementById(tileId);
+    if (!tile) {
+      tile = makeTile(w.pid, w.name, w.role, w.stream, w.isSelf, w.hasCam, w.hasMic);
+      grid.appendChild(tile);
+    } else {
+      // Patch existing tile — DO NOT recreate video element
+      patchTile(tile, w);
+    }
+  });
+}
+
+function patchTile(tile, w) {
+  // Update stream if changed — without recreating video
+  const video = tile.querySelector('video');
+  if (video && w.stream && video.srcObject !== w.stream) {
+    video.srcObject = w.stream;
+    video.play().catch(()=>{});
+  }
+  // Update no-cam class
+  const hasVideo = w.hasCam && w.stream && w.stream.getVideoTracks().some(t => t.enabled);
+  tile.classList.toggle('no-cam', !hasVideo);
+  // Update label name
+  const lbl = tile.querySelector('.vtile-label');
+  if (lbl) {
+    const nameSpan = lbl.querySelector('.tile-name');
+    if (nameSpan) nameSpan.textContent = w.isSelf ? 'Siz' : w.name;
+  }
 }
 
 function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
@@ -1430,8 +1532,17 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
 
   const label = document.createElement('div');
   label.className = 'vtile-label';
-  if (!hasMic) label.innerHTML += '<span style="color:#f87171;font-size:10px;font-weight:700">M</span>';
-  label.appendChild(document.createTextNode((isSelf?'Siz':name)));
+  if (!hasMic) {
+    const muteSpan = document.createElement('span');
+    muteSpan.style.cssText = 'color:#f87171;font-size:10px;font-weight:700;margin-right:3px';
+    muteSpan.textContent = 'M';
+    label.appendChild(muteSpan);
+  }
+  // Name — always show as small text overlay (even when cam on)
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'tile-name';
+  nameSpan.textContent = isSelf ? 'Siz' : name;
+  label.appendChild(nameSpan);
   tile.appendChild(label);
   return tile;
 }

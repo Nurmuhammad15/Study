@@ -289,23 +289,30 @@ def handle(update):
         cb   = update["callback_query"]
         cid  = cb["message"]["chat"]["id"]
         data = cb.get("data", "")
-        name = cb.get("from", {}).get("first_name", "Ustoz")
+        name = (cb.get("from") or {}).get("first_name") or "Ustoz"
         answer_cb(cb["id"])
 
-        if   data == "home"      : do_start(cid, name)
-        elif data == "newlesson" : do_newlesson_start(cid)
-        elif data == "stats"     : do_stats(cid)
-        elif data == "rooms"     : do_rooms(cid)
-        elif data == "cancel"    :
-            clear_state(cid)
-            do_start(cid, name)
-        elif data == "skip_time" :
-            st = get_state(cid)
-            if st.get("state") == "waiting_time":
-                d = st.get("data", {})
-                do_create_room(cid, d.get("title", "Dars"), name)
+        try:
+            if   data == "home"      : do_start(cid, name)
+            elif data == "newlesson" : do_newlesson_start(cid)
+            elif data == "stats"     : do_stats(cid)
+            elif data == "rooms"     : do_rooms(cid)
+            elif data == "cancel"    :
+                clear_state(cid)
+                do_start(cid, name)
+            elif data == "skip_time" :
+                st = get_state(cid)
+                if st.get("state") == "waiting_time":
+                    d2 = st.get("data", {})
+                    do_create_room(cid, d2.get("title", "Dars"), name)
+                else:
+                    do_start(cid, name)
             else:
                 do_start(cid, name)
+        except Exception as e:
+            print(f"Callback handler error: {e}")
+            try: send(cid, f"Xato yuz berdi: {e}", back_kb())
+            except: pass
         return
 
     # Oddiy xabar
