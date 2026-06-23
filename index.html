@@ -1095,20 +1095,29 @@ async function getMedia() {
 // Request camera if it was denied and user clicks button
 async function requestCamAccess() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    // Add video track to existing localStream
-    stream.getVideoTracks().forEach(t => {
-      localStream.addTrack(t);
-      // Replace track in all peer connections
-      Object.values(peers).forEach(p => {
-        const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
-        if (sender) sender.replaceTrack(t);
-        else if (p.call?.peerConnection) {
-          p.call.peerConnection.addTrack(t, localStream);
-        }
-      });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
     });
+    const vTrack = stream.getVideoTracks()[0];
+    if (!vTrack) return;
+
+    // Remove old video tracks, add new one
+    localStream.getVideoTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
+    localStream.addTrack(vTrack);
+
+    // Replace in all active peer connections
+    for (const p of Object.values(peers)) {
+      if (!p.call?.peerConnection) continue;
+      const pc = p.call.peerConnection;
+      const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+      try {
+        if (sender) { await sender.replaceTrack(vTrack); }
+        else        { pc.addTrack(vTrack, localStream); }
+      } catch(e) { console.warn('cam track replace:', e); }
+    }
+
     camOn = true;
+    broadcastBoard({ type: 'cam_changed', peerId: myPeerId, camOn: true });
     updateBtnState();
     rebuildGrid();
     showToast('Kamera yoqildi');
@@ -1119,22 +1128,43 @@ async function requestCamAccess() {
 
 async function toggleCam() {
   if (!camOn && localStream.getVideoTracks().length === 0) {
-    // No video track exists — need to request permission
     await requestCamAccess();
     return;
   }
   camOn = !camOn;
   localStream.getVideoTracks().forEach(t => { t.enabled = camOn; });
-  // Update peers
-  Object.values(peers).forEach(p => {
-    const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
-    if (sender && localStream.getVideoTracks()[0]) {
-      sender.track.enabled = camOn;
+
+  // Update all senders — ensure remote side gets the change
+  const updateSenders = async () => {
+    for (const p of Object.values(peers)) {
+      if (!p.call?.peerConnection) continue;
+      const pc = p.call.peerConnection;
+      const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+      if (sender) {
+        const vTrack = localStream.getVideoTracks()[0];
+        if (vTrack) {
+          try {
+            if (sender.track !== vTrack) await sender.replaceTrack(vTrack);
+            sender.track.enabled = camOn;
+          } catch(e) { console.warn('replaceTrack error:', e); }
+        }
+      } else if (camOn) {
+        // Sender doesn't exist — add track
+        const vTrack = localStream.getVideoTracks()[0];
+        if (vTrack) {
+          try { pc.addTrack(vTrack, localStream); } catch(e) {}
+        }
+      }
     }
-  });
+  };
+  await updateSenders();
+
+  // Notify peers via DataChannel so they refresh video
+  broadcastBoard({ type: 'cam_changed', peerId: myPeerId, camOn });
+
   updateBtnState();
   rebuildGrid();
-  showToast(camOn ? 'Kamera yoqildi' : 'Kamera o\'chirildi');
+  showToast(camOn ? 'Kamera yoqildi' : "Kamera o'chirildi");
 }
 
 function toggleMic() {
@@ -1234,33 +1264,24 @@ function startPeer() {
 
 function handleCall(call) {
   const pid = call.peer;
-  // Close old call if exists
   try { if (peers[pid]?.call) peers[pid].call.close(); } catch(e) {}
-  peers[pid] = { call, stream: null, name: peers[pid]?.name || '...', role: peers[pid]?.role || '?' };
+  const existing = peers[pid] || {};
+  peers[pid] = { call, stream: existing.stream || null, name: existing.name || '...', role: existing.role || '?' };
 
   call.on('stream', s => {
-    if (!s || s.getTracks().length === 0) return;
-    peers[pid].stream = s;
-    rebuildGrid();
-    // Start audio monitor if teacher stream
-    const info = participantsList.find(x => x.peer_id === pid);
-    if (info?.role === 'teacher' || pid.startsWith('tr-')) {
-      startAudioMonitor(s);
-    }
-    // Retry video play up to 5 times
-    let tries = 0;
-    const tryPlay = () => {
-      const tileId = '#tile-' + pid.replace(/[^a-z0-9]/gi,'_') + ' video';
-      const el = document.querySelector(tileId);
-      if (el) {
-        el.srcObject = s;
-        el.play().catch(() => {});
-      } else if (tries++ < 5) {
-        setTimeout(tryPlay, 400);
-      }
-    };
-    setTimeout(tryPlay, 200);
+    handleRemoteStream(pid, s);
   });
+
+  // Listen for mid-call track additions (camera on/off)
+  const setupTrackListener = () => {
+    if (call.peerConnection) {
+      call.peerConnection.ontrack = (e) => {
+        if (e.streams?.[0]) handleRemoteStream(pid, e.streams[0]);
+      };
+    }
+  };
+  setupTrackListener();
+  setTimeout(setupTrackListener, 1000); // retry in case peerConnection not ready
 
   call.on('close',  () => { delete peers[pid]; rebuildGrid(); updateParticipants(); });
   call.on('error',  (e) => { console.warn('call error', pid, e); delete peers[pid]; rebuildGrid(); });
@@ -1269,48 +1290,119 @@ function handleCall(call) {
 async function connectToPeer(peerId) {
   if (!myPeer || !myPeerId || peerId === myPeerId) return;
 
-  // Prevent duplicate: lower peer_id calls, higher listens
-  // This ensures exactly one call between any two peers
-  const shouldCall = myPeerId < peerId;
-
-  if (!shouldCall) {
-    // I wait for the other side to call me (via handleCall)
-    // Just init the slot so we know about this peer
-    if (!peers[peerId]) {
-      peers[peerId] = { call: null, stream: null, name: '...', role: '?' };
-    }
-    setTimeout(() => openDataConn(peerId), 800);
+  // Already have active call — skip
+  const existing = peers[peerId];
+  if (existing?.call?.peerConnection?.connectionState === 'connected') {
+    setTimeout(() => openDataConn(peerId), 500);
     return;
   }
 
-  if (peers[peerId]?.call?.open) return; // already connected
-  peers[peerId] = { call: null, stream: null, name: peers[peerId]?.name || '...', role: peers[peerId]?.role || '?' };
+  // WHO CALLS WHOM?
+  // Rule: teacher always calls students
+  //       between two students: the one who joined EARLIER calls
+  //       (earlier = smaller joined_at, approximated by peer_id string sort)
+  // This guarantees EXACTLY ONE call per pair
+  const myIsTeacher     = myRole === 'teacher';
+  const theirInfo       = participantsList.find(p => p.peer_id === peerId);
+  const theirIsTeacher  = theirInfo?.role === 'teacher' || peerId.startsWith('tr-');
+
+  let iShouldCall;
+  if (myIsTeacher && !theirIsTeacher) {
+    iShouldCall = true;   // ustoz → o'quvchi
+  } else if (!myIsTeacher && theirIsTeacher) {
+    iShouldCall = false;  // o'quvchi ← ustoz (kutadi)
+  } else {
+    // Both teacher or both student — alphabetically lower calls
+    iShouldCall = myPeerId < peerId;
+  }
+
+  if (!iShouldCall) {
+    // I'll receive the call — just prep slot and data channel
+    if (!peers[peerId]) {
+      peers[peerId] = { call: null, stream: null, name: theirInfo?.name || '...', role: theirInfo?.role || 'student' };
+    }
+    setTimeout(() => openDataConn(peerId), 600);
+    return;
+  }
+
+  // I should call
+  peers[peerId] = {
+    call: null, stream: null,
+    name: existing?.name || theirInfo?.name || '...',
+    role: existing?.role || theirInfo?.role || 'student'
+  };
 
   try {
-    const stream = localStream && localStream.getTracks().length > 0
-      ? localStream
-      : new MediaStream();
-    const call = myPeer.call(peerId, stream);
+    // Always send localStream (even if empty — receiver gets stream event when tracks added)
+    const callStream = localStream || new MediaStream();
+    const call = myPeer.call(peerId, callStream);
     if (!call) { delete peers[peerId]; return; }
     peers[peerId].call = call;
 
     call.on('stream', s => {
-      if (!s || s.getTracks().length === 0) return;
-      peers[peerId].stream = s;
-      rebuildGrid();
-      let tries = 0;
-      const tryPlay = () => {
-        const el = document.querySelector('#tile-' + peerId.replace(/[^a-z0-9]/gi,'_') + ' video');
-        if (el) { el.srcObject = s; el.play().catch(()=>{}); }
-        else if (tries++ < 5) setTimeout(tryPlay, 400);
-      };
-      setTimeout(tryPlay, 200);
+      handleRemoteStream(peerId, s);
     });
-    call.on('close',  () => { delete peers[peerId]; rebuildGrid(); });
+
+    // Also listen for track events (when remote adds track mid-call)
+    if (call.peerConnection) {
+      call.peerConnection.ontrack = (e) => {
+        if (e.streams && e.streams[0]) handleRemoteStream(peerId, e.streams[0]);
+      };
+    } else {
+      // peerConnection not ready yet — wait
+      call.on('stream', s => { // already added above
+        setTimeout(() => {
+          if (call.peerConnection) {
+            call.peerConnection.ontrack = (e) => {
+              if (e.streams?.[0]) handleRemoteStream(peerId, e.streams[0]);
+            };
+          }
+        }, 500);
+      });
+    }
+
+    call.on('close',  () => { delete peers[peerId]; rebuildGrid(); updateParticipants(); });
     call.on('error',  (e) => { console.warn('call err', peerId, e); delete peers[peerId]; rebuildGrid(); });
   } catch(e) { console.warn('connectToPeer error:', e); delete peers[peerId]; }
 
-  setTimeout(() => openDataConn(peerId), 800);
+  setTimeout(() => openDataConn(peerId), 600);
+}
+
+// Handle remote stream — used by both caller and callee
+function handleRemoteStream(peerId, s) {
+  if (!s) return;
+  // Accept even empty stream — tracks will be added later
+  peers[peerId] = peers[peerId] || { call: null, stream: null, name: '...', role: 'student' };
+  peers[peerId].stream = s;
+
+  // Listen for new tracks being added to stream (camera toggle mid-call)
+  s.onaddtrack = () => {
+    rebuildGrid();
+    playVideoTile(peerId, s);
+  };
+  s.onremovetrack = () => {
+    rebuildGrid();
+  };
+
+  rebuildGrid();
+  playVideoTile(peerId, s);
+  // Audio monitor for teacher
+  const info = participantsList.find(x => x.peer_id === peerId);
+  if (info?.role === 'teacher' || peerId.startsWith('tr-')) startAudioMonitor(s);
+}
+
+function playVideoTile(peerId, stream) {
+  let tries = 0;
+  const tryPlay = () => {
+    const el = document.querySelector('#tile-' + peerId.replace(/[^a-z0-9]/gi,'_') + ' video');
+    if (el) {
+      if (el.srcObject !== stream) el.srcObject = stream;
+      el.play().catch(() => {});
+    } else if (tries++ < 8) {
+      setTimeout(tryPlay, 300);
+    }
+  };
+  setTimeout(tryPlay, 150);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1418,29 +1510,43 @@ function stopAllMedia() {
 
 function handleParticipants(list) {
   participantsList = list;
+
   list.forEach(p => {
     if (p.peer_id === myPeerId) return;
-    const existing = peers[p.peer_id];
-    // Connect if: no connection, or call object missing, or peerConnection closed
-    const needsConnect = !existing
-      || !existing.call
-      || existing.call.peerConnection?.connectionState === 'closed'
-      || existing.call.peerConnection?.connectionState === 'failed';
-    if (needsConnect) {
-      connectToPeer(p.peer_id);
-    }
+
+    // Update name/role always
     if (peers[p.peer_id]) {
       peers[p.peer_id].name = p.name || peers[p.peer_id].name;
       peers[p.peer_id].role = p.role || peers[p.peer_id].role;
     }
+
+    // Check connection state
+    const ex  = peers[p.peer_id];
+    const pc  = ex?.call?.peerConnection;
+    const state = pc?.connectionState || pc?.iceConnectionState || 'none';
+    const isConnected = state === 'connected' || state === 'completed';
+    const isFailed    = state === 'failed' || state === 'closed' || state === 'disconnected';
+
+    const needsConnect = !ex
+      || !ex.call
+      || isFailed
+      || (!isConnected && !ex.call); // no call object at all
+
+    if (needsConnect) {
+      connectToPeer(p.peer_id);
+    } else if (isConnected && ex && !ex.stream) {
+      // Connected but no stream yet — might be camera off, just wait
+    }
   });
-  // Remove peers no longer in list
+
+  // Remove peers no longer in server list
   Object.keys(peers).forEach(pid => {
     if (!list.find(p => p.peer_id === pid)) {
       try { peers[pid]?.call?.close(); } catch(e) {}
       delete peers[pid];
     }
   });
+
   updateParticipants();
   rebuildGrid();
 }
@@ -1799,6 +1905,19 @@ function setupDataConn(dc, peerId) {
     // Teacher switched view — force students to follow
     if (msg.type === 'view_switch' && myRole === 'student') {
       switchView(msg.view);
+    }
+    // Peer toggled camera — refresh their video tile
+    if (msg.type === 'cam_changed') {
+      const pid = msg.peerId;
+      if (pid && peers[pid]) {
+        // Re-attach stream to force video refresh
+        setTimeout(() => {
+          if (peers[pid]?.stream) {
+            playVideoTile(pid, peers[pid].stream);
+            rebuildGrid();
+          }
+        }, 300);
+      }
     }
     // Teacher kicked this student
     if (msg.type === 'kick') {
