@@ -1395,6 +1395,11 @@ function handleRemoteStream(peerId, s) {
   if (peers[peerId].stream === s) return;
   peers[peerId].stream = s;
 
+  // onaddtrack/onremovetrack only fire for tracks changed AFTER this point —
+  // they do NOT cover the initial tracks already in `s`, and some browsers
+  // are unreliable about firing them at all for renegotiated tracks. So we
+  // also poll briefly right after (re)connect to catch tracks that show up
+  // moments after the call is answered (common with replaceTrack/addTrack).
   s.onaddtrack    = () => { rebuildGrid(); playVideoTile(peerId, s); };
   s.onremovetrack = () => { rebuildGrid(); };
 
@@ -1403,6 +1408,17 @@ function handleRemoteStream(peerId, s) {
 
   // Audio: ensure remote audio plays (browsers block autoplay without user interaction)
   s.getAudioTracks().forEach(t => { t.enabled = true; });
+
+  // Safety net: re-sync the tile a few times shortly after connecting, in case
+  // the video/audio track attaches a beat after the initial stream event.
+  [300, 800, 1500].forEach(delay => {
+    setTimeout(() => {
+      if (peers[peerId]?.stream === s) {
+        rebuildGrid();
+        playVideoTile(peerId, s);
+      }
+    }, delay);
+  });
 
   // Audio monitor for teacher stream
   const info = participantsList.find(x => x.peer_id === peerId);
@@ -1632,16 +1648,34 @@ function rebuildGrid() {
 function patchTile(tile, w) {
   const video = tile.querySelector('video');
   if (video) {
-    // Update stream
-    if (w.stream && video.srcObject !== w.stream) {
+    // Re-attach if the stream object changed OR if the element lost its srcObject
+    // OR if the stream now has a video track that the element isn't showing yet
+    // (same MediaStream object, track added/replaced later — object identity won't change).
+    const needsReattach =
+      w.stream && (
+        video.srcObject !== w.stream ||
+        !video.srcObject ||
+        video.readyState === 0
+      );
+    if (needsReattach) {
       video.srcObject = w.stream;
       video.muted     = !!w.isSelf;
       video.volume    = w.isSelf ? 0 : 1;
       video.play().catch(() => {});
+    } else if (w.stream && video.srcObject === w.stream) {
+      // Same stream object already attached — force the element to notice
+      // newly added/replaced tracks inside it (browsers don't always repaint
+      // automatically when a track is added to an already-attached stream).
+      const vTrack = w.stream.getVideoTracks()[0];
+      if (vTrack && vTrack.enabled && vTrack.readyState === 'live' && video.paused) {
+        video.play().catch(() => {});
+      }
     }
-    // Ensure audio tracks enabled
+    // Ensure audio tracks enabled and actually audible
     if (w.stream && !w.isSelf) {
       w.stream.getAudioTracks().forEach(t => { t.enabled = true; });
+      if (video.muted) video.muted = false;
+      if (video.volume !== 1) video.volume = 1;
     }
   }
   // Update no-cam class
@@ -1972,13 +2006,17 @@ function setupDataConn(dc, peerId) {
     if (msg.type === 'cam_changed') {
       const pid = msg.peerId;
       if (pid && peers[pid]) {
-        // Re-attach stream to force video refresh
-        setTimeout(() => {
+        // Refresh right away, then again shortly after — the new/replaced
+        // track can take a moment to actually become 'live' on our end.
+        const refresh = () => {
           if (peers[pid]?.stream) {
             playVideoTile(pid, peers[pid].stream);
             rebuildGrid();
           }
-        }, 300);
+        };
+        refresh();
+        setTimeout(refresh, 300);
+        setTimeout(refresh, 900);
       }
     }
     // Teacher kicked this student
