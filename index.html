@@ -1588,8 +1588,27 @@ function handleParticipants(list) {
       || isFailed
       || (!isConnected && !ex.call); // no call object at all
 
-    if (needsConnect) {
+    // Deterministic glare prevention: only the side with the
+    // lexicographically smaller peerId initiates the call. The other side
+    // only answers. Without this, both peers can call each other at the
+    // same time (every 4s sync tick), each side closing/replacing its own
+    // call object independently — the two sides can end up bound to
+    // different RTCPeerConnections, so one direction "connects" while
+    // never actually carrying the other side's audio/video track.
+    const iShouldInitiate = myPeerId < p.peer_id;
+
+    if (needsConnect && iShouldInitiate) {
       connectToPeer(p.peer_id);
+    } else if (needsConnect && !iShouldInitiate) {
+      // Don't call them — wait for their call. If nothing arrives after a
+      // few seconds (e.g. they're stuck), fall back to calling anyway so
+      // the room doesn't get permanently stuck.
+      if (!ex || !ex._waitingSince) {
+        peers[p.peer_id] = peers[p.peer_id] || { call: null, stream: null, name: p.name, role: p.role };
+        peers[p.peer_id]._waitingSince = Date.now();
+      } else if (Date.now() - ex._waitingSince > 6000) {
+        connectToPeer(p.peer_id);
+      }
     } else if (isConnected && ex && !ex.stream) {
       // Connected but no stream yet — might be camera off, just wait
     }
