@@ -1287,11 +1287,32 @@ function startPeer() {
     handleCall(call);
   });
   myPeer.on('error', e => {
-    console.warn('PeerJS error:', e.type);
+    console.warn('PeerJS error:', e.type, e.message);
     if (e.type === 'unavailable-id') { setTimeout(startPeer, 800); }
     else if (['network','server-error','socket-error','socket-closed'].includes(e.type)) {
       peerRetries++;
       setTimeout(startPeer, Math.min(1000 * peerRetries, 8000));
+    }
+    else if (e.type === 'peer-unavailable') {
+      // The target peer's ID wasn't registered on the signalling server yet
+      // (common race: we try to call them before their PeerJS connection has
+      // finished registering, especially over slower/asymmetric networks).
+      // Extract the peer id from the error message and retry shortly —
+      // by then they should be registered, since they'll also be retrying
+      // their own connectToPeer via the periodic sync.
+      const m = /Could not connect to peer (\S+)/.exec(e.message || '');
+      const failedPid = m ? m[1] : null;
+      if (failedPid && peers[failedPid]) {
+        peers[failedPid].calling = false;
+        const retryDelays = [1500, 3000, 5000];
+        retryDelays.forEach(delay => {
+          setTimeout(() => {
+            const stillNeeded = participantsList.some(p => p.peer_id === failedPid)
+              && (!peers[failedPid]?.call || peers[failedPid].call.peerConnection?.connectionState !== 'connected');
+            if (stillNeeded) connectToPeer(failedPid);
+          }, delay);
+        });
+      }
     }
   });
   myPeer.on('disconnected', () => {
