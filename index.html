@@ -1320,6 +1320,50 @@ function startPeer() {
   });
 }
 
+// ── Connection watchdog ──────────────────────────────────────────
+// Logs every ICE/connection state change to console (so failures are
+// visible even when PeerJS itself throws no error), and auto-retries
+// the call once a second if it gets stuck in 'failed'/'disconnected'.
+const watchedPeers = {};
+function watchConnection(peerId, call) {
+  const attach = () => {
+    const pc = call.peerConnection;
+    if (!pc) { setTimeout(attach, 200); return; }
+    if (watchedPeers[peerId] === pc) return; // already watching this pc
+    watchedPeers[peerId] = pc;
+
+    pc.oniceconnectionstatechange = () => {
+      console.log('[ICE]', peerId, pc.iceConnectionState);
+    };
+    pc.onconnectionstatechange = () => {
+      console.log('[CONN]', peerId, pc.connectionState);
+    };
+
+    let stuckSince = null;
+    const tick = setInterval(() => {
+      if (!peers[peerId] || peers[peerId].call !== call) { clearInterval(tick); return; }
+      const cs = pc.connectionState;
+      if (cs === 'failed' || cs === 'disconnected') {
+        if (!stuckSince) stuckSince = Date.now();
+        // Give it ~3s to self-recover (ICE restart), then force a retry.
+        if (Date.now() - stuckSince > 3000) {
+          stuckSince = null;
+          console.warn('[RETRY] reconnecting to', peerId, 'after', cs);
+          try { call.close(); } catch(e) {}
+          delete peers[peerId];
+          clearInterval(tick);
+          // Only the side with the "smaller" id re-initiates, mirrors syncParticipants logic
+          if (myPeerId < peerId) connectToPeer(peerId);
+        }
+      } else {
+        stuckSince = null;
+      }
+      if (cs === 'closed') clearInterval(tick);
+    }, 1000);
+  };
+  attach();
+}
+
 function handleCall(call) {
   const pid = call.peer;
 
@@ -1350,6 +1394,7 @@ function handleCall(call) {
     };
   };
   hookOnTrack();
+  watchConnection(pid, call);
 
   call.on('stream', s => handleRemoteStream(pid, s));
   call.on('close',  ()  => { delete peers[pid]; rebuildGrid(); updateParticipants(); });
@@ -1395,6 +1440,7 @@ async function connectToPeer(peerId) {
       };
     };
     hookOnTrack();
+    watchConnection(peerId, call);
 
     call.on('stream', s => handleRemoteStream(peerId, s));
     call.on('close',  ()  => { delete peers[peerId]; rebuildGrid(); updateParticipants(); });
