@@ -1197,7 +1197,44 @@ async function toggleCam() {
   showToast(camOn ? 'Kamera yoqildi' : "Kamera o'chirildi");
 }
 
-function toggleMic() {
+async function requestMicAccess() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+    });
+    const aTrack = stream.getAudioTracks()[0];
+    if (!aTrack) return;
+    aTrack.enabled = true;
+
+    localStream.getAudioTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
+    localStream.addTrack(aTrack);
+
+    // Push the new audio track into all active peer connections
+    for (const p of Object.values(peers)) {
+      if (!p.call?.peerConnection) continue;
+      const pc = p.call.peerConnection;
+      const sender = pc.getSenders().find(s => s.track?.kind === 'audio');
+      try {
+        if (sender) { await sender.replaceTrack(aTrack); }
+        else        { pc.addTrack(aTrack, localStream); }
+      } catch(e) { console.warn('mic track add:', e); }
+    }
+
+    micOn = true;
+    broadcastBoard({ type: 'mic_changed', peerId: myPeerId, micOn: true });
+    updateBtnState();
+    rebuildGrid();
+    showToast('Mikrofon yoqildi');
+  } catch(e) {
+    showToast('Mikrofon ruxsati berilmadi: ' + e.message);
+  }
+}
+
+async function toggleMic() {
+  if (!localStream || localStream.getAudioTracks().length === 0) {
+    await requestMicAccess();
+    return;
+  }
   micOn = !micOn;
   localStream.getAudioTracks().forEach(t => { t.enabled = micOn; });
   updateBtnState();
@@ -2088,6 +2125,11 @@ function setupDataConn(dc, peerId) {
         }, 150);
       }
     }
+    // Peer toggled microphone — just needs a grid refresh for the "M" label
+    if (msg.type === 'mic_changed') {
+      const pid = msg.peerId;
+      if (pid && peers[pid]) rebuildGrid();
+    }
     // Peer toggled camera — refresh their video tile
     if (msg.type === 'cam_changed') {
       const pid = msg.peerId;
@@ -2349,6 +2391,11 @@ function startAudioMonitor(stream) {
   if (myRole !== 'student') return;
   try {
     audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') {
+      const resumeOnce = () => { audioCtx.resume().catch(()=>{}); };
+      document.addEventListener('click', resumeOnce, { once: true });
+      document.addEventListener('touchstart', resumeOnce, { once: true });
+    }
     analyser  = audioCtx.createAnalyser();
     analyser.fftSize = 256;
     const src = audioCtx.createMediaStreamSource(stream);
@@ -2363,6 +2410,14 @@ function startAudioMonitor(stream) {
     }, 200);
   } catch(e) { console.warn('Audio monitor error:', e); }
 }
+
+// Global safety net: on the very first user interaction, retry resuming any
+// suspended AudioContext and replaying any <video> element that autoplay
+// blocked silently (no console error is thrown for this, so it's easy to miss).
+document.addEventListener('click', function retryAllMedia() {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+  document.querySelectorAll('video').forEach(v => { if (v.paused && v.srcObject) v.play().catch(()=>{}); });
+}, { once: false });
 
 window.addEventListener('beforeunload', () => {
   if (roomToken && myPeerId)
