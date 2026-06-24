@@ -603,7 +603,6 @@ function switchView(view) {
     if (tbb) tbb.classList.add('active');
     const lbl = document.getElementById('student-view-text');
     if (lbl) lbl.textContent = 'Doska';
-    // Force layout then resize — use multiple rAF for mobile
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => resizeCanvas());
@@ -620,13 +619,10 @@ function switchView(view) {
   }
 }
 
-// Ustoz tomonidan chaqiriladi — o'quvchilarga ham broadcast qiladi
 function teacherSwitchView(view) {
   if (myRole !== 'teacher') return;
   switchView(view);
-  // Broadcast view switch to all students
   broadcastBoard({ type: 'view_switch', view });
-  // If switching to board — also send current board snapshot
   if (view === 'board' && canvasReady && canvas.width > 0) {
     setTimeout(() => {
       try {
@@ -663,11 +659,9 @@ function resizeCanvas() {
 
   let w, h;
   if (isStudent) {
-    // Student: toolbar hidden, canvas fills entire board-area
     w = area.offsetWidth;
     h = area.offsetHeight;
   } else {
-    // Teacher: canvas fills area minus toolbar
     const tbH = toolbar ? toolbar.offsetHeight : 0;
     w = area.offsetWidth;
     h = area.offsetHeight - tbH;
@@ -678,7 +672,6 @@ function resizeCanvas() {
     return;
   }
 
-  // Preserve existing drawing
   const tmp = document.createElement('canvas');
   tmp.width  = canvas.width  || w;
   tmp.height = canvas.height || h;
@@ -828,7 +821,6 @@ function drawShape(x, y) {
   }
 }
 
-// Text tool
 let textActive = false;
 function placeTextInput(x, y) {
   const ti = document.getElementById('board-text-input');
@@ -866,7 +858,6 @@ function handleTextInput(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitText(); }
 }
 
-// Mouse / touch events
 canvas.addEventListener('mousedown', e => {
   if (!canvasReady) return;
   e.preventDefault();
@@ -894,7 +885,6 @@ canvas.addEventListener('mousemove', e => {
     ctx.lineJoin = 'round';
     ctx.lineTo(x, y);
     ctx.stroke();
-    // keep path open for next segment
     ctx.beginPath();
     ctx.moveTo(x, y);
     queueStroke({op:'move',x,y,color:brushColor,size:brushSize});
@@ -919,18 +909,15 @@ canvas.addEventListener('mouseup', e => {
   drawing = false;
   if (tool !== 'pen' && tool !== 'eraser') {
     drawShape(...Object.values(getPos(e)));
-    // broadcast final shape as image patch
     queueStroke({op:'shape', patch: canvas.toDataURL('image/jpeg',0.6)});
   }
 });
 canvas.addEventListener('mouseleave', () => { drawing = false; });
 
-// Touch support
 canvas.addEventListener('touchstart', e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY})); }, {passive:false});
 canvas.addEventListener('touchmove',  e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousemove',  {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY})); }, {passive:false});
 canvas.addEventListener('touchend',   e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup',   {})); }, {passive:false});
 
-// Keyboard shortcuts
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoBoard(); }
@@ -952,7 +939,6 @@ window.addEventListener('resize', () => {
   }
 });
 
-// Init canvas on first open
 function initCanvas() {
   canvasReady = false;
   resizeCanvas();
@@ -1017,7 +1003,6 @@ async function init() {
   myRole    = tToken ? 'teacher' : 'student';
 
   if (!roomToken) {
-    // No token in URL — show login form immediately
     document.getElementById('login-page').style.display = 'flex';
     setTimeout(() => {
       const inp = document.getElementById('link-input');
@@ -1026,7 +1011,6 @@ async function init() {
     return;
   }
 
-  // Token found — show loading and fetch room info
   window.history.replaceState({}, '', window.location.pathname);
   document.getElementById('loading').style.display = 'flex';
   try {
@@ -1046,15 +1030,13 @@ async function enterRoom(d) {
   peerRoomId = d.room.peer_room_id;
 
   if (myRole === 'student') {
-    // O'quvchidan ism so'rash
     document.getElementById('loading').style.display = 'none';
     document.getElementById('name-room-badge').textContent = d.room.title || 'Dars';
     document.getElementById('name-page').style.display = 'flex';
     setTimeout(() => document.getElementById('name-input').focus(), 150);
-    return; // getMedia enterRoomWithName da chaqiriladi
+    return;
   }
 
-  // Ustoz — to'g'ri kiradi
   myName = d.user.name;
   document.getElementById('room-title-text').textContent = roomInfo.title;
   document.getElementById('screen-ctrl').style.display = '';
@@ -1079,13 +1061,13 @@ async function confirmName() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// MEDIA — FIXED CAMERA
+// MEDIA
 // ══════════════════════════════════════════════════════════════
 async function getMedia() {
-  // Try video + audio first
+  // 🔥 HAR DOIM KAMERA VA MIKROFON SO'RAYMIZ (o'quvchi uchun ham)
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
       audio: {
         echoCancellation: false,
         noiseSuppression: false,
@@ -1096,11 +1078,9 @@ async function getMedia() {
     });
     camOn = true;
     micOn = true;
-    // Ensure audio enabled
     localStream.getAudioTracks().forEach(t => { t.enabled = true; });
   } catch(e1) {
     console.warn('Video+audio failed:', e1.name, e1.message);
-    // Try audio only
     try {
       localStream = await navigator.mediaDevices.getUserMedia({
         video: false,
@@ -1111,7 +1091,6 @@ async function getMedia() {
       showToast('Kamera ruxsat berilmagan — faqat mikrofon');
     } catch(e2) {
       console.warn('Audio only failed:', e2.name);
-      // No permissions at all
       localStream = new MediaStream();
       camOn = false;
       micOn = false;
@@ -1122,20 +1101,17 @@ async function getMedia() {
   startPeer();
 }
 
-// Request camera if it was denied and user clicks button
 async function requestCamAccess() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
     });
     const vTrack = stream.getVideoTracks()[0];
     if (!vTrack) return;
 
-    // Remove old video tracks, add new one
     localStream.getVideoTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
     localStream.addTrack(vTrack);
 
-    // Replace in all active peer connections
     for (const p of Object.values(peers)) {
       if (!p.call?.peerConnection) continue;
       const pc = p.call.peerConnection;
@@ -1164,7 +1140,6 @@ async function toggleCam() {
   camOn = !camOn;
   localStream.getVideoTracks().forEach(t => { t.enabled = camOn; });
 
-  // Update all senders — ensure remote side gets the change
   const updateSenders = async () => {
     for (const p of Object.values(peers)) {
       if (!p.call?.peerConnection) continue;
@@ -1179,7 +1154,6 @@ async function toggleCam() {
           } catch(e) { console.warn('replaceTrack error:', e); }
         }
       } else if (camOn) {
-        // Sender doesn't exist — add track
         const vTrack = localStream.getVideoTracks()[0];
         if (vTrack) {
           try { pc.addTrack(vTrack, localStream); } catch(e) {}
@@ -1189,7 +1163,6 @@ async function toggleCam() {
   };
   await updateSenders();
 
-  // Notify peers via DataChannel so they refresh video
   broadcastBoard({ type: 'cam_changed', peerId: myPeerId, camOn });
 
   updateBtnState();
@@ -1209,7 +1182,6 @@ async function requestMicAccess() {
     localStream.getAudioTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
     localStream.addTrack(aTrack);
 
-    // Push the new audio track into all active peer connections
     for (const p of Object.values(peers)) {
       if (!p.call?.peerConnection) continue;
       const pc = p.call.peerConnection;
@@ -1316,12 +1288,27 @@ function startPeer() {
     startTimer();
   });
   myPeer.on('call', call => {
-    // Answer with real stream — this sends our audio/video to caller
-    const answerStream = localStream && localStream.getTracks().length > 0
-      ? localStream
-      : new MediaStream();
-    call.answer(answerStream);
-    handleCall(call);
+    // 🔥 O'QUVCHI: Agar localStream bo'sh bo'lsa, kamera/mikrofon so'raydi
+    if (!localStream || localStream.getTracks().length === 0) {
+      navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+        audio: true
+      }).then(stream => {
+        localStream = stream;
+        camOn = true;
+        micOn = true;
+        updateBtnState();
+        rebuildGrid();
+        call.answer(localStream);
+        handleCall(call);
+      }).catch(() => {
+        call.answer(new MediaStream());
+        handleCall(call);
+      });
+    } else {
+      call.answer(localStream);
+      handleCall(call);
+    }
   });
   myPeer.on('error', e => {
     console.warn('PeerJS error:', e.type, e.message);
@@ -1331,12 +1318,6 @@ function startPeer() {
       setTimeout(startPeer, Math.min(1000 * peerRetries, 8000));
     }
     else if (e.type === 'peer-unavailable') {
-      // The target peer's ID wasn't registered on the signalling server yet
-      // (common race: we try to call them before their PeerJS connection has
-      // finished registering, especially over slower/asymmetric networks).
-      // Extract the peer id from the error message and retry shortly —
-      // by then they should be registered, since they'll also be retrying
-      // their own connectToPeer via the periodic sync.
       const m = /Could not connect to peer (\S+)/.exec(e.message || '');
       const failedPid = m ? m[1] : null;
       if (failedPid && peers[failedPid]) {
@@ -1357,16 +1338,12 @@ function startPeer() {
   });
 }
 
-// ── Connection watchdog ──────────────────────────────────────────
-// Logs every ICE/connection state change to console (so failures are
-// visible even when PeerJS itself throws no error), and auto-retries
-// the call once a second if it gets stuck in 'failed'/'disconnected'.
 const watchedPeers = {};
 function watchConnection(peerId, call) {
   const attach = () => {
     const pc = call.peerConnection;
     if (!pc) { setTimeout(attach, 200); return; }
-    if (watchedPeers[peerId] === pc) return; // already watching this pc
+    if (watchedPeers[peerId] === pc) return;
     watchedPeers[peerId] = pc;
 
     pc.oniceconnectionstatechange = () => {
@@ -1382,14 +1359,12 @@ function watchConnection(peerId, call) {
       const cs = pc.connectionState;
       if (cs === 'failed' || cs === 'disconnected') {
         if (!stuckSince) stuckSince = Date.now();
-        // Give it ~3s to self-recover (ICE restart), then force a retry.
         if (Date.now() - stuckSince > 3000) {
           stuckSince = null;
           console.warn('[RETRY] reconnecting to', peerId, 'after', cs);
           try { call.close(); } catch(e) {}
           delete peers[peerId];
           clearInterval(tick);
-          // Only the side with the "smaller" id re-initiates, mirrors syncParticipants logic
           if (myPeerId < peerId) connectToPeer(peerId);
         }
       } else {
@@ -1404,12 +1379,9 @@ function watchConnection(peerId, call) {
 function handleCall(call) {
   const pid = call.peer;
 
-  // If we already have a connected call to this peer — close the new one
-  // (glare resolution: keep the existing connection)
   const ex = peers[pid];
   const exState = ex?.call?.peerConnection?.connectionState;
   if (exState === 'connected') {
-    // Already connected — but still attach stream listener in case
     call.on('stream', s => handleRemoteStream(pid, s));
     return;
   }
@@ -1423,7 +1395,6 @@ function handleCall(call) {
     role:   ex?.role   || 'student'
   };
 
-  // Hook ontrack ASAP
   const hookOnTrack = () => {
     if (!call.peerConnection) return setTimeout(hookOnTrack, 200);
     call.peerConnection.ontrack = (e) => {
@@ -1441,7 +1412,22 @@ function handleCall(call) {
 async function connectToPeer(peerId) {
   if (!myPeer || !myPeerId || peerId === myPeerId) return;
 
-  // Skip if already have a working call
+  // 🔥 O'QUVCHI: Agar localStream bo'sh bo'lsa, avtomatik kamera/mikrofon so'raydi
+  if (myRole === 'student' && (!localStream || localStream.getTracks().length === 0)) {
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+        audio: true
+      });
+      camOn = true;
+      micOn = true;
+      updateBtnState();
+      rebuildGrid();
+    } catch(e) {
+      console.warn('Can\'t get media in connectToPeer:', e);
+    }
+  }
+
   const ex = peers[peerId];
   const state = ex?.call?.peerConnection?.connectionState;
   if (state === 'connected' || state === 'connecting') {
@@ -1449,7 +1435,6 @@ async function connectToPeer(peerId) {
     return;
   }
 
-  // If outgoing call already in progress — skip
   if (ex?.calling) return;
 
   const theirInfo = participantsList.find(p => p.peer_id === peerId) || {};
@@ -1469,7 +1454,6 @@ async function connectToPeer(peerId) {
     peers[peerId].call    = call;
     peers[peerId].calling = false;
 
-    // Set up peerConnection.ontrack as soon as possible
     const hookOnTrack = () => {
       if (!call.peerConnection) return setTimeout(hookOnTrack, 200);
       call.peerConnection.ontrack = (e) => {
@@ -1490,31 +1474,21 @@ async function connectToPeer(peerId) {
   setTimeout(() => openDataConn(peerId), 500);
 }
 
-// Handle remote stream — used by both caller and callee
 function handleRemoteStream(peerId, s) {
   if (!s) return;
   peers[peerId] = peers[peerId] || { call: null, stream: null, name: '...', role: 'student' };
 
-  // Don't replace if same stream
   if (peers[peerId].stream === s) return;
   peers[peerId].stream = s;
 
-  // onaddtrack/onremovetrack only fire for tracks changed AFTER this point —
-  // they do NOT cover the initial tracks already in `s`, and some browsers
-  // are unreliable about firing them at all for renegotiated tracks. So we
-  // also poll briefly right after (re)connect to catch tracks that show up
-  // moments after the call is answered (common with replaceTrack/addTrack).
   s.onaddtrack    = () => { rebuildGrid(); playVideoTile(peerId, s); };
   s.onremovetrack = () => { rebuildGrid(); };
 
   rebuildGrid();
   playVideoTile(peerId, s);
 
-  // Audio: ensure remote audio plays (browsers block autoplay without user interaction)
   s.getAudioTracks().forEach(t => { t.enabled = true; });
 
-  // Safety net: re-sync the tile a few times shortly after connecting, in case
-  // the video/audio track attaches a beat after the initial stream event.
   [300, 800, 1500].forEach(delay => {
     setTimeout(() => {
       if (peers[peerId]?.stream === s) {
@@ -1524,7 +1498,6 @@ function handleRemoteStream(peerId, s) {
     }, delay);
   });
 
-  // Audio monitor for teacher stream
   const info = participantsList.find(x => x.peer_id === peerId);
   if (myRole === 'student' && (info?.role === 'teacher' || peerId.startsWith('tr-'))) {
     startAudioMonitor(s);
@@ -1541,7 +1514,6 @@ function playVideoTile(peerId, stream) {
       el.muted  = isSelf;
       el.volume = isSelf ? 0 : 1;
       el.play().catch(() => {
-        // Retry on next user interaction
         document.addEventListener('click', () => el.play().catch(()=>{}), { once: true });
       });
     } else if (tries++ < 10) {
@@ -1566,7 +1538,6 @@ async function joinRoomServer() {
   } catch {}
 }
 
-// When new peer data conn opens — send current view + board snapshot
 function onNewDataConnOpen(dc) {
   if (myRole !== 'teacher') return;
   const currentView = document.getElementById('board-area').classList.contains('active') ? 'board' : 'video';
@@ -1580,7 +1551,6 @@ function onNewDataConnOpen(dc) {
   }
 }
 
-// Smart sync: heartbeat every 8s, full join only when needed
 let lastParticipantCount = 0;
 let heartbeatFails = 0;
 let syncTick = 0;
@@ -1589,13 +1559,10 @@ async function syncParticipants() {
   if (!roomToken || !myPeerId) return;
   syncTick++;
 
-  // Every 5th tick (40s) do full join to refresh peer list
-  // Other ticks just heartbeat (tiny request, no body parsing)
   const doFullJoin = syncTick % 5 === 0 || lastParticipantCount === 0;
 
   try {
     if (doFullJoin) {
-      // Full sync — returns participant list
       const r = await fetch('/api/room?action=join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
@@ -1612,7 +1579,6 @@ async function syncParticipants() {
         handleParticipants(d.participants || []);
       }
     } else {
-      // Lightweight heartbeat — just keep-alive, no participant list
       const r = await fetch('/api/room?action=heartbeat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
@@ -1626,7 +1592,6 @@ async function syncParticipants() {
     }
   } catch {
     heartbeatFails++;
-    // After 3 consecutive fails — try full join
     if (heartbeatFails >= 3) { syncTick = 0; heartbeatFails = 0; }
   }
 }
@@ -1652,7 +1617,6 @@ function showKickedScreen(reason) {
 }
 
 function stopAllMedia() {
-  // Stop recording if active
   if (isRecording && mediaRecorder) {
     try { mediaRecorder.stop(); } catch(e) {}
     isRecording = false;
@@ -1668,45 +1632,33 @@ function stopAllMedia() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 }
 
+// 🔥 ASOSIY TUZATISH: handleParticipants — barcha ishtirokchilarga ulanish
 function handleParticipants(list) {
   participantsList = list;
 
   list.forEach(p => {
     if (p.peer_id === myPeerId) return;
 
-    // Update name/role always
     if (peers[p.peer_id]) {
       peers[p.peer_id].name = p.name || peers[p.peer_id].name;
       peers[p.peer_id].role = p.role || peers[p.peer_id].role;
     }
 
-    // Check connection state
     const ex  = peers[p.peer_id];
     const pc  = ex?.call?.peerConnection;
     const state = pc?.connectionState || pc?.iceConnectionState || 'none';
     const isConnected = state === 'connected' || state === 'completed';
     const isFailed    = state === 'failed' || state === 'closed' || state === 'disconnected';
 
-    const needsConnect = !ex
-      || !ex.call
-      || isFailed
-      || (!isConnected && !ex.call); // no call object at all
+    const needsConnect = !ex || !ex.call || isFailed || (!isConnected && !ex.call);
 
-    // Deterministic glare prevention: only the side with the
-    // lexicographically smaller peerId initiates the call. The other side
-    // only answers. Without this, both peers can call each other at the
-    // same time (every 4s sync tick), each side closing/replacing its own
-    // call object independently — the two sides can end up bound to
-    // different RTCPeerConnections, so one direction "connects" while
-    // never actually carrying the other side's audio/video track.
     const iShouldInitiate = myPeerId < p.peer_id;
 
+    // 🔥 MUHIM: Agar ulanish kerak bo'lsa VA men boshlashim kerak bo'lsa — ulanish
     if (needsConnect && iShouldInitiate) {
       connectToPeer(p.peer_id);
     } else if (needsConnect && !iShouldInitiate) {
-      // Don't call them — wait for their call. If nothing arrives after a
-      // few seconds (e.g. they're stuck), fall back to calling anyway so
-      // the room doesn't get permanently stuck.
+      // Kichik peer kutadi, lekin 6 soniyadan keyin o'zi boshlaydi (agar kelmasa)
       if (!ex || !ex._waitingSince) {
         peers[p.peer_id] = peers[p.peer_id] || { call: null, stream: null, name: p.name, role: p.role };
         peers[p.peer_id]._waitingSince = Date.now();
@@ -1714,11 +1666,11 @@ function handleParticipants(list) {
         connectToPeer(p.peer_id);
       }
     } else if (isConnected && ex && !ex.stream) {
-      // Connected but no stream yet — might be camera off, just wait
+      // Ulangan lekin stream yo'q — kuting
     }
   });
 
-  // Remove peers no longer in server list
+  // Ro'yxatda yo'q peerlarni o'chirish
   Object.keys(peers).forEach(pid => {
     if (!list.find(p => p.peer_id === pid)) {
       try { peers[pid]?.call?.close(); } catch(e) {}
@@ -1739,7 +1691,6 @@ function rebuildGrid() {
   const gClass = 'video-grid g' + Math.min(total, 9);
   if (grid.className !== gClass) grid.className = gClass;
 
-  // Build wanted tiles list
   const wanted = [
     { pid: myPeerId, name: myName, role: myRole, stream: localStream, isSelf: true, hasCam: camOn, hasMic: micOn }
   ];
@@ -1748,13 +1699,11 @@ function rebuildGrid() {
     wanted.push({ pid, name: info.name||p.name||'Ishtirokchi', role: info.role||p.role||'student', stream: p.stream, isSelf: false, hasCam: !!p.stream, hasMic: true });
   });
 
-  // Remove tiles no longer needed
   const wantedIds = new Set(wanted.map(w => 'tile-' + w.pid.replace(/[^a-z0-9]/gi,'_')));
   Array.from(grid.children).forEach(el => {
     if (!wantedIds.has(el.id)) el.remove();
   });
 
-  // Add or update tiles
   wanted.forEach((w, i) => {
     const tileId = 'tile-' + w.pid.replace(/[^a-z0-9]/gi,'_');
     let tile = document.getElementById(tileId);
@@ -1762,7 +1711,6 @@ function rebuildGrid() {
       tile = makeTile(w.pid, w.name, w.role, w.stream, w.isSelf, w.hasCam, w.hasMic);
       grid.appendChild(tile);
     } else {
-      // Patch existing tile — DO NOT recreate video element
       patchTile(tile, w);
     }
   });
@@ -1771,9 +1719,6 @@ function rebuildGrid() {
 function patchTile(tile, w) {
   const video = tile.querySelector('video');
   if (video) {
-    // Re-attach if the stream object changed OR if the element lost its srcObject
-    // OR if the stream now has a video track that the element isn't showing yet
-    // (same MediaStream object, track added/replaced later — object identity won't change).
     const needsReattach =
       w.stream && (
         video.srcObject !== w.stream ||
@@ -1786,25 +1731,19 @@ function patchTile(tile, w) {
       video.volume    = w.isSelf ? 0 : 1;
       video.play().catch(() => {});
     } else if (w.stream && video.srcObject === w.stream) {
-      // Same stream object already attached — force the element to notice
-      // newly added/replaced tracks inside it (browsers don't always repaint
-      // automatically when a track is added to an already-attached stream).
       const vTrack = w.stream.getVideoTracks()[0];
       if (vTrack && vTrack.enabled && vTrack.readyState === 'live' && video.paused) {
         video.play().catch(() => {});
       }
     }
-    // Ensure audio tracks enabled and actually audible
     if (w.stream && !w.isSelf) {
       w.stream.getAudioTracks().forEach(t => { t.enabled = true; });
       if (video.muted) video.muted = false;
       if (video.volume !== 1) video.volume = 1;
     }
   }
-  // Update no-cam class
   const hasVideo = w.stream && w.stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
   tile.classList.toggle('no-cam', !hasVideo);
-  // Update label
   const nameSpan = tile.querySelector('.tile-name');
   if (nameSpan) nameSpan.textContent = w.isSelf ? 'Siz' : (w.name || '...');
 }
@@ -1822,14 +1761,13 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
   const video = document.createElement('video');
   video.autoplay    = true;
   video.playsInline = true;
-  video.muted       = !!isSelf; // faqat o'z video muted (echo oldini olish)
+  video.muted       = !!isSelf;
   video.setAttribute('playsinline','');
   video.setAttribute('webkit-playsinline','');
-  video.volume      = isSelf ? 0 : 1; // remote audio to'liq ovozda
+  video.volume      = isSelf ? 0 : 1;
   if (stream) {
     video.srcObject = stream;
     video.play().catch(() => {
-      // Autoplay blocked — add click listener to play
       document.addEventListener('click', () => video.play().catch(()=>{}), { once: true });
     });
   }
@@ -1852,7 +1790,6 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
     muteSpan.textContent = 'M';
     label.appendChild(muteSpan);
   }
-  // Name — always show as small text overlay (even when cam on)
   const nameSpan = document.createElement('span');
   nameSpan.className = 'tile-name';
   nameSpan.textContent = isSelf ? 'Siz' : name;
@@ -1862,7 +1799,7 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// CONTROLS / LEAVE
+// CONTROLS / LEAVE / CHAT / PARTICIPANTS
 // ══════════════════════════════════════════════════════════════
 async function leaveRoom() {
   const pid = myPeerId;
@@ -1874,9 +1811,6 @@ async function leaveRoom() {
   showError('', myRole==='teacher'?'Dars yakunlandi':'Darsdan chiqdingiz', myRole==='teacher'?"Dars muvaffaqiyatli o'tkazildi.":"Qaytish uchun havoladan foydalaning.");
 }
 
-// ══════════════════════════════════════════════════════════════
-// CHAT
-// ══════════════════════════════════════════════════════════════
 function sendChat() {
   const inp = document.getElementById('chat-inp');
   const text = inp.value.trim();
@@ -1885,6 +1819,7 @@ function sendChat() {
   chatMessages.push({ text, sender: myName, time: Date.now(), mine: true });
   renderChat();
 }
+
 function renderChat() {
   const box = document.getElementById('chat-msgs');
   if (!chatMessages.length) { box.innerHTML = '<div class="chat-empty">Hali xabar yo\'q</div>'; return; }
@@ -1900,12 +1835,8 @@ function renderChat() {
   box.scrollTop = box.scrollHeight;
 }
 
-// ══════════════════════════════════════════════════════════════
-// PARTICIPANTS
-// ══════════════════════════════════════════════════════════════
 function updateParticipants() {
   const list = document.getElementById('part-list');
-  // Only show participants still in the list (left ones auto-removed by server)
   const all = [
     { peer_id:myPeerId, name:myName, role:myRole, self:true },
     ...participantsList.filter(p => p.peer_id !== myPeerId)
@@ -1937,7 +1868,6 @@ function updateParticipants() {
   document.getElementById('room-sub').textContent = `${all.length} ishtirokchi`;
 }
 
-// Show kick confirmation dialog
 function confirmKick(peerId, name) {
   const existing = document.getElementById('kick-confirm-dialog');
   if (existing) existing.remove();
@@ -1957,34 +1887,28 @@ function confirmKick(peerId, name) {
   document.body.appendChild(dlg);
 }
 
-// Kick participant via DataConnection
 function kickParticipant(peerId, name) {
   const dlg = document.getElementById('kick-confirm-dialog');
   if (dlg) dlg.remove();
-  // Send kick command via data connection
   const dc = dataConns[peerId];
   if (dc && dc.open) {
     dc.send({ type: 'kick', reason: 'Ustoz tomonidan chiqarildi' });
   }
-  // Also close peer call
   if (peers[peerId]) {
     try { peers[peerId].call?.close(); } catch(e) {}
     delete peers[peerId];
   }
-  // Remove from participants list locally
   participantsList = participantsList.filter(p => p.peer_id !== peerId);
   rebuildGrid();
   updateParticipants();
   showToast(`${name} darsdan chiqarildi`);
 }
 
-// Promote student to teacher role
 function promoteToTeacher(peerId, name) {
   const dc = dataConns[peerId];
   if (dc && dc.open) {
     dc.send({ type: 'promote', role: 'teacher' });
   }
-  // Update local list
   const p = participantsList.find(x => x.peer_id === peerId);
   if (p) p.role = 'teacher';
   updateParticipants();
@@ -2001,7 +1925,6 @@ function showRoom() {
   document.getElementById('room-timer').style.display = '';
 
   if (myRole === 'teacher') {
-    // Ustoz: barcha boshqaruvlar ko'rinadi
     document.getElementById('view-tabs-wrap').style.display = '';
     document.getElementById('student-view-label').style.display = 'none';
     document.getElementById('screen-ctrl').style.display = '';
@@ -2011,25 +1934,22 @@ function showRoom() {
     document.getElementById('ctrl-cam-col').style.display = '';
     document.getElementById('ctrl-mic-col').style.display = '';
     document.getElementById('ctrl-rec-col').style.display = '';
-    // Board toolbar clickable
     document.getElementById('board-area').classList.add('teacher-board');
   } else {
-    // O'quvchi: faqat ko'radi
     document.getElementById('view-tabs-wrap').style.display = 'none';
     document.getElementById('student-view-label').style.display = '';
     document.getElementById('screen-ctrl').style.display = 'none';
     document.getElementById('copy-link-btn').style.display = 'none';
     document.getElementById('ctrl-end-teacher').style.display = 'none';
     document.getElementById('ctrl-end-student').style.display = '';
-    // O'quvchi ham kamerni o'zi boshqara oladi
     document.getElementById('ctrl-cam-col').style.display = '';
     document.getElementById('ctrl-mic-col').style.display = '';
-    // Board readonly for students
     document.getElementById('board-area').classList.add('student-board');
   }
 
   setTimeout(initCanvas, 100);
 }
+
 function showError(icon, title, sub) {
   ['loading','waiting','room'].forEach(id => document.getElementById(id).style.display = 'none');
   document.getElementById('err-icon').textContent  = icon;
@@ -2037,6 +1957,7 @@ function showError(icon, title, sub) {
   document.getElementById('err-sub').textContent   = sub;
   document.getElementById('error-page').style.display = 'flex';
 }
+
 let _toastTimer;
 function showToast(msg, dur = 3500) {
   const t = document.getElementById('toast');
@@ -2045,10 +1966,12 @@ function showToast(msg, dur = 3500) {
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => t.classList.remove('show'), dur);
 }
+
 function switchTab(name) {
   document.querySelectorAll('.stab').forEach((el,i) => el.classList.toggle('active',['participants','chat'][i]===name));
   document.querySelectorAll('.stab-panel').forEach(el => el.classList.toggle('active', el.id==='tab-'+name));
 }
+
 function startTimer() {
   startTime = Date.now();
   timerInterval = setInterval(() => {
@@ -2058,17 +1981,18 @@ function startTimer() {
     document.getElementById('room-timer').textContent = `${m}:${sc}`;
   }, 1000);
 }
+
 async function copyStudentLink() {
   showToast('Dars havolasini Telegram botdan oling');
 }
+
 function esc(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-
 // ══════════════════════════════════════════════════════════════
-// BOARD SYNC — real-time via PeerJS DataConnections
+// BOARD SYNC
 // ══════════════════════════════════════════════════════════════
 let dataConns = {};
 let boardSyncBuf = [];
@@ -2090,7 +2014,6 @@ function setupDataConn(dc, peerId) {
   dataConns[peerId] = dc;
   dc.on('open', () => {
     sendBoardSnapshot(dc);
-    // Teacher: send current view to new peer
     onNewDataConnOpen(dc);
   });
   dc.on('data', msg => {
@@ -2102,7 +2025,6 @@ function setupDataConn(dc, peerId) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     if (msg.type === 'text') applyRemoteText(msg);
-    // Teacher switched background
     if (msg.type === 'board_bg') {
       boardBg = msg.color;
       if (canvasReady) {
@@ -2114,10 +2036,8 @@ function setupDataConn(dc, peerId) {
         ctx.drawImage(tmp, 0, 0);
       }
     }
-    // Teacher switched view — force students to follow
     if (msg.type === 'view_switch') {
       switchView(msg.view);
-      // Resize canvas after switch (needed for student fullscreen)
       if (msg.view === 'board') {
         setTimeout(() => {
           canvasReady = false;
@@ -2125,17 +2045,13 @@ function setupDataConn(dc, peerId) {
         }, 150);
       }
     }
-    // Peer toggled microphone — just needs a grid refresh for the "M" label
     if (msg.type === 'mic_changed') {
       const pid = msg.peerId;
       if (pid && peers[pid]) rebuildGrid();
     }
-    // Peer toggled camera — refresh their video tile
     if (msg.type === 'cam_changed') {
       const pid = msg.peerId;
       if (pid && peers[pid]) {
-        // Refresh right away, then again shortly after — the new/replaced
-        // track can take a moment to actually become 'live' on our end.
         const refresh = () => {
           if (peers[pid]?.stream) {
             playVideoTile(pid, peers[pid].stream);
@@ -2147,17 +2063,14 @@ function setupDataConn(dc, peerId) {
         setTimeout(refresh, 900);
       }
     }
-    // Teacher kicked this student
     if (msg.type === 'kick') {
       const bar = document.getElementById('student-audio-bar');
       if (bar) bar.classList.remove('show');
       showKickedScreen(msg.reason || 'Ustoz tomonidan chiqarildi');
     }
-    // Teacher promoted this student to teacher
     if (msg.type === 'promote') {
       myRole = 'teacher';
       showToast('Sizga ustoz huquqi berildi!');
-      // Re-setup UI for teacher role
       document.getElementById('view-tabs-wrap').style.display = '';
       document.getElementById('student-view-label').style.display = 'none';
       document.getElementById('screen-ctrl').style.display = '';
@@ -2243,7 +2156,7 @@ function applyRemoteText(msg) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// RECORDING — dars yozib olish (ustoz uchun)
+// RECORDING
 // ══════════════════════════════════════════════════════════════
 async function toggleRecording() {
   if (isRecording) {
@@ -2255,13 +2168,11 @@ async function toggleRecording() {
 
 async function startRecording() {
   try {
-    // Step 1: Capture the tab/screen via getDisplayMedia
-    // Chrome will show a picker — user selects "This Tab" for best result
     let displayStream;
     try {
       displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          displaySurface: 'browser',   // prefer current tab
+          displaySurface: 'browser',
           width:  { ideal: 1920 },
           height: { ideal: 1080 },
           frameRate: { ideal: 30 }
@@ -2271,19 +2182,17 @@ async function startRecording() {
           noiseSuppression: false,
           sampleRate: 48000
         },
-        preferCurrentTab: true,        // Chrome 107+ — auto-selects current tab
-        selfBrowserSurface: 'include'  // include our own tab
+        preferCurrentTab: true,
+        selfBrowserSurface: 'include'
       });
     } catch(e) {
       showToast('Ekran ruxsati berilmadi: ' + e.message);
       return;
     }
 
-    // Step 2: Mix all audio tracks (local mic + remote peers + display audio)
     const audioCtxRec = new (window.AudioContext || window.webkitAudioContext)();
     const dest = audioCtxRec.createMediaStreamDestination();
 
-    // Local microphone
     if (localStream) {
       localStream.getAudioTracks().forEach(t => {
         try {
@@ -2293,7 +2202,6 @@ async function startRecording() {
       });
     }
 
-    // Remote peers audio
     Object.values(peers).forEach(p => {
       if (p.stream) {
         p.stream.getAudioTracks().forEach(t => {
@@ -2305,7 +2213,6 @@ async function startRecording() {
       }
     });
 
-    // Display audio (tab audio if captured)
     displayStream.getAudioTracks().forEach(t => {
       try {
         const src = audioCtxRec.createMediaStreamSource(new MediaStream([t]));
@@ -2313,7 +2220,6 @@ async function startRecording() {
       } catch(e) {}
     });
 
-    // Step 3: Combine video from display + mixed audio
     const combinedStream = new MediaStream([
       ...displayStream.getVideoTracks(),
       ...dest.stream.getAudioTracks()
@@ -2322,12 +2228,10 @@ async function startRecording() {
     recordingStream = combinedStream;
     recordingStream._audioCtx = audioCtxRec;
 
-    // If user stops sharing via browser UI — stop recording too
     displayStream.getVideoTracks()[0].onended = () => {
       if (isRecording) stopRecording();
     };
 
-    // Step 4: Start MediaRecorder
     const mimeTypes = [
       'video/webm;codecs=h264,opus',
       'video/webm;codecs=vp9,opus',
@@ -2383,7 +2287,7 @@ function saveRecording() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// AUDIO MONITORING — o'quvchilarga ustoz audiosini ko'rsatish
+// AUDIO MONITORING
 // ══════════════════════════════════════════════════════════════
 let audioCtx = null, analyser = null, audioCheckInterval = null;
 
@@ -2411,9 +2315,6 @@ function startAudioMonitor(stream) {
   } catch(e) { console.warn('Audio monitor error:', e); }
 }
 
-// Global safety net: on the very first user interaction, retry resuming any
-// suspended AudioContext and replaying any <video> element that autoplay
-// blocked silently (no console error is thrown for this, so it's easy to miss).
 document.addEventListener('click', function retryAllMedia() {
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
   document.querySelectorAll('video').forEach(v => { if (v.paused && v.srcObject) v.play().catch(()=>{}); });
