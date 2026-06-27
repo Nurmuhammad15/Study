@@ -1277,6 +1277,10 @@ function startPeer() {
   const peerId = (myRole === 'teacher' ? 'tr-' : 'st-') + peerRoomId + '-' + Math.random().toString(36).slice(2,8);
   myPeer = new Peer(peerId, {
     debug: 1,
+    host: '0.peerjs.com',
+    port: 443,
+    path: '/',
+    secure: true,
     config: { iceServers: ICE_SERVERS, iceTransportPolicy: 'all', bundlePolicy: 'max-bundle' }
   });
   myPeer.on('open', id => {
@@ -1316,7 +1320,11 @@ function startPeer() {
     if (e.type === 'unavailable-id') { setTimeout(startPeer, 800); }
     else if (['network','server-error','socket-error','socket-closed'].includes(e.type)) {
       peerRetries++;
-      setTimeout(startPeer, Math.min(1000 * peerRetries, 8000));
+      if (peerRetries > 5) {
+        showError('', 'Server bilan aloqa yo\'q', 'Sahifani yangilang (F5) va qayta urinib ko\'ring.');
+        return;
+      }
+      setTimeout(startPeer, Math.min(2000 * peerRetries, 12000));
     }
     else if (e.type === 'peer-unavailable') {
       const m = /Could not connect to peer (\S+)/.exec(e.message || '');
