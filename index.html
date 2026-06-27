@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- PeerJS server sozlamalari. Railway deploy qilgach shu yerga URL kiriting: -->
+<meta name="peer-host" content="peerserver-production-dd83.up.railway.app">
+<meta name="peer-port" content="443">
+<meta name="peer-path" content="/">
 <title>Study — Onlayn Dars</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <style>
@@ -1275,11 +1279,15 @@ let peerRetries = 0;
 
 function startPeer() {
   const peerId = (myRole === 'teacher' ? 'tr-' : 'st-') + peerRoomId + '-' + Math.random().toString(36).slice(2,8);
+  const peerHost = document.querySelector('meta[name="peer-host"]')?.content || '0.peerjs.com';
+  const peerPort = parseInt(document.querySelector('meta[name="peer-port"]')?.content || '443');
+  const peerPath = document.querySelector('meta[name="peer-path"]')?.content || '/';
+
   myPeer = new Peer(peerId, {
     debug: 1,
-    host: '0.peerjs.com',
-    port: 443,
-    path: '/',
+    host: peerHost,
+    port: peerPort,
+    path: peerPath,
     secure: true,
     config: { iceServers: ICE_SERVERS, iceTransportPolicy: 'all', bundlePolicy: 'max-bundle' }
   });
