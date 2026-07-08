@@ -1072,13 +1072,12 @@ async function getMedia() {
   // 🔥 HAR DOIM KAMERA VA MIKROFON SO'RAYMIZ (o'quvchi uchun ham)
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: 'user' } },
       audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-        sampleRate: 48000,
-        channelCount: 1
+        echoCancellation: { ideal: true },
+        noiseSuppression: { ideal: true },
+        autoGainControl: { ideal: true },
+        channelCount: { ideal: 1 }
       }
     });
     camOn = true;
@@ -1087,19 +1086,27 @@ async function getMedia() {
   } catch(e1) {
     console.warn('Video+audio failed:', e1.name, e1.message);
     try {
-      localStream = await navigator.mediaDevices.getUserMedia({
-        video: false,
-        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
-      });
-      camOn = false;
-      micOn = true;
-      showToast('Kamera ruxsat berilmagan — faqat mikrofon');
-    } catch(e2) {
-      console.warn('Audio only failed:', e2.name);
-      localStream = new MediaStream();
-      camOn = false;
-      micOn = false;
-      showToast('Kamera va mikrofon topilmadi yoki ruxsat berilmagan');
+      // 🔥 Fallback #1: eng oddiy so'rov — hech qanday qattiq (exact) cheklovsiz,
+      // chunki ba'zi kompyuter kamera/mikrofonlari facingMode yoki AEC o'chirishni
+      // qo'llab-quvvatlamaydi va "exact" cheklov butun so'rovni yiqitadi.
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      camOn = localStream.getVideoTracks().length > 0;
+      micOn = localStream.getAudioTracks().length > 0;
+      if (!camOn) showToast('Kamera ruxsat berilmagan — faqat mikrofon');
+    } catch(e1b) {
+      console.warn('Simple video+audio failed:', e1b.name, e1b.message);
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+        camOn = false;
+        micOn = true;
+        showToast('Kamera ruxsat berilmagan — faqat mikrofon');
+      } catch(e2) {
+        console.warn('Audio only failed:', e2.name);
+        localStream = new MediaStream();
+        camOn = false;
+        micOn = false;
+        showToast('Kamera va mikrofon topilmadi yoki ruxsat berilmagan');
+      }
     }
   }
   updateBtnState();
@@ -1108,9 +1115,15 @@ async function getMedia() {
 
 async function requestCamAccess() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
-    });
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: 'user' } }
+      });
+    } catch(eInner) {
+      // Ba'zi kompyuter kameralari facingMode'ni umuman qo'llab-quvvatlamaydi
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    }
     const vTrack = stream.getVideoTracks()[0];
     if (!vTrack) return;
 
@@ -1177,9 +1190,14 @@ async function toggleCam() {
 
 async function requestMicAccess() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
-    });
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true }, autoGainControl: { ideal: true } }
+      });
+    } catch(eInner) {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
     const aTrack = stream.getAudioTracks()[0];
     if (!aTrack) return;
     aTrack.enabled = true;
@@ -1304,7 +1322,7 @@ function startPeer() {
     // 🔥 O'QUVCHI: Agar localStream bo'sh bo'lsa, kamera/mikrofon so'raydi
     if (!localStream || localStream.getTracks().length === 0) {
       navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: 'user' } },
         audio: true
       }).then(stream => {
         localStream = stream;
@@ -1315,8 +1333,21 @@ function startPeer() {
         call.answer(localStream);
         handleCall(call);
       }).catch(() => {
-        call.answer(new MediaStream());
-        handleCall(call);
+        // 🔥 Kamera+mikrofon birga so'ralganda ba'zi kompyuterlarda xato bo'lishi
+        // mumkin — shu sabab hech bo'lmasa faqat mikrofonni olishga urinamiz,
+        // aks holda odam umuman eshitilmay/qolib ketadi.
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+          localStream = stream;
+          camOn = false;
+          micOn = true;
+          updateBtnState();
+          rebuildGrid();
+          call.answer(localStream);
+          handleCall(call);
+        }).catch(() => {
+          call.answer(new MediaStream());
+          handleCall(call);
+        });
       });
     } else {
       call.answer(localStream);
@@ -1433,7 +1464,7 @@ async function connectToPeer(peerId) {
   if (myRole === 'student' && (!localStream || localStream.getTracks().length === 0)) {
     try {
       localStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: 'user' } },
         audio: true
       });
       camOn = true;
@@ -1441,7 +1472,16 @@ async function connectToPeer(peerId) {
       updateBtnState();
       rebuildGrid();
     } catch(e) {
-      console.warn('Can\'t get media in connectToPeer:', e);
+      console.warn('Can\'t get video+audio in connectToPeer, trying audio only:', e);
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        camOn = false;
+        micOn = true;
+        updateBtnState();
+        rebuildGrid();
+      } catch(e2) {
+        console.warn('Can\'t get any media in connectToPeer:', e2);
+      }
     }
   }
 
@@ -2206,9 +2246,8 @@ async function startRecording() {
           frameRate: { ideal: 30 }
         },
         audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          sampleRate: 48000
+          echoCancellation: { ideal: true },
+          noiseSuppression: { ideal: true }
         },
         preferCurrentTab: true,
         selfBrowserSurface: 'include'
