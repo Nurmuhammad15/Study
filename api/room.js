@@ -172,11 +172,17 @@ export default async function handler(req, res) {
          WHERE room_id=$1 AND peer_id=$2`,
         [user.room_id, peer_id]
       );
+      // Faqat xona muddati o'tganini (yoki umuman mavjud emasligini) tekshiramiz.
+      // is_active flagini bu yerda tekshirmaymiz — u faqat ustoz kirganda true
+      // bo'ladi, shu sabab ustozdan oldin kirgan o'quvchi noto'g'ri "Room closed"
+      // javobi bilan darsdan chiqarib yuborilardi. Ustoz chiqqanda (action=leave)
+      // expires_at darhol "now()" ga o'rnatiladi — shuning uchun dars tugashi
+      // baribir to'g'ri aniqlanadi.
       const rr = await client.query(
-        'SELECT is_active FROM rooms WHERE id=$1 AND expires_at > now()',
+        'SELECT id FROM rooms WHERE id=$1 AND expires_at > now()',
         [user.room_id]
       );
-      if (!rr.rows.length || !rr.rows[0].is_active) {
+      if (!rr.rows.length) {
         res.status(404).json({ ok:false, msg:'Room closed' }); return;
       }
       res.json({ ok:true }); return;

@@ -3,10 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- PeerJS server sozlamalari. Railway deploy qilgach shu yerga URL kiriting: -->
+<!-- PeerJS server sozlamalari. Railway'dagi o'z serveringiz tiklansa, shu yerga qaytaring:
 <meta name="peer-host" content="peerserver-production-dd83.up.railway.app">
 <meta name="peer-port" content="443">
 <meta name="peer-path" content="/peerjs">
+Hozircha bepul ommaviy 0.peerjs.com serveridan foydalanilmoqda (quyidagi meta teglar yo'q bo'lsa, JS avtomatik shu serverga ulanadi). -->
+<meta name="peer-host" content="0.peerjs.com">
+<meta name="peer-port" content="443">
+<meta name="peer-path" content="/">
 <title>Study — Onlayn Dars</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <style>
@@ -1359,7 +1363,10 @@ function startPeer() {
     if (e.type === 'unavailable-id') { setTimeout(startPeer, 800); }
     else if (['network','server-error','socket-error','socket-closed'].includes(e.type)) {
       peerRetries++;
-      if (peerRetries > 5) {
+      if (peerRetries === 3) {
+        showToast("Ulanish beqaror, qayta urinilmoqda...");
+      }
+      if (peerRetries > 30) {
         showError('', 'Server bilan aloqa yo\'q', 'Sahifani yangilang (F5) va qayta urinib ko\'ring.');
         return;
       }
