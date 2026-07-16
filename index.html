@@ -141,6 +141,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .video-grid.g5,.video-grid.g6{grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr}
 .video-grid.g7,.video-grid.g8,.video-grid.g9{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
 
+.participant-strip-wrap{position:relative;display:flex;align-items:center;gap:6px;background:#12141f;padding:8px 6px;flex-shrink:0;}
+.participant-strip{flex:1;display:flex;gap:8px;overflow-x:auto;scroll-behavior:smooth;padding:2px;}
+.participant-strip::-webkit-scrollbar{height:0}
+.strip-arrow{flex-shrink:0;width:26px;height:26px;border-radius:50%;border:none;background:rgba(255,255,255,.08);color:#fff;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;}
+.strip-arrow:hover{background:rgba(255,255,255,.2)}
+.stile{width:150px;height:96px;flex-shrink:0;cursor:pointer;}
+.stile.spotlighted{outline:2px solid #22c55e !important;outline-offset:-2px;}
+.stile .vtile-av{font-size:20px}
+.main-stage{flex:1;position:relative;background:#181c2a;overflow:hidden;min-height:0;}
+.main-stage .vtile{position:absolute;inset:0;border-radius:0;}
+@media(max-width:768px){
+  .stile{width:110px;height:74px}
+  .participant-strip-wrap{padding:6px 4px}
+}
+
 /* Video Tile */
 .vtile{position:relative;border-radius:12px;overflow:hidden;background:#2a2f42;display:flex;align-items:center;justify-content:center;transition:outline .15s;min-height:0;min-width:0;}
 .vtile video{width:100%;height:100%;object-fit:cover;display:block;min-height:0;}
@@ -418,7 +433,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
     <!-- Video view -->
     <div class="video-area" id="video-view">
-      <div class="video-grid g1" id="video-grid"></div>
+      <div class="participant-strip-wrap" id="participant-strip-wrap">
+        <button class="strip-arrow" type="button" onclick="scrollStrip(-1)">&#8249;</button>
+        <div class="participant-strip" id="participant-strip"></div>
+        <button class="strip-arrow" type="button" onclick="scrollStrip(1)">&#8250;</button>
+      </div>
+      <div class="main-stage" id="main-stage"></div>
     </div>
 
     <!-- Whiteboard view -->
@@ -1748,14 +1768,22 @@ function handleParticipants(list) {
   rebuildGrid();
 }
 
-// ══════════════════════════════════════════════════════════════
-// VIDEO GRID
-// ══════════════════════════════════════════════════════════════
+let spotlightId = null;
+
+function scrollStrip(dir) {
+  const el = document.getElementById('participant-strip');
+  if (el) el.scrollBy({ left: dir * 170, behavior: 'smooth' });
+}
+
+function setSpotlight(pid) {
+  spotlightId = pid;
+  rebuildGrid();
+}
+
 function rebuildGrid() {
-  const grid = document.getElementById('video-grid');
-  const total = 1 + Object.keys(peers).length;
-  const gClass = 'video-grid g' + Math.min(total, 9);
-  if (grid.className !== gClass) grid.className = gClass;
+  const strip = document.getElementById('participant-strip');
+  const stage = document.getElementById('main-stage');
+  if (!strip || !stage) return;
 
   const wanted = [
     { pid: myPeerId, name: myName, role: myRole, stream: localStream, isSelf: true, hasCam: camOn, hasMic: micOn }
@@ -1765,21 +1793,46 @@ function rebuildGrid() {
     wanted.push({ pid, name: info.name||p.name||'Ishtirokchi', role: info.role||p.role||'student', stream: p.stream, isSelf: false, hasCam: !!p.stream, hasMic: p.micOn !== false });
   });
 
-  const wantedIds = new Set(wanted.map(w => 'tile-' + w.pid.replace(/[^a-z0-9]/gi,'_')));
-  Array.from(grid.children).forEach(el => {
-    if (!wantedIds.has(el.id)) el.remove();
-  });
+  // Spotlightda ko'rsatiladigan ishtirokchini tanlash:
+  // avval joriy tanlov hali xonada bormi tekshiramiz, aks holda ustozni,
+  // aks holda birinchi boshqa ishtirokchini, aks holda o'zimizni tanlaymiz.
+  if (!spotlightId || !wanted.some(w => w.pid === spotlightId)) {
+    const teacher = wanted.find(w => w.role === 'teacher' && !w.isSelf);
+    const otherAny = wanted.find(w => !w.isSelf);
+    spotlightId = teacher ? teacher.pid : (otherAny ? otherAny.pid : wanted[0].pid);
+  }
 
-  wanted.forEach((w, i) => {
-    const tileId = 'tile-' + w.pid.replace(/[^a-z0-9]/gi,'_');
+  // ── Yuqoridagi ishtirokchilar tasmasi (kichik tilelar) ──
+  const wantedStripIds = new Set(wanted.map(w => 'stile-' + w.pid.replace(/[^a-z0-9]/gi,'_')));
+  Array.from(strip.children).forEach(el => { if (!wantedStripIds.has(el.id)) el.remove(); });
+
+  wanted.forEach(w => {
+    const tileId = 'stile-' + w.pid.replace(/[^a-z0-9]/gi,'_');
     let tile = document.getElementById(tileId);
     if (!tile) {
       tile = makeTile(w.pid, w.name, w.role, w.stream, w.isSelf, w.hasCam, w.hasMic);
-      grid.appendChild(tile);
+      tile.id = tileId;
+      tile.classList.add('stile');
+      tile.onclick = () => setSpotlight(w.pid);
+      strip.appendChild(tile);
     } else {
       patchTile(tile, w);
     }
+    tile.classList.toggle('spotlighted', w.pid === spotlightId);
   });
+
+  // ── Pastdagi katta sahna (spotlight qilingan ishtirokchi) ──
+  const stageW = wanted.find(w => w.pid === spotlightId) || wanted[0];
+  const stageTileId = 'stage-' + stageW.pid.replace(/[^a-z0-9]/gi,'_');
+  let stageTile = document.getElementById(stageTileId);
+  if (!stageTile) {
+    stage.innerHTML = '';
+    stageTile = makeTile(stageW.pid, stageW.name, stageW.role, stageW.stream, stageW.isSelf, stageW.hasCam, stageW.hasMic);
+    stageTile.id = stageTileId;
+    stage.appendChild(stageTile);
+  } else {
+    patchTile(stageTile, stageW);
+  }
 }
 
 function patchTile(tile, w) {
