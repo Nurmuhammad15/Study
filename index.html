@@ -525,7 +525,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
     <!-- Sidebar -->
     <div class="room-sidebar">
-      <div class="sidebar-tabs">
+      <div class="sidebar-tabs" id="sidebar-tabs">
         <div class="stab active" onclick="switchTab('participants')"> Ishtirokchilar</div>
         <div class="stab" onclick="switchTab('chat')"> Chat</div>
       </div>
@@ -2066,6 +2066,10 @@ function showRoom() {
     document.getElementById('ctrl-cam-col').style.display = '';
     document.getElementById('ctrl-mic-col').style.display = '';
     document.getElementById('board-area').classList.add('student-board');
+    // O'quvchida "Ishtirokchilar" bo'limi kerak emas (u yerda faqat
+    // ustozga tegishli boshqaruv tugmalari bor) — darhol Chat ko'rsatamiz.
+    document.getElementById('sidebar-tabs').style.display = 'none';
+    switchTab('chat');
   }
 
   setTimeout(initCanvas, 100);
