@@ -13,6 +13,7 @@ Hozircha bepul ommaviy 0.peerjs.com serveridan foydalanilmoqda (quyidagi meta te
 <meta name="peer-path" content="/">
 <title>Study — Onlayn Dars</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 :root {
   --bg:       #ffffff;
@@ -159,6 +160,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* Video Tile */
 .vtile{position:relative;border-radius:12px;overflow:hidden;background:#2a2f42;display:flex;align-items:center;justify-content:center;transition:outline .15s;min-height:0;min-width:0;}
 .vtile video{width:100%;height:100%;object-fit:cover;display:block;min-height:0;}
+.vtile.screen-tile{background:#000;}
+.vtile.screen-tile video{object-fit:contain;}
 .vtile.no-cam video{display:none}
 .vtile-av{width:clamp(48px,14%,88px);aspect-ratio:1;border-radius:50%;display:none;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:clamp(20px,5%,36px);position:relative;}
 .vtile.no-cam .vtile-av{display:flex;}
@@ -170,12 +173,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 #board-area{display:none;flex:1;flex-direction:column;background:#fff;overflow:hidden;}
 /* O'quvchi doskani faqat ko'radi - toolbar yashirin */
 #board-area.student-board .board-toolbar{display:none !important;}
-#board-area.student-board #board-canvas{
-  pointer-events:none;cursor:default;
-  position:absolute !important;
-  top:0 !important; left:0 !important;
-  width:100% !important; height:100% !important;
-}
+#board-area.student-board #board-canvas{ pointer-events:none;cursor:default; }
 #board-area.student-board{position:relative;}
 .board-toolbar{position:relative;}
 #board-area.active{display:flex;}
@@ -193,7 +191,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .tb-size input[type=range]{width:70px;accent-color:var(--accent);}
 .tb-size span{font-size:11px;color:var(--text2);min-width:20px}
 .tb-label{font-size:10px;font-weight:700;color:var(--text3);padding:0 4px;letter-spacing:.5px;text-transform:uppercase;}
-#board-canvas{display:block;cursor:crosshair;touch-action:none;flex:1;width:100%;min-height:0;}
+#board-canvas{display:block;cursor:crosshair;touch-action:none;flex:1;width:100%;height:100%;min-height:0;object-fit:contain;margin:auto;}
 .board-actions{display:flex;align-items:center;gap:6px;margin-left:auto;}
 .board-action-btn{padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:#fff;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:.15s;}
 .board-action-btn:hover{background:var(--bg2)}
@@ -201,8 +199,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .board-action-btn.danger:hover{background:rgba(239,68,68,.05)}
 
 /* Sidebar */
-.room-sidebar{width:260px;background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
-.sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.room-sidebar{width:260px;background:var(--card);border-left:1px solid var(--border);display:none;flex-direction:column;flex-shrink:0;overflow:hidden;}
+.room-sidebar.open{display:flex;}
+.sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;position:relative;padding-right:30px;}
+.sidebar-close-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:none;background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;border-radius:50%;}
+.sidebar-close-btn:hover{background:var(--bg2);}
+.chat-badge{position:absolute;top:2px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;}
+.chat-badge.show{display:flex;}
 .stab{flex:1;padding:11px 0;font-size:12px;font-weight:600;text-align:center;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:.15s;}
 .stab:hover{color:var(--text2)}
 .stab.active{color:var(--accent);border-color:var(--accent)}
@@ -252,7 +255,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* Controls */
 .room-controls{display:flex;align-items:center;justify-content:center;gap:20px;padding:12px 20px;background:rgba(255,255,255,.97);border-top:1px solid var(--border);flex-shrink:0;backdrop-filter:blur(8px);}
-.ctrl-col{display:flex;flex-direction:column;align-items:center;gap:5px}
+.ctrl-col{display:flex;flex-direction:column;align-items:center;gap:5px;position:relative}
 .ctrl-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0;}
 .ctrl-btn svg{width:20px;height:20px;pointer-events:none}
 .ctrl-btn.on{background:#f0f4ff;color:var(--text);border:1.5px solid var(--border2)}
@@ -298,7 +301,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .cam-request-toast .deny-btn{background:var(--bg2);color:var(--text2);}
 
 @media(max-width:720px){
-  .room-sidebar{display:none}
+  .room-sidebar.open{position:fixed;left:0;right:0;bottom:78px;height:58vh;width:100%;z-index:60;border-left:none;border-top:1px solid var(--border);box-shadow:0 -8px 28px rgba(0,0,0,.18);border-radius:16px 16px 0 0;}
   .ctrl-btn{width:46px;height:46px}
   .room-controls{gap:12px;padding:10px}
   .board-toolbar{gap:2px;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;padding:6px 8px;}
@@ -311,11 +314,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   .video-grid{height:100%;}
   /* Mobile: board fills full area */
   #board-area{flex:1 !important;position:relative;}
-  #board-area.student-board #board-canvas{
-    position:absolute !important;
-    top:0 !important; left:0 !important;
-    width:100% !important; height:100% !important;
-  }
 
 }
 @media(max-width:480px){
@@ -513,6 +511,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           </button>
         </div>
 
+        <div class="tb-sep"></div>
+        <div class="tb-group">
+          <input type="file" id="book-file-input" accept="application/pdf,image/*" style="display:none" onchange="handleBookFile(event)">
+          <button class="tb-btn" onclick="document.getElementById('book-file-input').click()" title="Kitob / PDF ochish">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </button>
+        </div>
+        <div class="tb-group" id="book-nav-group" style="display:none;padding:2px 8px;gap:8px;">
+          <button class="tb-btn" onclick="bookPrevPage()" title="Oldingi sahifa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span id="book-page-label" style="font-size:12px;color:var(--text2);white-space:nowrap;">1 / 1</span>
+          <button class="tb-btn" onclick="bookNextPage()" title="Keyingi sahifa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
         <div class="board-actions">
           <button class="board-action-btn" onclick="downloadBoard()">Saqlash</button>
           <button class="board-action-btn danger" onclick="clearBoard()">Tozalash</button>
@@ -524,10 +539,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
 
     <!-- Sidebar -->
-    <div class="room-sidebar">
+    <div class="room-sidebar" id="room-sidebar">
       <div class="sidebar-tabs" id="sidebar-tabs">
-        <div class="stab active" onclick="switchTab('participants')"> Ishtirokchilar</div>
+        <div class="stab active" id="tab-btn-participants" onclick="switchTab('participants')"> Ishtirokchilar</div>
         <div class="stab" onclick="switchTab('chat')"> Chat</div>
+        <button class="sidebar-close-btn" onclick="toggleChatPanel()" aria-label="Yopish">&times;</button>
       </div>
       <div class="stab-panel active" id="tab-participants">
         <div class="part-list" id="part-list">
@@ -562,6 +578,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
       </button>
       <span class="ctrl-lbl">Mikrofon</span>
+    </div>
+    <div class="ctrl-col" id="ctrl-chat-col">
+      <button class="ctrl-btn on" id="btn-chat" onclick="toggleChatPanel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span class="chat-badge" id="chat-badge">0</span>
+      </button>
+      <span class="ctrl-lbl">Chat</span>
     </div>
     <div class="ctrl-col" id="screen-ctrl" style="display:none">
       <button class="ctrl-btn on" id="btn-screen" onclick="toggleScreen()">
@@ -609,8 +632,10 @@ let roomToken = null, myRole = null, myName = null;
 let roomId = null, peerRoomId = null, roomInfo = null;
 let localStream = null, myPeer = null, myPeerId = null;
 let camOn = true, micOn = true, screenSharing = false, screenStream = null;
+let screenSharingPeers = new Set();
 let peers = {}, participantsList = [];
 let chatMessages = [];
+let unreadChatCount = 0;
 let timerInterval = null, startTime = null, syncInterval = null;
 // Recording
 let mediaRecorder = null, recordedChunks = [], isRecording = false;
@@ -679,43 +704,20 @@ let canvasReady = false;
 const canvas = document.getElementById('board-canvas');
 const ctx = canvas.getContext('2d');
 
+// Doska uchun barcha ishtirokchilarda BIR XIL ichki o'lcham (piksellar soni emas,
+// balki "mantiqiy" koordinata maydoni). Shu tufayli chizilgan chiziqlar va
+// skrinshotlar telefon yoki kompyuterda har doim bir xil joyda va bir xil
+// nisbatlarda ko'rinadi — cho'zilib yoki qirqilib qolmaydi.
+const BOARD_W = 1280, BOARD_H = 720;
+
 function resizeCanvas() {
   const area = document.getElementById('board-area');
   if (!area || area.style.display === 'none') return;
-
-  const isStudent = area.classList.contains('student-board');
-  const toolbar   = area.querySelector('.board-toolbar');
-
-  let w, h;
-  if (isStudent) {
-    w = area.offsetWidth;
-    h = area.offsetHeight;
-  } else {
-    const tbH = toolbar ? toolbar.offsetHeight : 0;
-    w = area.offsetWidth;
-    h = area.offsetHeight - tbH;
-  }
-
-  if (w < 10 || h < 10) {
-    setTimeout(resizeCanvas, 80);
-    return;
-  }
-
-  const tmp = document.createElement('canvas');
-  tmp.width  = canvas.width  || w;
-  tmp.height = canvas.height || h;
-  if (canvas.width > 0 && canvas.height > 0) {
-    try { tmp.getContext('2d').drawImage(canvas, 0, 0); } catch(e) {}
-  }
-
-  canvas.width  = w;
-  canvas.height = h;
-
-  ctx.fillStyle = boardBg;
-  ctx.fillRect(0, 0, w, h);
-
-  if (tmp.width > 0 && tmp.height > 0) {
-    try { ctx.drawImage(tmp, 0, 0); } catch(e) {}
+  if (canvas.width !== BOARD_W || canvas.height !== BOARD_H) {
+    canvas.width  = BOARD_W;
+    canvas.height = BOARD_H;
+    ctx.fillStyle = boardBg;
+    ctx.fillRect(0, 0, BOARD_W, BOARD_H);
   }
   canvasReady = true;
 }
@@ -725,6 +727,83 @@ function saveHistory() {
   if (history.length > 50) history.shift();
   redoStack = [];
 }
+
+// ══════════════════════════════════════════════════════════════
+// KITOB / PDF OCHISH (faqat ustoz)
+// ══════════════════════════════════════════════════════════════
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+let currentBookPdf = null, currentBookPage = 1, currentBookNumPages = 1;
+
+async function handleBookFile(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  if (myRole !== 'teacher') return;
+
+  if (myRole === 'teacher') teacherSwitchView('board');
+
+  if (file.type === 'application/pdf') {
+    if (!window.pdfjsLib) { showToast("PDF kutubxonasi yuklanmadi, internetni tekshiring"); return; }
+    showToast('Kitob yuklanmoqda...');
+    try {
+      const buf = await file.arrayBuffer();
+      currentBookPdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      currentBookNumPages = currentBookPdf.numPages;
+      currentBookPage = 1;
+      document.getElementById('book-nav-group').style.display = currentBookNumPages > 1 ? 'flex' : 'none';
+      await renderBookPage(1);
+    } catch (err) {
+      showToast('Kitobni ochib bo\'lmadi: ' + err.message);
+    }
+  } else if (file.type.startsWith('image/')) {
+    currentBookPdf = null;
+    document.getElementById('book-nav-group').style.display = 'none';
+    const img = new Image();
+    img.onload = () => {
+      drawBookImageToBoard(img);
+    };
+    img.src = URL.createObjectURL(file);
+  } else {
+    showToast('Faqat PDF yoki rasm fayllarni ochish mumkin');
+  }
+}
+
+// Berilgan rasmni doskaga (BOARD_W x BOARD_H) markazlashtirib, nisbatini
+// buzmasdan chizadi va barcha o'quvchilarga skrinshot sifatida yuboradi.
+function drawBookImageToBoard(imgOrCanvas, srcW, srcH) {
+  if (!canvasReady) resizeCanvas();
+  const sw = srcW || imgOrCanvas.width, sh = srcH || imgOrCanvas.height;
+  const scale = Math.min(BOARD_W / sw, BOARD_H / sh);
+  const dw = sw * scale, dh = sh * scale;
+  const dx = (BOARD_W - dw) / 2, dy = (BOARD_H - dh) / 2;
+  saveHistory();
+  ctx.fillStyle = boardBg;
+  ctx.fillRect(0, 0, BOARD_W, BOARD_H);
+  ctx.drawImage(imgOrCanvas, dx, dy, dw, dh);
+  try { broadcastBoard({ type: 'snapshot', data: canvas.toDataURL('image/jpeg', 0.8) }); } catch(e) {}
+}
+
+async function renderBookPage(n) {
+  if (!currentBookPdf) return;
+  n = Math.min(Math.max(1, n), currentBookNumPages);
+  currentBookPage = n;
+  const page = await currentBookPdf.getPage(n);
+  const base = page.getViewport({ scale: 1 });
+  const scale = Math.min(BOARD_W / base.width, BOARD_H / base.height) * 2; // 2x - aniqroq (Retina) chizish uchun
+  const viewport = page.getViewport({ scale });
+  const off = document.createElement('canvas');
+  off.width = viewport.width;
+  off.height = viewport.height;
+  await page.render({ canvasContext: off.getContext('2d'), viewport }).promise;
+  drawBookImageToBoard(off);
+  const lbl = document.getElementById('book-page-label');
+  if (lbl) lbl.textContent = currentBookPage + ' / ' + currentBookNumPages;
+}
+
+function bookPrevPage() { if (currentBookPdf) renderBookPage(currentBookPage - 1); }
+function bookNextPage() { if (currentBookPdf) renderBookPage(currentBookPage + 1); }
 
 function undoBoard() {
   if (!history.length) return;
@@ -786,6 +865,7 @@ function setBg(color) {
   document.querySelectorAll('#bg-white,#bg-black,#bg-cream,#bg-blue').forEach(el => el.classList.remove('active'));
   const map = {'#ffffff':'bg-white','#0f1117':'bg-black','#fefce8':'bg-cream','#eff6ff':'bg-blue'};
   if (map[color]) document.getElementById(map[color]).classList.add('active');
+  document.getElementById('board-area').style.background = color;
   if (!canvasReady) return;
   saveHistory();
   const tmp = document.createElement('canvas');
@@ -799,17 +879,18 @@ function setBg(color) {
 
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
-  const scaleX = canvas.width  / r.width;
-  const scaleY = canvas.height / r.height;
-  if (e.touches && e.touches.length > 0) {
-    return {
-      x: (e.touches[0].clientX - r.left) * scaleX,
-      y: (e.touches[0].clientY - r.top)  * scaleY
-    };
-  }
+  // object-fit:contain markazlashtirilgan holda ko'rsatilgani uchun,
+  // haqiqiy "rasm" maydoni r dan kichikroq bo'lishi mumkin (letterbox).
+  const scale = Math.min(r.width / canvas.width, r.height / canvas.height) || 1;
+  const dispW = canvas.width  * scale;
+  const dispH = canvas.height * scale;
+  const offX  = r.left + (r.width  - dispW) / 2;
+  const offY  = r.top  + (r.height - dispH) / 2;
+  const cx = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+  const cy = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
   return {
-    x: (e.clientX - r.left) * scaleX,
-    y: (e.clientY - r.top)  * scaleY
+    x: (cx - offX) / scale,
+    y: (cy - offY) / scale
   };
 }
 
@@ -1269,11 +1350,11 @@ async function toggleScreen() {
       const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
       if (sender) sender.replaceTrack(track);
     });
-    const myTile = document.getElementById('tile-' + myPeerId?.replace(/[^a-z0-9]/gi,'_'));
-    if (myTile) { const v = myTile.querySelector('video'); v.srcObject = new MediaStream([track]); v.play().catch(()=>{}); }
     track.onended = stopScreen;
     screenSharing = true;
     document.getElementById('btn-screen').className = 'ctrl-btn screen-on';
+    broadcastBoard({ type: 'screen_share', active: true, peer: myPeerId });
+    rebuildGrid();
     showToast('Ekran ulashish boshlandi');
   } catch { showToast('Ekran ulashish bekor qilindi'); }
 }
@@ -1288,10 +1369,10 @@ function stopScreen() {
         const sender = p.call?.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
         if (sender) sender.replaceTrack(camTrack);
       });
-      const myTile = document.getElementById('tile-' + myPeerId?.replace(/[^a-z0-9]/gi,'_'));
-      if (myTile) { const v = myTile.querySelector('video'); v.srcObject = localStream; v.play().catch(()=>{}); }
     }
   }
+  broadcastBoard({ type: 'screen_share', active: false, peer: myPeerId });
+  rebuildGrid();
   const sb = document.getElementById('btn-screen');
   if (sb) sb.className = 'ctrl-btn on';
   showToast("Ekran ulashish to'xtatildi");
@@ -1786,11 +1867,11 @@ function rebuildGrid() {
   if (!strip || !stage) return;
 
   const wanted = [
-    { pid: myPeerId, name: myName, role: myRole, stream: localStream, isSelf: true, hasCam: camOn, hasMic: micOn }
+    { pid: myPeerId, name: myName, role: myRole, stream: localStream, isSelf: true, hasCam: camOn, hasMic: micOn, isScreen: screenSharing }
   ];
   Object.entries(peers).forEach(([pid, p]) => {
     const info = participantsList.find(x => x.peer_id === pid) || {};
-    wanted.push({ pid, name: info.name||p.name||'Ishtirokchi', role: info.role||p.role||'student', stream: p.stream, isSelf: false, hasCam: !!p.stream, hasMic: p.micOn !== false });
+    wanted.push({ pid, name: info.name||p.name||'Ishtirokchi', role: info.role||p.role||'student', stream: p.stream, isSelf: false, hasCam: !!p.stream, hasMic: p.micOn !== false, isScreen: screenSharingPeers.has(pid) });
   });
 
   // Spotlightda ko'rsatiladigan ishtirokchini tanlash:
@@ -1810,7 +1891,7 @@ function rebuildGrid() {
     const tileId = 'stile-' + w.pid.replace(/[^a-z0-9]/gi,'_');
     let tile = document.getElementById(tileId);
     if (!tile) {
-      tile = makeTile(w.pid, w.name, w.role, w.stream, w.isSelf, w.hasCam, w.hasMic);
+      tile = makeTile(w.pid, w.name, w.role, w.stream, w.isSelf, w.hasCam, w.hasMic, w.isScreen);
       tile.id = tileId;
       tile.classList.add('stile');
       tile.onclick = () => setSpotlight(w.pid);
@@ -1827,7 +1908,7 @@ function rebuildGrid() {
   let stageTile = document.getElementById(stageTileId);
   if (!stageTile) {
     stage.innerHTML = '';
-    stageTile = makeTile(stageW.pid, stageW.name, stageW.role, stageW.stream, stageW.isSelf, stageW.hasCam, stageW.hasMic);
+    stageTile = makeTile(stageW.pid, stageW.name, stageW.role, stageW.stream, stageW.isSelf, stageW.hasCam, stageW.hasMic, stageW.isScreen);
     stageTile.id = stageTileId;
     stage.appendChild(stageTile);
   } else {
@@ -1863,17 +1944,19 @@ function patchTile(tile, w) {
   }
   const hasVideo = w.stream && w.stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
   tile.classList.toggle('no-cam', !hasVideo);
+  tile.classList.toggle('screen-tile', !!w.isScreen);
   const nameSpan = tile.querySelector('.tile-name');
   if (nameSpan) nameSpan.textContent = w.isSelf ? 'Siz' : (w.name || '...');
 }
 
-function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic) {
+function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic, isScreen) {
   const tile = document.createElement('div');
   const hasVideo = hasCam && stream && stream.getVideoTracks().some(t => t.enabled);
   let cls = 'vtile';
   if (!hasVideo) cls += ' no-cam';
   if (isSelf)  cls += ' self-tile';
   if (role === 'teacher') cls += ' teacher-tile';
+  if (isScreen) cls += ' screen-tile';
   tile.className = cls;
   tile.id = 'tile-' + pid.replace(/[^a-z0-9]/gi, '_');
 
@@ -2068,7 +2151,7 @@ function showRoom() {
     document.getElementById('board-area').classList.add('student-board');
     // O'quvchida "Ishtirokchilar" bo'limi kerak emas (u yerda faqat
     // ustozga tegishli boshqaruv tugmalari bor) — darhol Chat ko'rsatamiz.
-    document.getElementById('sidebar-tabs').style.display = 'none';
+    document.getElementById('tab-btn-participants').style.display = 'none';
     switchTab('chat');
   }
 
@@ -2095,6 +2178,19 @@ function showToast(msg, dur = 3500) {
 function switchTab(name) {
   document.querySelectorAll('.stab').forEach((el,i) => el.classList.toggle('active',['participants','chat'][i]===name));
   document.querySelectorAll('.stab-panel').forEach(el => el.classList.toggle('active', el.id==='tab-'+name));
+  if (name === 'chat') {
+    unreadChatCount = 0;
+    const badge = document.getElementById('chat-badge');
+    if (badge) { badge.classList.remove('show'); badge.textContent = '0'; }
+  }
+}
+
+function toggleChatPanel() {
+  const sb = document.getElementById('room-sidebar');
+  if (!sb) return;
+  const opening = !sb.classList.contains('open');
+  sb.classList.toggle('open');
+  if (opening) switchTab('chat');
 }
 
 function startTimer() {
@@ -2147,8 +2243,19 @@ function setupDataConn(dc, peerId) {
     if (msg.type === 'chat') {
       chatMessages.push({ text: msg.text, sender: msg.sender, time: msg.time || Date.now(), mine: false });
       renderChat();
+      const sb = document.getElementById('room-sidebar');
+      if (sb && !sb.classList.contains('open')) {
+        unreadChatCount++;
+        const badge = document.getElementById('chat-badge');
+        if (badge) { badge.textContent = unreadChatCount > 9 ? '9+' : String(unreadChatCount); badge.classList.add('show'); }
+      }
     }
     if (msg.type === 'snapshot') applySnapshot(msg.data);
+    if (msg.type === 'screen_share') {
+      if (msg.active) { screenSharingPeers.add(msg.peer); spotlightId = msg.peer; }
+      else screenSharingPeers.delete(msg.peer);
+      rebuildGrid();
+    }
     if (msg.type === 'clear') {
       ctx.fillStyle = boardBg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -2156,6 +2263,7 @@ function setupDataConn(dc, peerId) {
     if (msg.type === 'text') applyRemoteText(msg);
     if (msg.type === 'board_bg') {
       boardBg = msg.color;
+      document.getElementById('board-area').style.background = msg.color;
       if (canvasReady) {
         const tmp = document.createElement('canvas');
         tmp.width = canvas.width; tmp.height = canvas.height;
