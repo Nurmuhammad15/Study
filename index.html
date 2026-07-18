@@ -1135,19 +1135,16 @@ async function enterRoom(d) {
   roomId     = d.room.id;
   peerRoomId = d.room.peer_room_id;
 
-  if (myRole === 'student') {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('name-room-badge').textContent = d.room.title || 'Dars';
-    document.getElementById('name-page').style.display = 'flex';
-    setTimeout(() => document.getElementById('name-input').focus(), 150);
-    return;
-  }
-
-  myName = d.user.name;
-  document.getElementById('room-title-text').textContent = roomInfo.title;
-  document.getElementById('screen-ctrl').style.display = '';
-  document.getElementById('copy-link-btn').style.display = '';
-  await getMedia();
+  // Endi ustoz ham, o'quvchi ham darsga kirishdan oldin ismini
+  // yozib tasdiqlaydi (avval ustoz uchun bu qadam o'tkazib yuborilardi).
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('name-room-badge').textContent = d.room.title || 'Dars';
+  document.getElementById('name-page').style.display = 'flex';
+  const inp = document.getElementById('name-input');
+  // Agar tokenda allaqachon ism bo'lsa (masalan, bot orqali kiritilgan
+  // ustoz ismi), uni tayyor holda ko'rsatamiz — xohlasa o'zgartiradi.
+  inp.value = (d.user.name && d.user.name !== 'Oquvchi') ? d.user.name : '';
+  setTimeout(() => { inp.focus(); inp.select(); }, 150);
 }
 
 async function confirmName() {
@@ -1163,6 +1160,10 @@ async function confirmName() {
   document.getElementById('name-page').style.display = 'none';
   document.getElementById('loading').style.display = 'flex';
   document.getElementById('room-title-text').textContent = roomInfo.title;
+  if (myRole === 'teacher') {
+    document.getElementById('screen-ctrl').style.display = '';
+    document.getElementById('copy-link-btn').style.display = '';
+  }
   await getMedia();
 }
 
