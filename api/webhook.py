@@ -181,6 +181,15 @@ def do_newlesson_start(cid):
         cancel_kb()
     )
 
+def do_ask_teacher_name(cid, title):
+    set_state(cid, "waiting_teacher_name", {"title": title})
+    send(cid,
+        f"✅ Mavzu: <b>{title}</b>\n\n"
+        "👨‍🏫 Ismingizni kiriting (o'quvchilarga shu ism ko'rinadi):\n"
+        "<i>Masalan: Alisherov Nurmuhammad</i>",
+        cancel_kb()
+    )
+
 def do_create_room(cid, title, teacher_name, scheduled_at=None):
     clear_state(cid)
     try:
@@ -306,9 +315,16 @@ def handle(update):
     if state == "waiting_title":
         if len(text) < 2:
             send(cid, "❌ Mavzu kamida 2 ta belgi bo'lsin", cancel_kb()); return
-        set_state(cid, "waiting_time", {"title": text, "teacher_name": name})
+        do_ask_teacher_name(cid, text)
+        return
+
+    if state == "waiting_teacher_name":
+        if len(text) < 2:
+            send(cid, "❌ Ism kamida 2 ta belgi bo'lsin", cancel_kb()); return
+        d = st.get("data", {})
+        set_state(cid, "waiting_time", {"title": d.get("title", "Dars"), "teacher_name": text})
         send(cid,
-            f"✅ Mavzu: <b>{text}</b>\n\n"
+            f"✅ Ism: <b>{text}</b>\n\n"
             "🕐 Dars vaqtini kiriting (ixtiyoriy):\n"
             "<i>Masalan: 15:30</i>",
             time_kb()
