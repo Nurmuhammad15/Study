@@ -17,15 +17,25 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; connect-src 'self' https://0.peerjs.com wss://0.peerjs.com https://peerserver-production-dd83.up.railway.app wss://peerserver-production-dd83.up.railway.app https://api.telegram.org https://*.neon.tech https://cdnjs.cloudflare.com https://api.anthropic.com; media-src 'self' blob: mediastream:; img-src 'self' data: blob:; frame-ancestors 'none'"
+          "value": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; connect-src 'self' https://peerserver-0vbb.onrender.com wss://peerserver-0vbb.onrender.com https://0.peerjs.com wss://0.peerjs.com https://api.telegram.org https://*.neon.tech https://cdnjs.cloudflare.com https://api.anthropic.com; media-src 'self' blob: mediastream:; img-src 'self' data: blob:; frame-ancestors 'none'"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron-lesson",
+      "schedule": "0 17 * * 3,6"
     }
   ],
   "rewrites": [
     {
       "source": "/api/webhook",
       "destination": "/api/webhook.py"
+    },
+    {
+      "source": "/api/cron-lesson",
+      "destination": "/api/cron-lesson.py"
     },
     {
       "source": "/api/room",
