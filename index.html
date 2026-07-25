@@ -1528,7 +1528,28 @@ function getOrCreatePC(peerId, isInitiator) {
   let stuckSince = null;
   pc.onconnectionstatechange = () => {
     const cs = pc.connectionState;
+    console.log('[PC]', peerId, 'connectionState =', cs);
+    if (cs === 'connected') {
+      // Qaysi turdagi ICE kandidat orqali ulanganini aniqlaymiz —
+      // bu diagnostika uchun juda muhim (host = to'g'ridan-to'g'ri,
+      // srflx = STUN orqali, relay = TURN orqali).
+      pc.getStats().then(stats => {
+        stats.forEach(r => {
+          if (r.type === 'candidate-pair' && r.state === 'succeeded') {
+            const local  = stats.get(r.localCandidateId);
+            const remote = stats.get(r.remoteCandidateId);
+            console.log('[ICE]', peerId, 'ulanish turi -> local:', local?.candidateType, 'remote:', remote?.candidateType);
+            if (local?.candidateType === 'relay' || remote?.candidateType === 'relay') {
+              console.log('[ICE]', peerId, 'TURN (relay) orqali ulandi');
+            } else {
+              console.log('[ICE]', peerId, 'to\'g\'ridan-to\'g\'ri (P2P) ulandi');
+            }
+          }
+        });
+      }).catch(() => {});
+    }
     if (cs === 'failed' || cs === 'disconnected') {
+      console.warn('[PC]', peerId, cs, '-> ICE candidates yig\'ilishi:', pc.iceGatheringState, ', ICE holati:', pc.iceConnectionState);
       if (!stuckSince) stuckSince = Date.now();
       setTimeout(() => {
         if (!stuckSince || pc.connectionState === 'connected') return;
@@ -1541,6 +1562,12 @@ function getOrCreatePC(peerId, isInitiator) {
     } else {
       stuckSince = null;
     }
+  };
+  pc.oniceconnectionstatechange = () => {
+    console.log('[ICE]', peerId, 'iceConnectionState =', pc.iceConnectionState);
+  };
+  pc.onicegatheringstatechange = () => {
+    console.log('[ICE]', peerId, 'iceGatheringState =', pc.iceGatheringState);
   };
 
   if (isInitiator) {
