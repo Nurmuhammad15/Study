@@ -140,6 +140,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .strip-arrow:hover{background:rgba(255,255,255,.2)}
 .stile{width:150px;height:96px;flex-shrink:0;cursor:pointer;}
 .stile.spotlighted{outline:2px solid #22c55e !important;outline-offset:-2px;}
+.stile.speaking:not(.spotlighted){outline:2px solid #3b82f6;outline-offset:-2px;box-shadow:0 0 0 2px rgba(59,130,246,.25);}
+.vtile.speaking:not(.stile){outline:2px solid #3b82f6;outline-offset:-2px;}
 .stile .vtile-av{font-size:20px}
 .main-stage{flex:1;position:relative;background:#181c2a;overflow:hidden;min-height:0;}
 .main-stage .vtile{position:absolute;inset:0;border-radius:0;}
@@ -162,6 +164,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* WHITEBOARD AREA */
 #board-area{display:none;flex:1;flex-direction:column;background:#fff;overflow:hidden;}
+/* O'quvchi doskani faqat ko'radi - toolbar yashirin */
 #board-area.student-board .board-toolbar{display:none !important;}
 #board-area.student-board #board-canvas{ pointer-events:none;cursor:default; }
 #board-area.student-board{position:relative;}
@@ -298,10 +301,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   .tb-size input[type=range]{width:50px}
   .tb-label{display:none}
   .tb-sep{margin:0 2px}
+  /* Mobile: room body full height */
   .room-body{flex:1;min-height:0;}
   #video-view{height:100%;}
   .video-grid{height:100%;}
+  /* Mobile: board fills full area */
   #board-area{flex:1 !important;position:relative;}
+
 }
 @media(max-width:480px){
   .room-header{padding:8px 10px;}
@@ -399,6 +405,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         <button class="view-tab active" id="tab-video-btn" onclick="teacherSwitchView('video')"> Video</button>
         <button class="view-tab" id="tab-board-btn" onclick="teacherSwitchView('board')"> Doska</button>
       </div>
+      <!-- O'quvchi uchun ko'rsatkish (faqat read-only) -->
       <div id="student-view-label" style="display:none;font-size:12px;color:var(--text3);background:var(--bg2);padding:5px 12px;border-radius:8px;border:1px solid var(--border);">
         <span id="student-view-text">Video</span>
       </div>
@@ -552,6 +559,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
   <!-- Controls -->
   <div class="room-controls">
+    <!-- Ustoz controls -->
     <div class="ctrl-col" id="ctrl-cam-col">
       <button class="ctrl-btn on" id="btn-cam" onclick="toggleCam()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
@@ -577,18 +585,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       </button>
       <span class="ctrl-lbl">Ekran</span>
     </div>
+    <!-- Yozib olish (faqat ustoz) -->
     <div class="ctrl-col" id="ctrl-rec-col" style="display:none">
       <button class="ctrl-btn rec" id="btn-rec" onclick="toggleRecording()">
         <span class="rec-dot" id="rec-dot" style="background:#ef4444;width:14px;height:14px;border-radius:50%;display:inline-block;"></span>
       </button>
       <span class="ctrl-lbl" id="rec-lbl">Yozish</span>
     </div>
+    <!-- Ustoz: dars yakunlash tugmasi -->
     <div class="ctrl-col" id="ctrl-end-teacher" style="display:none">
       <button class="ctrl-btn end" onclick="leaveRoom()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15.46l-5.27-.61a2 2 0 0 0-1.69.55l-2.2 2.2a15 15 0 0 1-6.59-6.59l2.2-2.2a2 2 0 0 0 .55-1.69L7.4 1.18A2 2 0 0 0 5.21.06L1.08.96A2 2 0 0 0 0 2.96C0 13.13 8.87 22 19.04 22a2 2 0 0 0 1.96-1.06l.9-4.13a2 2 0 0 0-1.1-2.21z"/></svg>
       </button>
       <span class="ctrl-lbl">Tugatish</span>
     </div>
+    <!-- O'quvchi: faqat chiqish -->
     <div class="ctrl-col" id="ctrl-end-student" style="display:none">
       <button class="ctrl-btn end" onclick="leaveRoom()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15.46l-5.27-.61a2 2 0 0 0-1.69.55l-2.2 2.2a15 15 0 0 1-6.59-6.59l2.2-2.2a2 2 0 0 0 .55-1.69L7.4 1.18A2 2 0 0 0 5.21.06L1.08.96A2 2 0 0 0 0 2.96C0 13.13 8.87 22 19.04 22a2 2 0 0 0 1.96-1.06l.9-4.13a2 2 0 0 0-1.1-2.21z"/></svg>
@@ -608,61 +619,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 <script>
 // ══════════════════════════════════════════════════════════════
-// OPTIMALLASHTIRILGAN SOZLAMALAR
-// ══════════════════════════════════════════════════════════════
-const CONFIG = {
-  SIGNAL_POLL_INTERVAL: 5000,
-  HEARTBEAT_INTERVAL: 15000,
-  VIDEO_WIDTH: 320,
-  VIDEO_HEIGHT: 240,
-  VIDEO_FRAMERATE: 15,
-  MAX_BITRATE: 300000,
-  BOARD_SYNC_INTERVAL: 100,
-  BOARD_BATCH_SIZE: 5,
-  SNAPSHOT_QUALITY: 0.5,
-  MAX_RETRANSMITS: 3
-};
-
-// ══════════════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════════════
 let roomToken = null, myRole = null, myName = null;
-let roomId = null, roomInfo = null;
-let localStream = null;
+let roomId = null, peerRoomId = null, roomInfo = null;
+let localStream = null, myPeer = null, myPeerId = null;
 let camOn = true, micOn = true, screenSharing = false, screenStream = null;
 let screenSharingPeers = new Set();
-let peers = {};
-let participantsList = [];
+let peers = {}, participantsList = [];
 let chatMessages = [];
 let unreadChatCount = 0;
-let timerInterval = null, startTime = null;
+let timerInterval = null, startTime = null, syncInterval = null;
+// Recording
 let mediaRecorder = null, recordedChunks = [], isRecording = false;
 let recordingStream = null;
-let myRoomPeerId = null;
-let dataChannels = {};
-let signalPollInterval = null;
-let lastSignalCheck = 0;
-let heartbeatInterval = null;
-let heartbeatFailed = 0;
 
 // ══════════════════════════════════════════════════════════════
-// ICE SERVER (OPTIMALLASHTIRILGAN)
-// ══════════════════════════════════════════════════════════════
-const ICE_SERVERS = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' }
-  ],
-  iceTransportPolicy: 'all',
-  bundlePolicy: 'max-bundle',
-  rtcpMuxPolicy: 'require'
-};
-
-// ══════════════════════════════════════════════════════════════
-// VIEW SWITCH
+// VIEW SWITCH (Video / Board)
 // ══════════════════════════════════════════════════════════════
 function switchView(view) {
   const vv  = document.getElementById('video-view');
@@ -700,7 +673,7 @@ function teacherSwitchView(view) {
   if (view === 'board' && canvasReady && canvas.width > 0) {
     setTimeout(() => {
       try {
-        const snap = canvas.toDataURL('image/jpeg', CONFIG.SNAPSHOT_QUALITY);
+        const snap = canvas.toDataURL('image/jpeg', 0.7);
         broadcastBoard({ type: 'snapshot', data: snap });
       } catch(e) {}
     }, 300);
@@ -724,6 +697,10 @@ let canvasReady = false;
 const canvas = document.getElementById('board-canvas');
 const ctx = canvas.getContext('2d');
 
+// Doska uchun barcha ishtirokchilarda BIR XIL ichki o'lcham (piksellar soni emas,
+// balki "mantiqiy" koordinata maydoni). Shu tufayli chizilgan chiziqlar va
+// skrinshotlar telefon yoki kompyuterda har doim bir xil joyda va bir xil
+// nisbatlarda ko'rinadi — cho'zilib yoki qirqilib qolmaydi.
 const BOARD_W = 1280, BOARD_H = 720;
 
 function resizeCanvas() {
@@ -744,7 +721,9 @@ function saveHistory() {
   redoStack = [];
 }
 
-// ── Kitob / PDF ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// KITOB / PDF OCHISH (faqat ustoz)
+// ══════════════════════════════════════════════════════════════
 if (window.pdfjsLib) {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
@@ -755,6 +734,7 @@ async function handleBookFile(e) {
   e.target.value = '';
   if (!file) return;
   if (myRole !== 'teacher') return;
+
   if (myRole === 'teacher') teacherSwitchView('board');
 
   if (file.type === 'application/pdf') {
@@ -774,13 +754,17 @@ async function handleBookFile(e) {
     currentBookPdf = null;
     document.getElementById('book-nav-group').style.display = 'none';
     const img = new Image();
-    img.onload = () => { drawBookImageToBoard(img); };
+    img.onload = () => {
+      drawBookImageToBoard(img);
+    };
     img.src = URL.createObjectURL(file);
   } else {
     showToast('Faqat PDF yoki rasm fayllarni ochish mumkin');
   }
 }
 
+// Berilgan rasmni doskaga (BOARD_W x BOARD_H) markazlashtirib, nisbatini
+// buzmasdan chizadi va barcha o'quvchilarga skrinshot sifatida yuboradi.
 function drawBookImageToBoard(imgOrCanvas, srcW, srcH) {
   if (!canvasReady) resizeCanvas();
   const sw = srcW || imgOrCanvas.width, sh = srcH || imgOrCanvas.height;
@@ -791,7 +775,7 @@ function drawBookImageToBoard(imgOrCanvas, srcW, srcH) {
   ctx.fillStyle = boardBg;
   ctx.fillRect(0, 0, BOARD_W, BOARD_H);
   ctx.drawImage(imgOrCanvas, dx, dy, dw, dh);
-  try { broadcastBoard({ type: 'snapshot', data: canvas.toDataURL('image/jpeg', CONFIG.SNAPSHOT_QUALITY) }); } catch(e) {}
+  try { broadcastBoard({ type: 'snapshot', data: canvas.toDataURL('image/jpeg', 0.8) }); } catch(e) {}
 }
 
 async function renderBookPage(n) {
@@ -800,7 +784,7 @@ async function renderBookPage(n) {
   currentBookPage = n;
   const page = await currentBookPdf.getPage(n);
   const base = page.getViewport({ scale: 1 });
-  const scale = Math.min(BOARD_W / base.width, BOARD_H / base.height) * 2;
+  const scale = Math.min(BOARD_W / base.width, BOARD_H / base.height) * 2; // 2x - aniqroq (Retina) chizish uchun
   const viewport = page.getViewport({ scale });
   const off = document.createElement('canvas');
   off.width = viewport.width;
@@ -888,6 +872,8 @@ function setBg(color) {
 
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
+  // object-fit:contain markazlashtirilgan holda ko'rsatilgani uchun,
+  // haqiqiy "rasm" maydoni r dan kichikroq bo'lishi mumkin (letterbox).
   const scale = Math.min(r.width / canvas.width, r.height / canvas.height) || 1;
   const dispW = canvas.width  * scale;
   const dispH = canvas.height * scale;
@@ -895,7 +881,10 @@ function getPos(e) {
   const offY  = r.top  + (r.height - dispH) / 2;
   const cx = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
   const cy = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
-  return { x: (cx - offX) / scale, y: (cy - offY) / scale };
+  return {
+    x: (cx - offX) / scale,
+    y: (cy - offY) / scale
+  };
 }
 
 function drawShape(x, y) {
@@ -949,7 +938,6 @@ function placeTextInput(x, y) {
   ti.focus();
   textActive = true;
 }
-
 function commitText() {
   const ti = document.getElementById('board-text-input');
   if (!ti.value.trim()) { ti.style.display = 'none'; textActive = false; return; }
@@ -968,7 +956,6 @@ function commitText() {
   ti.value = '';
   textActive = false;
 }
-
 function handleTextInput(e) {
   if (e.key === 'Escape') { document.getElementById('board-text-input').style.display = 'none'; textActive = false; }
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitText(); }
@@ -1025,7 +1012,7 @@ canvas.addEventListener('mouseup', e => {
   drawing = false;
   if (tool !== 'pen' && tool !== 'eraser') {
     drawShape(...Object.values(getPos(e)));
-    queueStroke({op:'shape', patch: canvas.toDataURL('image/jpeg', CONFIG.SNAPSHOT_QUALITY)});
+    queueStroke({op:'shape', patch: canvas.toDataURL('image/jpeg',0.6)});
   }
 });
 canvas.addEventListener('mouseleave', () => { drawing = false; });
@@ -1058,395 +1045,6 @@ window.addEventListener('resize', () => {
 function initCanvas() {
   canvasReady = false;
   resizeCanvas();
-}
-
-// ══════════════════════════════════════════════════════════════
-// BOARD SYNC (OPTIMALLASHTIRILGAN)
-// ══════════════════════════════════════════════════════════════
-let boardSyncBuf = [];
-let syncTimer = null;
-let lastSyncTime = 0;
-
-function queueStroke(data) {
-  boardSyncBuf.push(data);
-  const now = Date.now();
-  if (boardSyncBuf.length >= CONFIG.BOARD_BATCH_SIZE || 
-      (boardSyncBuf.length > 0 && now - lastSyncTime >= CONFIG.BOARD_SYNC_INTERVAL)) {
-    flushBoardBuffer();
-  } else if (!syncTimer) {
-    syncTimer = setTimeout(flushBoardBuffer, CONFIG.BOARD_SYNC_INTERVAL);
-  }
-}
-
-function flushBoardBuffer() {
-  if (boardSyncBuf.length) {
-    broadcastBoard({ type: 'stroke', points: boardSyncBuf.splice(0) });
-    lastSyncTime = Date.now();
-  }
-  syncTimer = null;
-}
-
-function applyRemoteStroke(msg) {
-  if (!msg.points) return;
-  msg.points.forEach(p => {
-    ctx.strokeStyle = p.color || '#1a1a1a';
-    ctx.lineWidth   = p.size  || 3;
-    ctx.lineCap     = 'round';
-    ctx.lineJoin    = 'round';
-    if (p.op === 'begin') {
-      ctx.beginPath(); ctx.moveTo(p.x, p.y);
-    } else if (p.op === 'move') {
-      if (p.eraser) {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.lineTo(p.x, p.y); ctx.stroke();
-        ctx.globalCompositeOperation = 'source-over';
-      } else {
-        ctx.lineTo(p.x, p.y); ctx.stroke();
-      }
-    } else if (p.op === 'shape') {
-      const img = new Image();
-      img.onload = () => {
-        if (canvas.width < 10) return;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      };
-      img.src = p.patch;
-    }
-  });
-}
-
-function applyRemoteText(msg) {
-  ctx.fillStyle = msg.color || '#1a1a1a';
-  ctx.font = (msg.fontSize || 16) + 'px -apple-system, sans-serif';
-  const lines = (msg.text || '').split('\n');
-  const lh = (msg.fontSize || 16) * 1.3;
-  lines.forEach((line, i) => ctx.fillText(line, msg.x, msg.y + lh * (i + 1)));
-}
-
-function applySnapshot(dataUrl) {
-  const img = new Image();
-  img.onload = () => {
-    if (canvas.width < 10 || !canvasReady) {
-      setTimeout(() => applySnapshot(dataUrl), 200); return;
-    }
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  };
-  img.src = dataUrl;
-}
-
-// ══════════════════════════════════════════════════════════════
-// SIGNALING VIA SERVER (OPTIMALLASHTIRILGAN)
-// ══════════════════════════════════════════════════════════════
-async function sendSignal(peerId, signal) {
-  try {
-    await fetch('/api/room?action=signal', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Room-Token': roomToken
-      },
-      body: JSON.stringify({ peer_id: peerId, from_peer_id: myRoomPeerId, signal })
-    });
-  } catch(e) { console.warn('sendSignal error:', e); }
-}
-
-async function checkSignals() {
-  const now = Date.now();
-  if (now - lastSignalCheck < CONFIG.SIGNAL_POLL_INTERVAL) return;
-  lastSignalCheck = now;
-  
-  try {
-    const r = await fetch(`/api/room?action=signals&peer_id=${myRoomPeerId}`, {
-      headers: { 'X-Room-Token': roomToken }
-    });
-    const d = await r.json();
-    if (d.signals && d.signals.length > 0) {
-      const signalIds = [];
-      for (const sig of d.signals) {
-        signalIds.push(sig.id);
-        await handleIncomingSignal(sig.from_peer_id, sig.signal);
-      }
-      if (signalIds.length) {
-        await fetch('/api/room?action=consume_signals', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Room-Token': roomToken
-          },
-          body: JSON.stringify({ signal_ids: signalIds })
-        });
-      }
-    }
-  } catch(e) { console.warn('checkSignals error:', e); }
-}
-
-function startSignaling() {
-  signalPollInterval = setInterval(checkSignals, CONFIG.SIGNAL_POLL_INTERVAL);
-}
-
-function startHeartbeat() {
-  heartbeatInterval = setInterval(async () => {
-    try {
-      await fetch('/api/room?action=heartbeat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Room-Token': roomToken
-        },
-        body: JSON.stringify({ peer_id: myRoomPeerId })
-      });
-      heartbeatFailed = 0;
-    } catch(e) {
-      heartbeatFailed++;
-      if (heartbeatFailed > 3) {
-        heartbeatFailed = 0;
-        showToast("Ulanish beqaror, qayta ulanmoqda...");
-        await joinRoomServer();
-      }
-    }
-  }, CONFIG.HEARTBEAT_INTERVAL);
-}
-
-async function handleIncomingSignal(fromPeerId, signal) {
-  try {
-    if (signal.type === 'offer') {
-      if (!peers[fromPeerId] || !peers[fromPeerId].pc) {
-        const pc = createPeerConnection(fromPeerId);
-        peers[fromPeerId] = { pc, stream: null, name: '...', role: 'student', micOn: true, camOn: true };
-        pc.ondatachannel = (event) => {
-          setupDataChannel(event.channel, fromPeerId);
-          dataChannels[fromPeerId] = event.channel;
-        };
-      }
-      await peers[fromPeerId].pc.setRemoteDescription(new RTCSessionDescription(signal.offer));
-      const answer = await peers[fromPeerId].pc.createAnswer();
-      await peers[fromPeerId].pc.setLocalDescription(answer);
-      await sendSignal(fromPeerId, { type: 'answer', answer });
-      
-    } else if (signal.type === 'answer') {
-      if (peers[fromPeerId] && peers[fromPeerId].pc) {
-        await peers[fromPeerId].pc.setRemoteDescription(new RTCSessionDescription(signal.answer));
-      }
-    } else if (signal.type === 'candidate') {
-      if (peers[fromPeerId] && peers[fromPeerId].pc) {
-        try {
-          await peers[fromPeerId].pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-        } catch(e) {}
-      }
-    }
-  } catch(e) { console.warn('handleIncomingSignal error:', e); }
-}
-
-// ══════════════════════════════════════════════════════════════
-// WEBRTC
-// ══════════════════════════════════════════════════════════════
-function createPeerConnection(peerId) {
-  const pc = new RTCPeerConnection(ICE_SERVERS);
-  
-  if (localStream) {
-    // Video sender - bitrate cheklangan
-    const videoSender = pc.addTransceiver('video', {
-      direction: 'sendrecv',
-      sendEncodings: [{
-        maxBitrate: CONFIG.MAX_BITRATE,
-        maxFramerate: CONFIG.VIDEO_FRAMERATE
-      }]
-    });
-    
-    const audioSender = pc.addTransceiver('audio', {
-      direction: 'sendrecv',
-      sendEncodings: [{ maxBitrate: 32000 }]
-    });
-    
-    localStream.getTracks().forEach(track => {
-      if (track.kind === 'video') {
-        videoSender.sender.replaceTrack(track);
-      } else if (track.kind === 'audio') {
-        audioSender.sender.replaceTrack(track);
-      }
-    });
-  }
-  
-  pc.ontrack = (event) => {
-    if (event.streams && event.streams[0]) {
-      handleRemoteStream(peerId, event.streams[0]);
-    }
-  };
-  
-  pc.onicecandidate = (event) => {
-    if (event.candidate) {
-      sendSignal(peerId, { type: 'candidate', candidate: event.candidate });
-    }
-  };
-  
-  pc.onconnectionstatechange = () => {
-    if (pc.connectionState === 'connected') {
-      if (!dataChannels[peerId]) {
-        try {
-          const dc = pc.createDataChannel('board', {
-            ordered: false,
-            maxRetransmits: CONFIG.MAX_RETRANSMITS
-          });
-          setupDataChannel(dc, peerId);
-          dataChannels[peerId] = dc;
-        } catch(e) {}
-      }
-    } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-      setTimeout(() => {
-        if (peers[peerId] && peers[peerId].pc) {
-          reconnectToPeer(peerId);
-        }
-      }, 3000);
-    }
-  };
-  
-  return pc;
-}
-
-function setupDataChannel(dc, peerId) {
-  dataChannels[peerId] = dc;
-  
-  dc.onopen = () => {
-    if (canvasReady && canvas.width > 0) {
-      try {
-        dc.send(JSON.stringify({
-          type: 'snapshot',
-          data: canvas.toDataURL('image/jpeg', CONFIG.SNAPSHOT_QUALITY)
-        }));
-      } catch(e) {}
-    }
-    const currentView = document.getElementById('board-area').classList.contains('active') ? 'board' : 'video';
-    try {
-      dc.send(JSON.stringify({ type: 'view_switch', view: currentView }));
-    } catch(e) {}
-  };
-  
-  dc.onmessage = (e) => {
-    try {
-      const msg = JSON.parse(e.data);
-      handleBoardMessage(msg);
-    } catch(e) {}
-  };
-  
-  dc.onclose = () => {
-    delete dataChannels[peerId];
-  };
-}
-
-function handleBoardMessage(msg) {
-  if (!msg || !msg.type) return;
-  
-  if (msg.type === 'stroke') {
-    applyRemoteStroke(msg);
-  } else if (msg.type === 'chat') {
-    chatMessages.push({ text: msg.text, sender: msg.sender, time: msg.time || Date.now(), mine: false });
-    renderChat();
-    const sb = document.getElementById('room-sidebar');
-    if (sb && !sb.classList.contains('open')) {
-      unreadChatCount++;
-      const badge = document.getElementById('chat-badge');
-      if (badge) { badge.textContent = unreadChatCount > 9 ? '9+' : String(unreadChatCount); badge.classList.add('show'); }
-    }
-  } else if (msg.type === 'snapshot') {
-    applySnapshot(msg.data);
-  } else if (msg.type === 'screen_share') {
-    if (msg.active) { screenSharingPeers.add(msg.peer); spotlightId = msg.peer; }
-    else screenSharingPeers.delete(msg.peer);
-    rebuildGrid();
-  } else if (msg.type === 'clear') {
-    ctx.fillStyle = boardBg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else if (msg.type === 'text') {
-    applyRemoteText(msg);
-  } else if (msg.type === 'board_bg') {
-    boardBg = msg.color;
-    document.getElementById('board-area').style.background = msg.color;
-    if (canvasReady) {
-      const tmp = document.createElement('canvas');
-      tmp.width = canvas.width; tmp.height = canvas.height;
-      tmp.getContext('2d').drawImage(canvas, 0, 0);
-      ctx.fillStyle = msg.color;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(tmp, 0, 0);
-    }
-  } else if (msg.type === 'view_switch') {
-    switchView(msg.view);
-    if (msg.view === 'board') {
-      setTimeout(() => { canvasReady = false; resizeCanvas(); }, 150);
-    }
-  } else if (msg.type === 'mic_changed') {
-    const pid = msg.peerId;
-    if (pid && peers[pid]) { peers[pid].micOn = !!msg.micOn; rebuildGrid(); }
-  } else if (msg.type === 'cam_changed') {
-    const pid = msg.peerId;
-    if (pid && peers[pid]) { peers[pid].camOn = !!msg.camOn; rebuildGrid(); }
-  } else if (msg.type === 'kick') {
-    const bar = document.getElementById('student-audio-bar');
-    if (bar) bar.classList.remove('show');
-    showKickedScreen(msg.reason || 'Ustoz tomonidan chiqarildi');
-  } else if (msg.type === 'promote') {
-    myRole = 'teacher';
-    showToast('Sizga ustoz huquqi berildi!');
-    document.getElementById('view-tabs-wrap').style.display = '';
-    document.getElementById('student-view-label').style.display = 'none';
-    document.getElementById('screen-ctrl').style.display = '';
-    document.getElementById('ctrl-end-teacher').style.display = '';
-    document.getElementById('ctrl-end-student').style.display = 'none';
-    document.getElementById('board-area').classList.remove('student-board');
-    document.getElementById('board-area').classList.add('teacher-board');
-    updateParticipants();
-  }
-}
-
-function broadcastBoard(msg) {
-  Object.values(dataChannels).forEach(dc => {
-    if (dc && dc.readyState === 'open') {
-      try { dc.send(JSON.stringify(msg)); } catch(e) {}
-    }
-  });
-}
-
-async function connectToPeer(peerId) {
-  if (peerId === myRoomPeerId) return;
-  if (peers[peerId] && peers[peerId].pc) {
-    const state = peers[peerId].pc.connectionState;
-    if (state === 'connected' || state === 'connecting') return;
-  }
-  
-  try {
-    if (myRole === 'student' && (!localStream || localStream.getTracks().length === 0)) {
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: CONFIG.VIDEO_WIDTH }, height: { ideal: CONFIG.VIDEO_HEIGHT } },
-          audio: true
-        });
-        camOn = true; micOn = true;
-        updateBtnState(); rebuildGrid();
-      } catch(e) {
-        try {
-          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          camOn = false; micOn = true;
-          updateBtnState(); rebuildGrid();
-        } catch(e2) {}
-      }
-    }
-    
-    const pc = createPeerConnection(peerId);
-    peers[peerId] = { pc, stream: null, name: '...', role: 'student', micOn: true, camOn: true };
-    
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    await sendSignal(peerId, { type: 'offer', offer });
-    
-  } catch(e) { console.warn('connectToPeer error:', e); }
-}
-
-async function reconnectToPeer(peerId) {
-  if (peers[peerId]) {
-    try { peers[peerId].pc.close(); } catch(e) {}
-    delete peers[peerId];
-    delete dataChannels[peerId];
-  }
-  setTimeout(() => connectToPeer(peerId), 1000);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1532,11 +1130,16 @@ async function enterRoom(d) {
   roomInfo   = d.room;
   myRole     = myRole || d.user.role;
   roomId     = d.room.id;
+  peerRoomId = d.room.peer_room_id;
 
+  // Endi ustoz ham, o'quvchi ham darsga kirishdan oldin ismini
+  // yozib tasdiqlaydi (avval ustoz uchun bu qadam o'tkazib yuborilardi).
   document.getElementById('loading').style.display = 'none';
   document.getElementById('name-room-badge').textContent = d.room.title || 'Dars';
   document.getElementById('name-page').style.display = 'flex';
   const inp = document.getElementById('name-input');
+  // Agar tokenda allaqachon ism bo'lsa (masalan, bot orqali kiritilgan
+  // ustoz ismi), uni tayyor holda ko'rsatamiz — xohlasa o'zgartiradi.
   inp.value = (d.user.name && d.user.name !== 'Oquvchi') ? d.user.name : '';
   setTimeout(() => { inp.focus(); inp.select(); }, 150);
 }
@@ -1562,17 +1165,13 @@ async function confirmName() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// MEDIA (OPTIMALLASHTIRILGAN)
+// MEDIA
 // ══════════════════════════════════════════════════════════════
 async function getMedia() {
+  // 🔥 HAR DOIM KAMERA VA MIKROFON SO'RAYMIZ (o'quvchi uchun ham)
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        width: { ideal: CONFIG.VIDEO_WIDTH },
-        height: { ideal: CONFIG.VIDEO_HEIGHT },
-        frameRate: { ideal: CONFIG.VIDEO_FRAMERATE },
-        facingMode: { ideal: 'user' }
-      },
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: 'user' } },
       audio: {
         echoCancellation: { ideal: true },
         noiseSuppression: { ideal: true },
@@ -1584,19 +1183,24 @@ async function getMedia() {
     micOn = true;
     localStream.getAudioTracks().forEach(t => { t.enabled = true; });
   } catch(e1) {
-    console.warn('Video+audio failed:', e1.name);
+    console.warn('Video+audio failed:', e1.name, e1.message);
     try {
+      // 🔥 Fallback #1: eng oddiy so'rov — hech qanday qattiq (exact) cheklovsiz,
+      // chunki ba'zi kompyuter kamera/mikrofonlari facingMode yoki AEC o'chirishni
+      // qo'llab-quvvatlamaydi va "exact" cheklov butun so'rovni yiqitadi.
       localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       camOn = localStream.getVideoTracks().length > 0;
       micOn = localStream.getAudioTracks().length > 0;
       if (!camOn) showToast('Kamera ruxsat berilmagan — faqat mikrofon');
     } catch(e1b) {
+      console.warn('Simple video+audio failed:', e1b.name, e1b.message);
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
         camOn = false;
         micOn = true;
         showToast('Kamera ruxsat berilmagan — faqat mikrofon');
       } catch(e2) {
+        console.warn('Audio only failed:', e2.name);
         localStream = new MediaStream();
         camOn = false;
         micOn = false;
@@ -1605,109 +1209,506 @@ async function getMedia() {
     }
   }
   updateBtnState();
-  await joinRoomServer();
+  setupSpeakingDetection('local', localStream);
+  startPeer();
 }
 
-async function joinRoomServer() {
+async function requestCamAccess() {
   try {
-    myRoomPeerId = (myRole === 'teacher' ? 'tr-' : 'st-') + roomId + '-' + Math.random().toString(36).slice(2,8);
-    
-    const r = await fetch('/api/room?action=join', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Room-Token': roomToken
-      },
-      body: JSON.stringify({ peer_id: myRoomPeerId, name: myName })
-    });
-    const d = await r.json();
-    if (d.ok) {
-      myPeerId = myRoomPeerId;
-      handleParticipants(d.participants || []);
-      showRoom();
-      startTimer();
-      startSignaling();
-      startHeartbeat();
-      
-      setTimeout(() => {
-        participantsList.forEach(p => {
-          if (p.peer_id !== myRoomPeerId) {
-            setTimeout(() => connectToPeer(p.peer_id), 500);
-          }
-        });
-      }, 1000);
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: 'user' } }
+      });
+    } catch(eInner) {
+      // Ba'zi kompyuter kameralari facingMode'ni umuman qo'llab-quvvatlamaydi
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
     }
+    const vTrack = stream.getVideoTracks()[0];
+    if (!vTrack) return;
+
+    localStream.getVideoTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
+    localStream.addTrack(vTrack);
+
+    for (const p of Object.values(peers)) {
+      if (!p.pc) continue;
+      const pc = p.pc;
+      const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+      try {
+        if (sender) { await sender.replaceTrack(vTrack); limitVideoBitrate(sender, 450); }
+        else        { limitVideoBitrate(pc.addTrack(vTrack, localStream), 450); }
+      } catch(e) { console.warn('cam track replace:', e); }
+    }
+
+    camOn = true;
+    broadcastBoard({ type: 'cam_changed', peerId: myPeerId, camOn: true });
+    updateBtnState();
+    rebuildGrid();
+    showToast('Kamera yoqildi');
   } catch(e) {
-    console.warn('joinRoomServer error:', e);
+    showToast('Kamera ruxsati berilmadi: ' + e.message);
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// PARTICIPANTS HANDLING
-// ══════════════════════════════════════════════════════════════
-function handleParticipants(list) {
-  participantsList = list;
-  
-  list.forEach(p => {
-    if (p.peer_id === myRoomPeerId) return;
-    if (peers[p.peer_id]) {
-      peers[p.peer_id].name = p.name || peers[p.peer_id].name;
-      peers[p.peer_id].role = p.role || peers[p.peer_id].role;
-    }
-    const ex = peers[p.peer_id];
-    if (!ex || !ex.pc || ex.pc.connectionState === 'failed' || ex.pc.connectionState === 'closed') {
-      if (myRoomPeerId < p.peer_id) {
-        setTimeout(() => connectToPeer(p.peer_id), 500);
+async function toggleCam() {
+  if (!camOn && localStream.getVideoTracks().length === 0) {
+    await requestCamAccess();
+    return;
+  }
+  camOn = !camOn;
+  localStream.getVideoTracks().forEach(t => { t.enabled = camOn; });
+
+  const updateSenders = async () => {
+    for (const p of Object.values(peers)) {
+      if (!p.pc) continue;
+      const pc = p.pc;
+      const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+      if (sender) {
+        const vTrack = localStream.getVideoTracks()[0];
+        if (vTrack) {
+          try {
+            if (sender.track !== vTrack) await sender.replaceTrack(vTrack);
+            sender.track.enabled = camOn;
+          } catch(e) { console.warn('replaceTrack error:', e); }
+        }
+      } else if (camOn) {
+        const vTrack = localStream.getVideoTracks()[0];
+        if (vTrack) {
+          try { pc.addTrack(vTrack, localStream); } catch(e) {}
+        }
       }
     }
-  });
-  
-  Object.keys(peers).forEach(pid => {
-    if (!list.find(p => p.peer_id === pid)) {
-      try { peers[pid].pc.close(); } catch(e) {}
-      delete peers[pid];
-      delete dataChannels[pid];
+  };
+  await updateSenders();
+
+  broadcastBoard({ type: 'cam_changed', peerId: myPeerId, camOn });
+
+  updateBtnState();
+  rebuildGrid();
+  showToast(camOn ? 'Kamera yoqildi' : "Kamera o'chirildi");
+}
+
+async function requestMicAccess() {
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true }, autoGainControl: { ideal: true } }
+      });
+    } catch(eInner) {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     }
-  });
-  
-  updateParticipants();
-  rebuildGrid();
-}
+    const aTrack = stream.getAudioTracks()[0];
+    if (!aTrack) return;
+    aTrack.enabled = true;
 
-// ══════════════════════════════════════════════════════════════
-// VIDEO TILES
-// ══════════════════════════════════════════════════════════════
-let spotlightId = null;
+    localStream.getAudioTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
+    localStream.addTrack(aTrack);
 
-function scrollStrip(dir) {
-  const el = document.getElementById('participant-strip');
-  if (el) el.scrollBy({ left: dir * 170, behavior: 'smooth' });
-}
+    for (const p of Object.values(peers)) {
+      if (!p.pc) continue;
+      const pc = p.pc;
+      const sender = pc.getSenders().find(s => s.track?.kind === 'audio');
+      try {
+        if (sender) { await sender.replaceTrack(aTrack); }
+        else        { pc.addTrack(aTrack, localStream); }
+      } catch(e) { console.warn('mic track add:', e); }
+    }
 
-function setSpotlight(pid) {
-  spotlightId = pid;
-  rebuildGrid();
-}
-
-function handleRemoteStream(peerId, stream) {
-  if (!stream) return;
-  if (!peers[peerId]) {
-    peers[peerId] = { pc: null, stream: null, name: '...', role: 'student', micOn: true, camOn: true };
+    micOn = true;
+    broadcastBoard({ type: 'mic_changed', peerId: myPeerId, micOn: true });
+    updateBtnState();
+    rebuildGrid();
+    showToast('Mikrofon yoqildi');
+  } catch(e) {
+    showToast('Mikrofon ruxsati berilmadi: ' + e.message);
   }
-  if (peers[peerId].stream === stream) return;
-  peers[peerId].stream = stream;
+}
+
+async function toggleMic() {
+  if (!localStream || localStream.getAudioTracks().length === 0) {
+    await requestMicAccess();
+    return;
+  }
+  micOn = !micOn;
+  localStream.getAudioTracks().forEach(t => { t.enabled = micOn; });
+  updateBtnState();
+  showToast(micOn ? 'Mikrofon yoqildi' : 'Mikrofon o\'chirildi');
+}
+
+async function toggleScreen() {
+  if (screenSharing) { stopScreen(); return; }
+  try {
+    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    const track = screenStream.getVideoTracks()[0];
+    Object.values(peers).forEach(p => {
+      const sender = p.pc?.getSenders().find(s => s.track?.kind === 'video');
+      if (sender) { sender.replaceTrack(track); limitVideoBitrate(sender, 900); }
+    });
+    track.onended = stopScreen;
+    screenSharing = true;
+    document.getElementById('btn-screen').className = 'ctrl-btn screen-on';
+    broadcastBoard({ type: 'screen_share', active: true, peer: myPeerId });
+    rebuildGrid();
+    showToast('Ekran ulashish boshlandi');
+  } catch { showToast('Ekran ulashish bekor qilindi'); }
+}
+
+function stopScreen() {
+  screenSharing = false;
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+  if (localStream) {
+    const camTrack = localStream.getVideoTracks()[0];
+    if (camTrack) {
+      Object.values(peers).forEach(p => {
+        const sender = p.pc?.getSenders().find(s => s.track?.kind === 'video');
+        if (sender) { sender.replaceTrack(camTrack); limitVideoBitrate(sender, 450); }
+      });
+    }
+  }
+  broadcastBoard({ type: 'screen_share', active: false, peer: myPeerId });
   rebuildGrid();
-  playVideoTile(peerId, stream);
-  
+  const sb = document.getElementById('btn-screen');
+  if (sb) sb.className = 'ctrl-btn on';
+  showToast("Ekran ulashish to'xtatildi");
+}
+
+function updateBtnState() {
+  document.getElementById('btn-cam').className = 'ctrl-btn ' + (camOn ? 'on' : 'off');
+  document.getElementById('btn-mic').className = 'ctrl-btn ' + (micOn ? 'on' : 'off');
+}
+
+// ══════════════════════════════════════════════════════════════
+// PEER (endi alohida PeerJS serveriga ehtiyoj yo'q — signalizatsiya
+// saytning o'z /api/signal orqali, "short polling" bilan ishlaydi)
+// ══════════════════════════════════════════════════════════════
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:stun4.l.google.com:19302' },
+  { urls: 'stun:openrelay.metered.ca:80' },
+  { urls: 'turn:openrelay.metered.ca:80',  username:'openrelayproject', credential:'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
+];
+
+let signalSince = 0;
+let signalPollTimer = null;
+let signalFails = 0;
+const pendingCandidates = {};
+
+async function sendSignal(to, type, data) {
+  try {
+    await fetch('/api/signal?action=send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
+      body: JSON.stringify({ from: myPeerId, to, type, data: JSON.stringify(data) })
+    });
+  } catch(e) {}
+}
+
+async function pollSignals() {
+  if (!myPeerId || !roomToken) return;
+  try {
+    const r = await fetch(`/api/signal?action=poll&peer_id=${encodeURIComponent(myPeerId)}&since=${signalSince}`, {
+      headers: { 'X-Room-Token': roomToken }
+    });
+    if (!r.ok) { signalFails++; return; }
+    const d = await r.json();
+    signalFails = 0;
+    if (!d.ok || !d.messages) return;
+    for (const m of d.messages) {
+      if (m.id > signalSince) signalSince = m.id;
+      let payload = null;
+      try { payload = typeof m.data === 'string' ? JSON.parse(m.data) : m.data; } catch(e) { continue; }
+      handleSignal(m.from_peer, m.type, payload);
+    }
+  } catch(e) {
+    signalFails++;
+  }
+  if (signalFails === 4) showToast("Ulanish beqaror, qayta urinilmoqda...");
+}
+
+function startSignalPolling() {
+  if (signalPollTimer) return;
+  pollSignals();
+  signalPollTimer = setInterval(pollSignals, 1200);
+}
+
+// RTCDataChannel'ni eski PeerJS DataConnection kabi ko'rinishga
+// keltiradi (.on('open'/'data'/'close'/'error'), .send(obj), .open)
+// — shu tufayli chat/doska/ishtirokchilar kodi o'zgarmasdan ishlayveradi.
+class DCAdapter {
+  constructor(channel) {
+    this.channel = channel;
+    this.open = channel.readyState === 'open';
+    this._h = { open: [], data: [], close: [], error: [] };
+    channel.onopen = () => { this.open = true; this._emit('open'); };
+    channel.onmessage = (e) => {
+      let msg = null;
+      try { msg = JSON.parse(e.data); } catch(err) { return; }
+      this._emit('data', msg);
+    };
+    channel.onclose = () => { this.open = false; this._emit('close'); };
+    channel.onerror = (e) => { this._emit('error', e); };
+    if (this.open) setTimeout(() => this._emit('open'), 0);
+  }
+  on(evt, cb) { (this._h[evt] = this._h[evt] || []).push(cb); }
+  _emit(evt, arg) { (this._h[evt] || []).forEach(cb => { try { cb(arg); } catch(e) {} }); }
+  send(obj) {
+    if (this.channel.readyState === 'open') {
+      try { this.channel.send(JSON.stringify(obj)); } catch(e) {}
+    }
+  }
+}
+
+function startPeer() {
+  // Peer ID hech qanday tashqi serverga bog'liq bo'lmagan holda,
+  // shu yerning o'zida generatsiya qilinadi.
+  myPeerId = (myRole === 'teacher' ? 'tr-' : 'st-') + peerRoomId + '-' + Math.random().toString(36).slice(2,8);
+  showRoom();
+  joinRoomServer();
+  startSignalPolling();
+  syncInterval = setInterval(syncParticipants, 4000);
+  startTimer();
+}
+
+// Video oqimi uchun maksimal bitreytni cheklaydi — sekin internet yoki
+// TURN orqali o'tayotgan aloqada tasvir "laguvchi" bo'lib qolmasligi uchun.
+function limitVideoBitrate(sender, kbps = 450) {
+  if (!sender) return;
+  try {
+    const params = sender.getParameters();
+    if (!params.encodings || !params.encodings.length) params.encodings = [{}];
+    params.encodings[0].maxBitrate   = kbps * 1000;
+    params.encodings[0].maxFramerate = 24;
+    sender.setParameters(params).catch(() => {});
+  } catch(e) {}
+}
+
+// Har bir hamkasb (peer) uchun RTCPeerConnection yaratadi yoki
+// mavjudini qaytaradi. isInitiator=true bo'lsa — ma'lumot kanali
+// (data channel) shu tomondan ochiladi, aks holda kutib turadi.
+function getOrCreatePC(peerId, isInitiator) {
+  if (peers[peerId] && peers[peerId].pc) return peers[peerId].pc;
+
+  const pc = new RTCPeerConnection({
+    iceServers: ICE_SERVERS,
+    iceTransportPolicy: 'all',
+    bundlePolicy: 'max-bundle'
+  });
+
+  const theirInfo = participantsList.find(p => p.peer_id === peerId) || {};
+  const ex = peers[peerId] || {};
+  peers[peerId] = {
+    pc,
+    stream:  ex.stream || null,
+    name:    ex.name   || theirInfo.name || '...',
+    role:    ex.role   || theirInfo.role || 'student',
+    calling: false
+  };
+
+  const baseStream = localStream || new MediaStream();
+  baseStream.getTracks().forEach(t => {
+    try {
+      const sender = pc.addTrack(t, baseStream);
+      if (t.kind === 'video') limitVideoBitrate(sender);
+    } catch(e) {}
+  });
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) sendSignal(peerId, 'candidate', e.candidate);
+  };
+  pc.ontrack = (e) => {
+    if (e.streams?.[0]) handleRemoteStream(peerId, e.streams[0]);
+  };
+
+  let stuckSince = null;
+  pc.onconnectionstatechange = () => {
+    const cs = pc.connectionState;
+    if (cs === 'failed' || cs === 'disconnected') {
+      if (!stuckSince) stuckSince = Date.now();
+      setTimeout(() => {
+        if (!stuckSince || pc.connectionState === 'connected') return;
+        if (Date.now() - stuckSince < 3000) return;
+        stuckSince = null;
+        console.warn('[RETRY] reconnecting to', peerId, 'after', cs);
+        closePeer(peerId);
+        if (myPeerId < peerId) connectToPeer(peerId);
+      }, 3100);
+    } else {
+      stuckSince = null;
+    }
+  };
+
+  if (isInitiator) {
+    const channel = pc.createDataChannel('data');
+    setupDataConn(new DCAdapter(channel), peerId);
+  } else {
+    pc.ondatachannel = (e) => setupDataConn(new DCAdapter(e.channel), peerId);
+  }
+
+  return pc;
+}
+
+function closePeer(peerId) {
+  const p = peers[peerId];
+  if (p?.pc) { try { p.pc.close(); } catch(e) {} }
+  delete peers[peerId];
+  delete dataConns[peerId];
+  delete pendingCandidates[peerId];
+}
+
+function flushPendingCandidates(peerId) {
+  const list = pendingCandidates[peerId];
+  if (!list || !list.length) return;
+  delete pendingCandidates[peerId];
+  const pc = peers[peerId]?.pc;
+  if (!pc) return;
+  list.forEach(c => { pc.addIceCandidate(c).catch(() => {}); });
+}
+
+async function handleSignal(fromId, type, payload) {
+  if (type === 'offer') {
+    // 🔥 O'QUVCHI: Agar localStream bo'sh bo'lsa, kamera/mikrofon so'raydi
+    if (!localStream || localStream.getTracks().length === 0) {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: 'user' } },
+          audio: true
+        });
+        camOn = true; micOn = true;
+      } catch(e) {
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          camOn = false; micOn = true;
+        } catch(e2) {
+          localStream = new MediaStream();
+        }
+      }
+      updateBtnState();
+      rebuildGrid();
+    }
+    const pc = getOrCreatePC(fromId, false);
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription(payload));
+      flushPendingCandidates(fromId);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      sendSignal(fromId, 'answer', pc.localDescription);
+    } catch(e) { console.warn('offer handling error:', e); }
+    return;
+  }
+
+  if (type === 'answer') {
+    const pc = peers[fromId]?.pc;
+    if (!pc) return;
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription(payload));
+      flushPendingCandidates(fromId);
+    } catch(e) { console.warn('answer handling error:', e); }
+    return;
+  }
+
+  if (type === 'candidate') {
+    const pc = peers[fromId]?.pc;
+    if (pc && pc.remoteDescription) {
+      try { await pc.addIceCandidate(payload); } catch(e) {}
+    } else {
+      (pendingCandidates[fromId] = pendingCandidates[fromId] || []).push(payload);
+    }
+    return;
+  }
+
+  if (type === 'bye') {
+    closePeer(fromId);
+    rebuildGrid();
+    updateParticipants();
+  }
+}
+
+async function connectToPeer(peerId) {
+  if (!myPeerId || peerId === myPeerId) return;
+
+  // 🔥 O'QUVCHI: Agar localStream bo'sh bo'lsa, avtomatik kamera/mikrofon so'raydi
+  if (myRole === 'student' && (!localStream || localStream.getTracks().length === 0)) {
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: 'user' } },
+        audio: true
+      });
+      camOn = true;
+      micOn = true;
+      updateBtnState();
+      rebuildGrid();
+    } catch(e) {
+      console.warn('Can\'t get video+audio in connectToPeer, trying audio only:', e);
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        camOn = false;
+        micOn = true;
+        updateBtnState();
+        rebuildGrid();
+      } catch(e2) {
+        console.warn('Can\'t get any media in connectToPeer:', e2);
+      }
+    }
+  }
+
+  const ex = peers[peerId];
+  const state = ex?.pc?.connectionState;
+  if (state === 'connected' || state === 'connecting') return;
+  if (ex?.calling) return;
+
+  const pc = getOrCreatePC(peerId, true);
+  peers[peerId].calling = true;
+
+  try {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await sendSignal(peerId, 'offer', pc.localDescription);
+  } catch(e) {
+    console.warn('connectToPeer:', e);
+  }
+  if (peers[peerId]) peers[peerId].calling = false;
+}
+
+function handleRemoteStream(peerId, s) {
+  if (!s) return;
+  peers[peerId] = peers[peerId] || { call: null, stream: null, name: '...', role: 'student' };
+
+  if (peers[peerId].stream === s) return;
+  peers[peerId].stream = s;
+  setupSpeakingDetection(peerId, s);
+
+  s.onaddtrack    = () => { rebuildGrid(); playVideoTile(peerId, s); };
+  s.onremovetrack = () => { rebuildGrid(); };
+
+  rebuildGrid();
+  playVideoTile(peerId, s);
+
+  s.getAudioTracks().forEach(t => { t.enabled = true; });
+
+  [300, 800, 1500].forEach(delay => {
+    setTimeout(() => {
+      if (peers[peerId]?.stream === s) {
+        rebuildGrid();
+        playVideoTile(peerId, s);
+      }
+    }, delay);
+  });
+
   const info = participantsList.find(x => x.peer_id === peerId);
   if (myRole === 'student' && (info?.role === 'teacher' || peerId.startsWith('tr-'))) {
-    startAudioMonitor(stream);
+    startAudioMonitor(s);
   }
 }
 
 function playVideoTile(peerId, stream) {
   let tries = 0;
-  const isSelf = peerId === myRoomPeerId;
+  const isSelf = peerId === myPeerId;
   const tryPlay = () => {
     const el = document.querySelector('#tile-' + peerId.replace(/[^a-z0-9]/gi,'_') + ' video');
     if (el) {
@@ -1724,27 +1725,284 @@ function playVideoTile(peerId, stream) {
   setTimeout(tryPlay, 100);
 }
 
+// ══════════════════════════════════════════════════════════════
+// SERVER SIGNALING
+// ══════════════════════════════════════════════════════════════
+async function joinRoomServer() {
+  try {
+    const r = await fetch('/api/room?action=join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
+      body: JSON.stringify({ peer_id: myPeerId, name: myName })
+    });
+    const d = await r.json();
+    if (d.ok) handleParticipants(d.participants || []);
+  } catch {}
+}
+
+function onNewDataConnOpen(dc) {
+  if (myRole !== 'teacher') return;
+  const currentView = document.getElementById('board-area').classList.contains('active') ? 'board' : 'video';
+  try { dc.send({ type: 'view_switch', view: currentView }); } catch(e) {}
+  if (currentView === 'board' && canvasReady && canvas.width > 0) {
+    setTimeout(() => {
+      try {
+        dc.send({ type: 'snapshot', data: canvas.toDataURL('image/jpeg', 0.7) });
+      } catch(e) {}
+    }, 500);
+  }
+}
+
+let lastParticipantCount = 0;
+let heartbeatFails = 0;
+let syncTick = 0;
+
+async function syncParticipants() {
+  if (!roomToken || !myPeerId) return;
+  syncTick++;
+
+  // har 3 tick (12s) da full join — DB 15s timeout dan kichik bo'lishi shart
+  const doFullJoin = syncTick % 3 === 0 || lastParticipantCount === 0;
+
+  try {
+    if (doFullJoin) {
+      const r = await fetch('/api/room?action=join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
+        body: JSON.stringify({ peer_id: myPeerId, name: myName })
+      });
+      if (r.status === 404 || r.status === 401 || r.status === 403) {
+        if (myRole !== 'teacher') { clearInterval(syncInterval); syncInterval = null; showRoomClosed(); }
+        return;
+      }
+      const d = await r.json();
+      if (d.ok) {
+        heartbeatFails = 0;
+        lastParticipantCount = (d.participants || []).length;
+        handleParticipants(d.participants || []);
+      }
+    } else {
+      const r = await fetch('/api/room?action=heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Room-Token': roomToken },
+        body: JSON.stringify({ peer_id: myPeerId })
+      });
+      if (r.status === 404 || r.status === 401 || r.status === 403) {
+        if (myRole !== 'teacher') { clearInterval(syncInterval); syncInterval = null; showRoomClosed(); }
+        return;
+      }
+      heartbeatFails = 0;
+    }
+  } catch {
+    heartbeatFails++;
+    if (heartbeatFails >= 3) { syncTick = 0; heartbeatFails = 0; }
+  }
+}
+
+function showRoomClosed() {
+  stopAllMedia();
+  document.getElementById('room').style.display = 'none';
+  document.getElementById('err-icon').textContent  = '';
+  document.getElementById('err-title').textContent = 'Dars yakunlandi';
+  document.getElementById('err-sub').textContent   = 'Ustoz darsni tugatdi. Ushbu havola endi ishlamaydi.';
+  document.querySelector('#error-page .error-btn').style.display = 'none';
+  document.getElementById('error-page').style.display = 'flex';
+}
+
+function showKickedScreen(reason) {
+  stopAllMedia();
+  document.getElementById('room').style.display = 'none';
+  document.getElementById('err-icon').textContent  = '';
+  document.getElementById('err-title').textContent = 'Darsdan chiqarildingiz';
+  document.getElementById('err-sub').textContent   = reason || 'Ustoz sizi darsdan chiqardi.';
+  document.querySelector('#error-page .error-btn').style.display = 'none';
+  document.getElementById('error-page').style.display = 'flex';
+}
+
+function stopAllMedia() {
+  if (isRecording && mediaRecorder) {
+    try { mediaRecorder.stop(); } catch(e) {}
+    isRecording = false;
+  }
+  if (audioCheckInterval) { clearInterval(audioCheckInterval); audioCheckInterval = null; }
+  if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
+  if (localStream)  { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+  Object.values(peers).forEach(p => { try { p.pc?.close(); } catch(e) {} });
+  peers = {};
+  dataConns = {};
+  if (signalPollTimer) { clearInterval(signalPollTimer); signalPollTimer = null; }
+  if (syncInterval)  { clearInterval(syncInterval);  syncInterval  = null; }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function handleParticipants(list) {
+  participantsList = list;
+
+  list.forEach(p => {
+    if (p.peer_id === myPeerId) return;
+
+    if (peers[p.peer_id]) {
+      peers[p.peer_id].name = p.name || peers[p.peer_id].name;
+      peers[p.peer_id].role = p.role || peers[p.peer_id].role;
+    }
+
+    const ex  = peers[p.peer_id];
+    const pc  = ex?.pc;
+    const state = pc?.connectionState || pc?.iceConnectionState || 'none';
+    const isConnected  = state === 'connected' || state === 'completed';
+    const isConnecting = state === 'connecting' || state === 'new';
+    const isFailed     = state === 'failed' || state === 'closed' || state === 'disconnected';
+
+    // Ulanish jarayonida — hech narsa qilma
+    if (ex?.calling || isConnecting) return;
+
+    const needsConnect = !ex || !ex.pc || isFailed || (!isConnected && !ex.pc);
+
+    const iShouldInitiate = myPeerId < p.peer_id;
+
+    if (needsConnect && iShouldInitiate) {
+      connectToPeer(p.peer_id);
+    } else if (needsConnect && !iShouldInitiate) {
+      // Kichik peer kutadi, lekin 8 soniyadan keyin o'zi boshlaydi
+      if (!ex || !ex._waitingSince) {
+        peers[p.peer_id] = peers[p.peer_id] || { pc: null, stream: null, name: p.name, role: p.role };
+        peers[p.peer_id]._waitingSince = Date.now();
+      } else if (Date.now() - ex._waitingSince > 8000) {
+        peers[p.peer_id]._waitingSince = Date.now(); // reset — qayta 8s kutadi
+        connectToPeer(p.peer_id);
+      }
+    }
+  });
+
+  // Ro'yxatda yo'q peerlarni o'chirish
+  Object.keys(peers).forEach(pid => {
+    if (!list.find(p => p.peer_id === pid)) {
+      try { peers[pid]?.pc?.close(); } catch(e) {}
+      delete peers[pid];
+    }
+  });
+
+  updateParticipants();
+  rebuildGrid();
+}
+
+let spotlightId = null;
+let manualPinUntil = 0; // shu vaqtgacha avtomatik "kim gapiryapti" almashtirmaydi
+
+// ── Faol so'zlovchini aniqlash (mikrofon ovoz balandligi bo'yicha) ──
+let sharedAudioCtx = null;
+let localAnalyser = null;
+const remoteAnalysers = {}; // peerId -> AnalyserNode
+let speakingLoopStarted = false;
+
+function getAudioCtx() {
+  if (!sharedAudioCtx) {
+    try { sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e) { return null; }
+  }
+  if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume().catch(() => {});
+  return sharedAudioCtx;
+}
+
+function attachAnalyser(stream) {
+  if (!stream || !stream.getAudioTracks().length) return null;
+  const ctx = getAudioCtx();
+  if (!ctx) return null;
+  try {
+    const src = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0.6;
+    src.connect(analyser);
+    return analyser;
+  } catch(e) { return null; }
+}
+
+function setupSpeakingDetection(peerId, stream) {
+  const analyser = attachAnalyser(stream);
+  if (!analyser) return;
+  if (peerId === 'local') localAnalyser = analyser;
+  else remoteAnalysers[peerId] = analyser;
+  startSpeakingLoop();
+}
+
+function startSpeakingLoop() {
+  if (speakingLoopStarted) return;
+  speakingLoopStarted = true;
+  const buf = new Uint8Array(256);
+  const SPEAK_THRESHOLD = 0.045;
+
+  function levelOf(analyser) {
+    if (!analyser) return 0;
+    analyser.getByteTimeDomainData(buf);
+    let sum = 0;
+    for (let i = 0; i < buf.length; i++) {
+      const v = (buf[i] - 128) / 128;
+      sum += v * v;
+    }
+    return Math.sqrt(sum / buf.length);
+  }
+
+  setInterval(() => {
+    const levels = {};
+    if (myPeerId) levels[myPeerId] = micOn ? levelOf(localAnalyser) : 0;
+    Object.keys(remoteAnalysers).forEach(pid => {
+      const off = peers[pid] && peers[pid].micOn === false;
+      levels[pid] = off ? 0 : levelOf(remoteAnalysers[pid]);
+    });
+
+    let loudestId = null, loudestVal = SPEAK_THRESHOLD;
+    Object.entries(levels).forEach(([pid, v]) => {
+      if (v > loudestVal) { loudestVal = v; loudestId = pid; }
+    });
+
+    document.querySelectorAll('[data-pid]').forEach(el => {
+      const pid = el.dataset.pid;
+      el.classList.toggle('speaking', !!pid && (levels[pid] || 0) > SPEAK_THRESHOLD);
+    });
+
+    if (loudestId && Date.now() > manualPinUntil && loudestId !== spotlightId) {
+      spotlightId = loudestId;
+      rebuildGrid();
+    }
+  }, 600);
+}
+
+function scrollStrip(dir) {
+  const el = document.getElementById('participant-strip');
+  if (el) el.scrollBy({ left: dir * 170, behavior: 'smooth' });
+}
+
+function setSpotlight(pid) {
+  spotlightId = pid;
+  manualPinUntil = Date.now() + 10000;
+  rebuildGrid();
+}
+
 function rebuildGrid() {
   const strip = document.getElementById('participant-strip');
   const stage = document.getElementById('main-stage');
   if (!strip || !stage) return;
 
   const wanted = [
-    { pid: myRoomPeerId, name: myName, role: myRole, stream: localStream, isSelf: true, hasCam: camOn, hasMic: micOn, isScreen: screenSharing }
+    { pid: myPeerId, name: myName, role: myRole, stream: localStream, isSelf: true, hasCam: camOn, hasMic: micOn, isScreen: screenSharing }
   ];
   Object.entries(peers).forEach(([pid, p]) => {
     const info = participantsList.find(x => x.peer_id === pid) || {};
-    const hasCam = p.stream && p.stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
-    wanted.push({ pid, name: info.name || p.name || 'Ishtirokchi', role: info.role || p.role || 'student', stream: p.stream, isSelf: false, hasCam: !!hasCam, hasMic: p.micOn !== false, isScreen: screenSharingPeers.has(pid) });
+    wanted.push({ pid, name: info.name||p.name||'Ishtirokchi', role: info.role||p.role||'student', stream: p.stream, isSelf: false, hasCam: !!p.stream, hasMic: p.micOn !== false, isScreen: screenSharingPeers.has(pid) });
   });
 
+  // Spotlightda ko'rsatiladigan ishtirokchini tanlash:
+  // avval joriy tanlov hali xonada bormi tekshiramiz, aks holda ustozni,
+  // aks holda birinchi boshqa ishtirokchini, aks holda o'zimizni tanlaymiz.
   if (!spotlightId || !wanted.some(w => w.pid === spotlightId)) {
     const teacher = wanted.find(w => w.role === 'teacher' && !w.isSelf);
     const otherAny = wanted.find(w => !w.isSelf);
     spotlightId = teacher ? teacher.pid : (otherAny ? otherAny.pid : wanted[0].pid);
   }
 
-  // Strip
+  // ── Yuqoridagi ishtirokchilar tasmasi (kichik tilelar) ──
   const wantedStripIds = new Set(wanted.map(w => 'stile-' + w.pid.replace(/[^a-z0-9]/gi,'_')));
   Array.from(strip.children).forEach(el => { if (!wantedStripIds.has(el.id)) el.remove(); });
 
@@ -1763,7 +2021,7 @@ function rebuildGrid() {
     tile.classList.toggle('spotlighted', w.pid === spotlightId);
   });
 
-  // Stage
+  // ── Pastdagi katta sahna (spotlight qilingan ishtirokchi) ──
   const stageW = wanted.find(w => w.pid === spotlightId) || wanted[0];
   const stageTileId = 'stage-' + stageW.pid.replace(/[^a-z0-9]/gi,'_');
   let stageTile = document.getElementById(stageTileId);
@@ -1780,7 +2038,12 @@ function rebuildGrid() {
 function patchTile(tile, w) {
   const video = tile.querySelector('video');
   if (video) {
-    const needsReattach = w.stream && (video.srcObject !== w.stream || !video.srcObject || video.readyState === 0);
+    const needsReattach =
+      w.stream && (
+        video.srcObject !== w.stream ||
+        !video.srcObject ||
+        video.readyState === 0
+      );
     if (needsReattach) {
       video.srcObject = w.stream;
       video.muted     = !!w.isSelf;
@@ -1815,6 +2078,7 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic, isScreen) {
   if (isScreen) cls += ' screen-tile';
   tile.className = cls;
   tile.id = 'tile-' + pid.replace(/[^a-z0-9]/gi, '_');
+  tile.dataset.pid = pid;
 
   const video = document.createElement('video');
   video.autoplay    = true;
@@ -1857,253 +2121,10 @@ function makeTile(pid, name, role, stream, isSelf, hasCam, hasMic, isScreen) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// CONTROLS
+// CONTROLS / LEAVE / CHAT / PARTICIPANTS
 // ══════════════════════════════════════════════════════════════
-async function requestCamAccess() {
-  try {
-    let stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: CONFIG.VIDEO_WIDTH }, height: { ideal: CONFIG.VIDEO_HEIGHT } }
-      });
-    } catch(eInner) {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    }
-    const vTrack = stream.getVideoTracks()[0];
-    if (!vTrack) return;
-
-    localStream.getVideoTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
-    localStream.addTrack(vTrack);
-
-    for (const p of Object.values(peers)) {
-      if (!p.pc) continue;
-      const sender = p.pc.getSenders().find(s => s.track?.kind === 'video');
-      try {
-        if (sender) { await sender.replaceTrack(vTrack); }
-        else { p.pc.addTrack(vTrack, localStream); }
-      } catch(e) {}
-    }
-
-    camOn = true;
-    broadcastBoard({ type: 'cam_changed', peerId: myRoomPeerId, camOn: true });
-    updateBtnState();
-    rebuildGrid();
-    showToast('Kamera yoqildi');
-  } catch(e) {
-    showToast('Kamera ruxsati berilmadi: ' + e.message);
-  }
-}
-
-async function toggleCam() {
-  if (!camOn && localStream.getVideoTracks().length === 0) {
-    await requestCamAccess();
-    return;
-  }
-  camOn = !camOn;
-  localStream.getVideoTracks().forEach(t => { t.enabled = camOn; });
-
-  for (const p of Object.values(peers)) {
-    if (!p.pc) continue;
-    const sender = p.pc.getSenders().find(s => s.track?.kind === 'video');
-    if (sender && sender.track) {
-      sender.track.enabled = camOn;
-    }
-  }
-
-  broadcastBoard({ type: 'cam_changed', peerId: myRoomPeerId, camOn });
-  updateBtnState();
-  rebuildGrid();
-  showToast(camOn ? 'Kamera yoqildi' : "Kamera o'chirildi");
-}
-
-async function requestMicAccess() {
-  try {
-    let stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true }, autoGainControl: { ideal: true } }
-      });
-    } catch(eInner) {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    }
-    const aTrack = stream.getAudioTracks()[0];
-    if (!aTrack) return;
-    aTrack.enabled = true;
-
-    localStream.getAudioTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
-    localStream.addTrack(aTrack);
-
-    for (const p of Object.values(peers)) {
-      if (!p.pc) continue;
-      const sender = p.pc.getSenders().find(s => s.track?.kind === 'audio');
-      try {
-        if (sender) { await sender.replaceTrack(aTrack); }
-        else { p.pc.addTrack(aTrack, localStream); }
-      } catch(e) {}
-    }
-
-    micOn = true;
-    broadcastBoard({ type: 'mic_changed', peerId: myRoomPeerId, micOn: true });
-    updateBtnState();
-    rebuildGrid();
-    showToast('Mikrofon yoqildi');
-  } catch(e) {
-    showToast('Mikrofon ruxsati berilmadi: ' + e.message);
-  }
-}
-
-async function toggleMic() {
-  if (!localStream || localStream.getAudioTracks().length === 0) {
-    await requestMicAccess();
-    return;
-  }
-  micOn = !micOn;
-  localStream.getAudioTracks().forEach(t => { t.enabled = micOn; });
-  
-  for (const p of Object.values(peers)) {
-    if (!p.pc) continue;
-    const sender = p.pc.getSenders().find(s => s.track?.kind === 'audio');
-    if (sender && sender.track) {
-      sender.track.enabled = micOn;
-    }
-  }
-  
-  updateBtnState();
-  showToast(micOn ? 'Mikrofon yoqildi' : 'Mikrofon o\'chirildi');
-}
-
-async function toggleScreen() {
-  if (screenSharing) { stopScreen(); return; }
-  try {
-    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-    const track = screenStream.getVideoTracks()[0];
-    Object.values(peers).forEach(p => {
-      const sender = p.pc?.getSenders().find(s => s.track?.kind === 'video');
-      if (sender) sender.replaceTrack(track);
-    });
-    track.onended = stopScreen;
-    screenSharing = true;
-    document.getElementById('btn-screen').className = 'ctrl-btn screen-on';
-    broadcastBoard({ type: 'screen_share', active: true, peer: myRoomPeerId });
-    rebuildGrid();
-    showToast('Ekran ulashish boshlandi');
-  } catch { showToast('Ekran ulashish bekor qilindi'); }
-}
-
-function stopScreen() {
-  screenSharing = false;
-  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
-  if (localStream) {
-    const camTrack = localStream.getVideoTracks()[0];
-    if (camTrack) {
-      Object.values(peers).forEach(p => {
-        const sender = p.pc?.getSenders().find(s => s.track?.kind === 'video');
-        if (sender) sender.replaceTrack(camTrack);
-      });
-    }
-  }
-  broadcastBoard({ type: 'screen_share', active: false, peer: myRoomPeerId });
-  rebuildGrid();
-  const sb = document.getElementById('btn-screen');
-  if (sb) sb.className = 'ctrl-btn on';
-  showToast("Ekran ulashish to'xtatildi");
-}
-
-function updateBtnState() {
-  document.getElementById('btn-cam').className = 'ctrl-btn ' + (camOn ? 'on' : 'off');
-  document.getElementById('btn-mic').className = 'ctrl-btn ' + (micOn ? 'on' : 'off');
-}
-
-function showRoom() {
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('room').style.display = 'flex';
-  document.getElementById('live-chip').style.display = '';
-  document.getElementById('room-timer').style.display = '';
-
-  if (myRole === 'teacher') {
-    document.getElementById('view-tabs-wrap').style.display = '';
-    document.getElementById('student-view-label').style.display = 'none';
-    document.getElementById('screen-ctrl').style.display = '';
-    document.getElementById('copy-link-btn').style.display = '';
-    document.getElementById('ctrl-end-teacher').style.display = '';
-    document.getElementById('ctrl-end-student').style.display = 'none';
-    document.getElementById('ctrl-cam-col').style.display = '';
-    document.getElementById('ctrl-mic-col').style.display = '';
-    document.getElementById('ctrl-rec-col').style.display = '';
-    document.getElementById('board-area').classList.add('teacher-board');
-  } else {
-    document.getElementById('view-tabs-wrap').style.display = 'none';
-    document.getElementById('student-view-label').style.display = '';
-    document.getElementById('screen-ctrl').style.display = 'none';
-    document.getElementById('copy-link-btn').style.display = 'none';
-    document.getElementById('ctrl-end-teacher').style.display = 'none';
-    document.getElementById('ctrl-end-student').style.display = '';
-    document.getElementById('ctrl-cam-col').style.display = '';
-    document.getElementById('ctrl-mic-col').style.display = '';
-    document.getElementById('board-area').classList.add('student-board');
-    document.getElementById('tab-btn-participants').style.display = 'none';
-    switchTab('chat');
-  }
-
-  setTimeout(initCanvas, 100);
-}
-
-function showError(icon, title, sub) {
-  ['loading','waiting','room'].forEach(id => document.getElementById(id).style.display = 'none');
-  document.getElementById('err-icon').textContent  = icon;
-  document.getElementById('err-title').textContent = title;
-  document.getElementById('err-sub').textContent   = sub;
-  document.getElementById('error-page').style.display = 'flex';
-}
-
-function showRoomClosed() {
-  stopAllMedia();
-  document.getElementById('room').style.display = 'none';
-  document.getElementById('err-icon').textContent  = '';
-  document.getElementById('err-title').textContent = 'Dars yakunlandi';
-  document.getElementById('err-sub').textContent   = 'Ustoz darsni tugatdi. Ushbu havola endi ishlamaydi.';
-  document.querySelector('#error-page .error-btn').style.display = 'none';
-  document.getElementById('error-page').style.display = 'flex';
-}
-
-function showKickedScreen(reason) {
-  stopAllMedia();
-  document.getElementById('room').style.display = 'none';
-  document.getElementById('err-icon').textContent  = '';
-  document.getElementById('err-title').textContent = 'Darsdan chiqarildingiz';
-  document.getElementById('err-sub').textContent   = reason || 'Ustoz sizi darsdan chiqardi.';
-  document.querySelector('#error-page .error-btn').style.display = 'none';
-  document.getElementById('error-page').style.display = 'flex';
-}
-
-function stopAllMedia() {
-  if (isRecording && mediaRecorder) {
-    try { mediaRecorder.stop(); } catch(e) {}
-    isRecording = false;
-  }
-  if (audioCheckInterval) { clearInterval(audioCheckInterval); audioCheckInterval = null; }
-  if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
-  if (signalPollInterval) { clearInterval(signalPollInterval); signalPollInterval = null; }
-  if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
-  if (localStream)  { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
-  Object.values(peers).forEach(p => { try { p.pc?.close(); } catch(e) {} });
-  peers = {};
-  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-}
-
-function startTimer() {
-  startTime = Date.now();
-  timerInterval = setInterval(() => {
-    const s = Math.floor((Date.now()-startTime)/1000);
-    const m = String(Math.floor(s/60)).padStart(2,'0');
-    const sc = String(s%60).padStart(2,'0');
-    document.getElementById('room-timer').textContent = `${m}:${sc}`;
-  }, 1000);
-}
-
 async function leaveRoom() {
-  const pid = myRoomPeerId;
+  const pid = myPeerId;
   const token = roomToken;
   stopAllMedia();
   if (token && pid) {
@@ -2112,13 +2133,6 @@ async function leaveRoom() {
   showError('', myRole==='teacher'?'Dars yakunlandi':'Darsdan chiqdingiz', myRole==='teacher'?"Dars muvaffaqiyatli o'tkazildi.":"Qaytish uchun havoladan foydalaning.");
 }
 
-function copyStudentLink() {
-  showToast('Dars havolasini Telegram botdan oling');
-}
-
-// ══════════════════════════════════════════════════════════════
-// CHAT
-// ══════════════════════════════════════════════════════════════
 function sendChat() {
   const inp = document.getElementById('chat-inp');
   const text = inp.value.trim();
@@ -2145,14 +2159,11 @@ function renderChat() {
   box.scrollTop = box.scrollHeight;
 }
 
-// ══════════════════════════════════════════════════════════════
-// PARTICIPANTS LIST
-// ══════════════════════════════════════════════════════════════
 function updateParticipants() {
   const list = document.getElementById('part-list');
   const all = [
-    { peer_id: myRoomPeerId, name: myName, role: myRole, self: true },
-    ...participantsList.filter(p => p.peer_id !== myRoomPeerId)
+    { peer_id:myPeerId, name:myName, role:myRole, self:true },
+    ...participantsList.filter(p => p.peer_id !== myPeerId)
   ];
   list.innerHTML = '';
   all.forEach(p => {
@@ -2203,9 +2214,9 @@ function confirmKick(peerId, name) {
 function kickParticipant(peerId, name) {
   const dlg = document.getElementById('kick-confirm-dialog');
   if (dlg) dlg.remove();
-  const dc = dataChannels[peerId];
-  if (dc && dc.readyState === 'open') {
-    dc.send(JSON.stringify({ type: 'kick', reason: 'Ustoz tomonidan chiqarildi' }));
+  const dc = dataConns[peerId];
+  if (dc && dc.open) {
+    dc.send({ type: 'kick', reason: 'Ustoz tomonidan chiqarildi' });
   }
   if (peers[peerId]) {
     try { peers[peerId].pc?.close(); } catch(e) {}
@@ -2218,9 +2229,9 @@ function kickParticipant(peerId, name) {
 }
 
 function promoteToTeacher(peerId, name) {
-  const dc = dataChannels[peerId];
-  if (dc && dc.readyState === 'open') {
-    dc.send(JSON.stringify({ type: 'promote', role: 'teacher' }));
+  const dc = dataConns[peerId];
+  if (dc && dc.open) {
+    dc.send({ type: 'promote', role: 'teacher' });
   }
   const p = participantsList.find(x => x.peer_id === peerId);
   if (p) p.role = 'teacher';
@@ -2231,6 +2242,59 @@ function promoteToTeacher(peerId, name) {
 // ══════════════════════════════════════════════════════════════
 // UI HELPERS
 // ══════════════════════════════════════════════════════════════
+function showRoom() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('room').style.display = 'flex';
+  document.getElementById('live-chip').style.display = '';
+  document.getElementById('room-timer').style.display = '';
+
+  if (myRole === 'teacher') {
+    document.getElementById('view-tabs-wrap').style.display = '';
+    document.getElementById('student-view-label').style.display = 'none';
+    document.getElementById('screen-ctrl').style.display = '';
+    document.getElementById('copy-link-btn').style.display = '';
+    document.getElementById('ctrl-end-teacher').style.display = '';
+    document.getElementById('ctrl-end-student').style.display = 'none';
+    document.getElementById('ctrl-cam-col').style.display = '';
+    document.getElementById('ctrl-mic-col').style.display = '';
+    document.getElementById('ctrl-rec-col').style.display = '';
+    document.getElementById('board-area').classList.add('teacher-board');
+  } else {
+    document.getElementById('view-tabs-wrap').style.display = 'none';
+    document.getElementById('student-view-label').style.display = '';
+    document.getElementById('screen-ctrl').style.display = 'none';
+    document.getElementById('copy-link-btn').style.display = 'none';
+    document.getElementById('ctrl-end-teacher').style.display = 'none';
+    document.getElementById('ctrl-end-student').style.display = '';
+    document.getElementById('ctrl-cam-col').style.display = '';
+    document.getElementById('ctrl-mic-col').style.display = '';
+    document.getElementById('board-area').classList.add('student-board');
+    // O'quvchida "Ishtirokchilar" bo'limi kerak emas (u yerda faqat
+    // ustozga tegishli boshqaruv tugmalari bor) — darhol Chat ko'rsatamiz.
+    document.getElementById('tab-btn-participants').style.display = 'none';
+    switchTab('chat');
+  }
+
+  setTimeout(initCanvas, 100);
+}
+
+function showError(icon, title, sub) {
+  ['loading','waiting','room'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('err-icon').textContent  = icon;
+  document.getElementById('err-title').textContent = title;
+  document.getElementById('err-sub').textContent   = sub;
+  document.getElementById('error-page').style.display = 'flex';
+}
+
+let _toastTimer;
+function showToast(msg, dur = 3500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), dur);
+}
+
 function switchTab(name) {
   document.querySelectorAll('.stab').forEach((el,i) => el.classList.toggle('active',['participants','chat'][i]===name));
   document.querySelectorAll('.stab-panel').forEach(el => el.classList.toggle('active', el.id==='tab-'+name));
@@ -2249,18 +2313,205 @@ function toggleChatPanel() {
   if (opening) switchTab('chat');
 }
 
-let _toastTimer;
-function showToast(msg, dur = 3500) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => t.classList.remove('show'), dur);
+function startTimer() {
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+    const s = Math.floor((Date.now()-startTime)/1000);
+    const m = String(Math.floor(s/60)).padStart(2,'0');
+    const sc = String(s%60).padStart(2,'0');
+    document.getElementById('room-timer').textContent = `${m}:${sc}`;
+  }, 1000);
+}
+
+async function copyStudentLink() {
+  showToast('Dars havolasini Telegram botdan oling');
 }
 
 function esc(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ══════════════════════════════════════════════════════════════
+// BOARD SYNC
+// ══════════════════════════════════════════════════════════════
+let dataConns = {};
+let boardSyncBuf = [];
+let syncTimer = null;
+let boardDrawing = false;
+
+function listenDataConns() {
+  // Endi kerak emas: ma'lumot kanali RTCPeerConnection bilan birga
+  // getOrCreatePC() ichida avtomatik ochiladi. Funksiya faqat eski
+  // chaqiruvlar buzilmasligi uchun bo'sh saqlab qo'yildi.
+}
+
+function openDataConn(peerId) {
+  // Endi kerak emas — sabab yuqorida. Bo'sh qoldirilgan.
+}
+
+function setupDataConn(dc, peerId) {
+  dataConns[peerId] = dc;
+  dc.on('open', () => {
+    sendBoardSnapshot(dc);
+    onNewDataConnOpen(dc);
+  });
+  dc.on('data', msg => {
+    if (!msg || !msg.type) return;
+    if (msg.type === 'stroke') applyRemoteStroke(msg);
+    if (msg.type === 'chat') {
+      chatMessages.push({ text: msg.text, sender: msg.sender, time: msg.time || Date.now(), mine: false });
+      renderChat();
+      const sb = document.getElementById('room-sidebar');
+      if (sb && !sb.classList.contains('open')) {
+        unreadChatCount++;
+        const badge = document.getElementById('chat-badge');
+        if (badge) { badge.textContent = unreadChatCount > 9 ? '9+' : String(unreadChatCount); badge.classList.add('show'); }
+      }
+    }
+    if (msg.type === 'snapshot') applySnapshot(msg.data);
+    if (msg.type === 'screen_share') {
+      if (msg.active) { screenSharingPeers.add(msg.peer); spotlightId = msg.peer; }
+      else screenSharingPeers.delete(msg.peer);
+      rebuildGrid();
+    }
+    if (msg.type === 'clear') {
+      ctx.fillStyle = boardBg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    if (msg.type === 'text') applyRemoteText(msg);
+    if (msg.type === 'board_bg') {
+      boardBg = msg.color;
+      document.getElementById('board-area').style.background = msg.color;
+      if (canvasReady) {
+        const tmp = document.createElement('canvas');
+        tmp.width = canvas.width; tmp.height = canvas.height;
+        tmp.getContext('2d').drawImage(canvas, 0, 0);
+        ctx.fillStyle = msg.color;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(tmp, 0, 0);
+      }
+    }
+    if (msg.type === 'view_switch') {
+      switchView(msg.view);
+      if (msg.view === 'board') {
+        setTimeout(() => {
+          canvasReady = false;
+          resizeCanvas();
+        }, 150);
+      }
+    }
+    if (msg.type === 'mic_changed') {
+      const pid = msg.peerId;
+      if (pid && peers[pid]) {
+        peers[pid].micOn = !!msg.micOn;
+        rebuildGrid();
+      }
+    }
+    if (msg.type === 'cam_changed') {
+      const pid = msg.peerId;
+      if (pid && peers[pid]) {
+        const refresh = () => {
+          if (peers[pid]?.stream) {
+            playVideoTile(pid, peers[pid].stream);
+            rebuildGrid();
+          }
+        };
+        refresh();
+        setTimeout(refresh, 300);
+        setTimeout(refresh, 900);
+      }
+    }
+    if (msg.type === 'kick') {
+      const bar = document.getElementById('student-audio-bar');
+      if (bar) bar.classList.remove('show');
+      showKickedScreen(msg.reason || 'Ustoz tomonidan chiqarildi');
+    }
+    if (msg.type === 'promote') {
+      myRole = 'teacher';
+      showToast('Sizga ustoz huquqi berildi!');
+      document.getElementById('view-tabs-wrap').style.display = '';
+      document.getElementById('student-view-label').style.display = 'none';
+      document.getElementById('screen-ctrl').style.display = '';
+      document.getElementById('ctrl-end-teacher').style.display = '';
+      document.getElementById('ctrl-end-student').style.display = 'none';
+      document.getElementById('board-area').classList.remove('student-board');
+      document.getElementById('board-area').classList.add('teacher-board');
+      updateParticipants();
+    }
+  });
+  dc.on('close', () => { delete dataConns[peerId]; });
+  dc.on('error', () => { delete dataConns[peerId]; });
+}
+
+function broadcastBoard(msg) {
+  Object.values(dataConns).forEach(dc => {
+    if (dc && dc.open) { try { dc.send(msg); } catch(e) {} }
+  });
+}
+
+function sendBoardSnapshot(dc) {
+  if (canvas.width < 10) return;
+  try { dc.send({ type: 'snapshot', data: canvas.toDataURL('image/jpeg', 0.7) }); }
+  catch(e) {}
+}
+
+function applySnapshot(dataUrl) {
+  const img = new Image();
+  img.onload = () => {
+    if (canvas.width < 10 || !canvasReady) {
+      setTimeout(() => applySnapshot(dataUrl), 200); return;
+    }
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  };
+  img.src = dataUrl;
+}
+
+function queueStroke(data) {
+  boardSyncBuf.push(data);
+  if (!syncTimer) {
+    syncTimer = setTimeout(() => {
+      if (boardSyncBuf.length)
+        broadcastBoard({ type: 'stroke', points: boardSyncBuf.splice(0) });
+      syncTimer = null;
+    }, 40);
+  }
+}
+
+function applyRemoteStroke(msg) {
+  if (!msg.points) return;
+  msg.points.forEach(p => {
+    ctx.strokeStyle = p.color || '#1a1a1a';
+    ctx.lineWidth   = p.size  || 3;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    if (p.op === 'begin') {
+      ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    } else if (p.op === 'move') {
+      if (p.eraser) {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineTo(p.x, p.y); ctx.stroke();
+        ctx.globalCompositeOperation = 'source-over';
+      } else {
+        ctx.lineTo(p.x, p.y); ctx.stroke();
+      }
+    } else if (p.op === 'shape') {
+      const img = new Image();
+      img.onload = () => {
+        if (canvas.width < 10) return;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+      img.src = p.patch;
+    }
+  });
+}
+
+function applyRemoteText(msg) {
+  ctx.fillStyle = msg.color || '#1a1a1a';
+  ctx.font = (msg.fontSize || 16) + 'px -apple-system, sans-serif';
+  const lines = (msg.text || '').split('\n');
+  const lh = (msg.fontSize || 16) * 1.3;
+  lines.forEach((line, i) => ctx.fillText(line, msg.x, msg.y + lh * (i + 1)));
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2279,8 +2530,16 @@ async function startRecording() {
     let displayStream;
     try {
       displayStream = await navigator.mediaDevices.getDisplayMedia({
-        video: { displaySurface: 'browser', width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } },
-        audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true } },
+        video: {
+          displaySurface: 'browser',
+          width:  { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30 }
+        },
+        audio: {
+          echoCancellation: { ideal: true },
+          noiseSuppression: { ideal: true }
+        },
         preferCurrentTab: true,
         selfBrowserSurface: 'include'
       });
@@ -2420,8 +2679,8 @@ document.addEventListener('click', function retryAllMedia() {
 }, { once: false });
 
 window.addEventListener('beforeunload', () => {
-  if (roomToken && myRoomPeerId)
-    navigator.sendBeacon('/api/room?action=leave&room_token=' + encodeURIComponent(roomToken), new Blob([JSON.stringify({peer_id:myRoomPeerId})],{type:'application/json'}));
+  if (roomToken && myPeerId)
+    navigator.sendBeacon('/api/room?action=leave&room_token=' + encodeURIComponent(roomToken), new Blob([JSON.stringify({peer_id:myPeerId})],{type:'application/json'}));
 });
 
 init();
